@@ -34,7 +34,7 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 
 ### Make it yours
 
-- **Rules:** "When a microphone is in use, turn on Zen." Conditions include the frontmost or running app, a microphone or camera in use, battery, power and Low Power Mode, external or specific displays, the time of day and being offline. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically. Moves wait until you are not using the mouse and keyboard.
+- **Rules:** "When a microphone is in use, turn on Zen." Conditions include the frontmost or running app, a microphone or camera in use, battery, power and Low Power Mode, external or specific displays, the time of day, being offline and a shell command of your own that succeeds. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically. Moves wait until you are not using the mouse and keyboard.
 - **Scenes:** save arrangements such as *Work*, *Home* or *Presenting* and switch between them from the menu or with a rule.
 - **Zen:** one shortcut clears every app icon, leaving only system status. Great for screenshots, recordings and talks.
 - **Item shortcuts:** open a specific item (Wi-Fi, a VPN, a timer…) from anywhere, even while it is hidden.
@@ -82,6 +82,8 @@ You can also open `Package.swift` in Xcode to edit and debug. When Meno runs out
 | **Screen Recording** (optional) | Showing the real artwork of hidden items and noticing when their icons change (macOS 14–26). Without it Meno shows app icons. Only menu bar items are captured. |
 
 Rules about a microphone or camera in use only ask macOS whether a device is running, which needs no permission. Meno never records anything.
+
+A rule condition that runs a command runs exactly the command you typed, every 10 seconds with zsh, and only while the rule is on. Rules with commands are turned off when you import settings, so a settings file cannot run anything before you have looked at it.
 
 Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*. Settings and statistics live in `~/Library/Application Support/Meno`.
 
