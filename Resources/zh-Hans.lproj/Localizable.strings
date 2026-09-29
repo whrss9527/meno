@@ -180,6 +180,7 @@
 "Icon spacing" = "图标间距";
 "Ignore hover, scrolling and clicks while Zen is on" = "禅模式开启时忽略悬停、滚动和点按";
 "Import Settings…" = "导入设置…";
+"In the group “%@”" = "在分组“%@”中";
 "In the menu bar" = "在菜单栏中";
 "In the Shelf" = "在托盘中";
 "Include the Stash" = "包含暗格";

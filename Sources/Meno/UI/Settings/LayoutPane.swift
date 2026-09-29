@@ -378,6 +378,12 @@ private struct LayoutChip: View {
                     .foregroundStyle(.secondary)
                     .help(Text("Shown for a moment when it changes"))
             }
+            if let group = groups.first(where: { $0.id == groupID }) {
+                Image(systemName: group.symbol)
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+                    .help(Text("In the group “\(group.name)”"))
+            }
             Image(systemName: item.isMovable ? "chevron.down" : "lock.fill")
                 .font(.system(size: item.isMovable ? 8 : 9, weight: item.isMovable ? .bold : .regular))
                 .foregroundStyle(.secondary)
