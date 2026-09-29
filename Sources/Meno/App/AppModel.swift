@@ -227,6 +227,9 @@ final class AppModel: ObservableObject {
                 registerHotkeys()
             }
         }
+        if old.scenes.map(\.hotkey) != new.scenes.map(\.hotkey) {
+            registerHotkeys()
+        }
         if old.revealOnChange != new.revealOnChange {
             changes.settingsChanged()
         }
@@ -336,10 +339,17 @@ final class AppModel: ObservableObject {
                 self?.shelf.toggle(group: id, trigger: .hotkey, takesKeyboard: true)
             }
         }
+        for scene in settings.scenes {
+            guard let combo = scene.hotkey else { continue }
+            let id = scene.id
+            register(combo) { [weak self] in
+                guard let self, let scene = self.settings.scenes.first(where: { $0.id == id }) else { return }
+                Task { await self.applyScene(scene) }
+            }
+        }
         // A shortcut used twice fails the second time; that is reported as
         // a conflict instead.
-        let conflicts = settings.hotkeys.conflicts(with: settings.itemHotkeys, groupHotkeys: settings.groups.compactMap(\.hotkey))
-        refused.subtract(conflicts)
+        refused.subtract(settings.hotkeyConflicts)
         if refused != refusedHotkeys {
             refusedHotkeys = refused
         }

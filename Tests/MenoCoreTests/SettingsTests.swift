@@ -187,6 +187,24 @@ final class KeyComboTests: XCTestCase {
         XCTAssertNil(KeyCombo(keyCode: 0x31, modifiers: [.option, .command]).problem(osMajorVersion: 27))
     }
 
+    func testSceneShortcuts() throws {
+        var settings = MenoSettings()
+        let combo = KeyCombo(keyCode: 0x0D, modifiers: [.control, .option])
+        settings.scenes = [LayoutScene(name: "Work", layout: SceneLayout(), hotkey: combo)]
+        XCTAssertTrue(settings.hotkeyConflicts.isEmpty)
+        settings.groups = [ItemGroup(name: "Tools", hotkey: combo)]
+        XCTAssertEqual(settings.hotkeyConflicts, [combo])
+
+        // Scenes saved before scene shortcuts decode without one.
+        let decoded = try MenoSettings.decode(from: settings.encoded())
+        XCTAssertEqual(decoded.scenes.first?.hotkey, combo)
+        var json = try XCTUnwrap(String(data: settings.encoded(), encoding: .utf8))
+        json = json.replacingOccurrences(of: #""hotkey""#, with: #""oldKey""#)
+        let older = try MenoSettings.decode(from: Data(json.utf8))
+        XCTAssertEqual(older.scenes.map(\.name), ["Work"])
+        XCTAssertNil(older.scenes.first?.hotkey)
+    }
+
     func testConflicts() {
         var bindings = HotkeyBindings()
         let combo = KeyCombo(keyCode: 0x01, modifiers: [.control, .option])

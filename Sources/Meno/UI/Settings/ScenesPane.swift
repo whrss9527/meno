@@ -68,7 +68,14 @@ struct ScenesPane: View {
                                 renaming = scene
                             },
                             onCopyLink: { model.copyLink(.scene(name: scene.name)) },
-                            onDelete: { model.deleteScene(id: scene.id) }
+                            onDelete: { model.deleteScene(id: scene.id) },
+                            hotkey: Binding(
+                                get: { scene.hotkey },
+                                set: { combo in
+                                    guard let index = model.settings.scenes.firstIndex(where: { $0.id == scene.id }) else { return }
+                                    model.settings.scenes[index].hotkey = combo
+                                }
+                            )
                         )
                     }
                 }
@@ -105,6 +112,7 @@ private struct SceneCard: View {
     let onRename: () -> Void
     let onCopyLink: () -> Void
     let onDelete: () -> Void
+    @Binding var hotkey: KeyCombo?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -153,6 +161,14 @@ private struct SceneCard: View {
             }
             .menoGlassButtonStyle(prominent: !isActive)
             .disabled(isBusy)
+            HStack(spacing: 8) {
+                Image(systemName: "keyboard")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                ShortcutRecorder(combo: $hotkey)
+                    .help(Text("A shortcut that applies this scene from anywhere"))
+                Spacer(minLength: 0)
+            }
         }
         .padding(16)
         .menoGlassCard(cornerRadius: 18, tint: isActive ? Color.green.opacity(0.5) : nil)

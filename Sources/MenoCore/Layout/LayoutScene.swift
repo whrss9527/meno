@@ -10,6 +10,8 @@ public struct LayoutScene: Codable, Hashable, Identifiable, Sendable {
     public var layout: SceneLayout
     public var createdAt: Date
     public var updatedAt: Date
+    /// A global shortcut that applies the scene.
+    public var hotkey: KeyCombo?
 
     public init(
         id: UUID = UUID(),
@@ -17,7 +19,8 @@ public struct LayoutScene: Codable, Hashable, Identifiable, Sendable {
         symbol: String = "square.grid.2x2",
         layout: SceneLayout,
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        hotkey: KeyCombo? = nil
     ) {
         self.id = id
         self.name = name
@@ -25,6 +28,7 @@ public struct LayoutScene: Codable, Hashable, Identifiable, Sendable {
         self.layout = layout
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.hotkey = hotkey
     }
 }
 

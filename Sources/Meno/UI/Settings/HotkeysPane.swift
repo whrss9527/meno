@@ -97,7 +97,7 @@ struct HotkeysPane: View {
     }
 
     private var conflicts: Set<KeyCombo> {
-        model.settings.hotkeys.conflicts(with: model.settings.itemHotkeys, groupHotkeys: model.settings.groups.compactMap(\.hotkey))
+        model.settings.hotkeyConflicts
     }
 
     private func itemLabel(_ key: MenuItemKey) -> some View {

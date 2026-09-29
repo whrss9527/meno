@@ -32,6 +32,14 @@ public struct MenoSettings: Codable, Equatable, Sendable {
 
     public init() {}
 
+    /// Shortcuts used more than once by actions, items, groups and scenes.
+    public var hotkeyConflicts: Set<KeyCombo> {
+        hotkeys.conflicts(
+            with: itemHotkeys,
+            groupHotkeys: groups.compactMap(\.hotkey) + scenes.compactMap(\.hotkey)
+        )
+    }
+
     /// The rules as they apply now: while rules are paused, none is on.
     public var effectiveRules: [AutomationRule] {
         guard rulesPaused else { return rules }
