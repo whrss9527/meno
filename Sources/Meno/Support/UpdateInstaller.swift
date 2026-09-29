@@ -1,0 +1,211 @@
+import AppKit
+import CoreServices
+import CryptoKit
+import MenoCore
+import Security
+
+/// Puts a newer release in place of the running copy of Meno.
+///
+/// The release's zip is downloaded from GitHub and checked before anything
+/// is replaced: its size and checksum when GitHub gives them, the bundle
+/// identifier and version, and a valid code signature, from the same
+/// certificate when this copy has one. The previous copy is moved aside and
+/// deleted once Meno quit.
+enum UpdateInstaller {
+    enum Failure: LocalizedError {
+        case notBundled
+        case translocated
+        case readOnly
+        case noArchive
+        case download
+        case damaged
+        case unexpectedApp
+        case invalidSignature
+        case differentSigner
+
+        var errorDescription: String? {
+            switch self {
+            case .notBundled:
+                return String(localized: "This copy of Meno does not run from an app bundle.")
+            case .translocated:
+                return String(localized: "macOS runs Meno from a temporary copy. Move Meno to the Applications folder, open it from there and try again.")
+            case .readOnly:
+                return String(localized: "Meno cannot replace itself in its folder.")
+            case .noArchive:
+                return String(localized: "The release has no app to install.")
+            case .download:
+                return String(localized: "The download failed.")
+            case .damaged:
+                return String(localized: "The download is incomplete or damaged.")
+            case .unexpectedApp:
+                return String(localized: "The download is not the expected version of Meno.")
+            case .invalidSignature:
+                return String(localized: "The download's code signature is not valid.")
+            case .differentSigner:
+                return String(localized: "The download is signed differently than this copy of Meno.")
+            }
+        }
+    }
+
+    /// A checked release, ready to replace this copy.
+    struct Prepared {
+        let app: URL
+        /// Holds the download and, once replaced, the previous copy.
+        let folder: URL
+    }
+
+    /// Why Meno cannot replace itself where it runs, if it cannot.
+    static var blocker: Failure? {
+        guard AppInfo.isBundled else { return .notBundled }
+        let bundle = Bundle.main.bundleURL
+        // Apps opened from a quarantined download run from a read-only copy.
+        if bundle.path.contains("/AppTranslocation/") { return .translocated }
+        let fileManager = FileManager.default
+        guard fileManager.isWritableFile(atPath: bundle.deletingLastPathComponent().path),
+              fileManager.isWritableFile(atPath: bundle.path)
+        else { return .readOnly }
+        return nil
+    }
+
+    /// Downloads, unpacks and checks the app of `release`.
+    static func prepare(_ release: UpdateRelease, repository: String) async throws -> Prepared {
+        if let blocker { throw blocker }
+        guard let version = release.version, let archive = release.appArchive(repository: repository) else {
+            throw Failure.noArchive
+        }
+        let fileManager = FileManager.default
+        // On the same volume as the app, so it can be swapped in one step.
+        let folder = try fileManager.url(
+            for: .itemReplacementDirectory,
+            in: .userDomainMask,
+            appropriateFor: Bundle.main.bundleURL,
+            create: true
+        )
+        do {
+            let zip = folder.appendingPathComponent("Meno.zip")
+            try await download(archive, to: zip)
+            let unpacked = folder.appendingPathComponent("Unpacked", isDirectory: true)
+            guard await run("/usr/bin/ditto", ["-x", "-k", zip.path, unpacked.path]) == 0 else {
+                throw Failure.damaged
+            }
+            let app = try findApp(in: unpacked)
+            try check(app, version: version)
+            releaseFromQuarantine(app)
+            return Prepared(app: app, folder: folder)
+        } catch {
+            try? fileManager.removeItem(at: folder)
+            throw error
+        }
+    }
+
+    /// Moves this copy aside and the prepared one in its place.
+    static func replace(with prepared: Prepared) throws {
+        let fileManager = FileManager.default
+        let bundle = Bundle.main.bundleURL
+        let previous = prepared.folder.appendingPathComponent("Previous.app", isDirectory: true)
+        do {
+            try fileManager.moveItem(at: bundle, to: previous)
+            do {
+                try fileManager.moveItem(at: prepared.app, to: bundle)
+            } catch {
+                try? fileManager.moveItem(at: previous, to: bundle)
+                throw error
+            }
+        } catch {
+            try? fileManager.removeItem(at: prepared.folder)
+            throw error
+        }
+        LSRegisterURL(bundle as CFURL, true)
+    }
+
+    private static func download(_ asset: UpdateRelease.Asset, to destination: URL) async throws {
+        var request = URLRequest(url: asset.downloadURL, timeoutInterval: 60)
+        request.setValue("Meno/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
+        let result: (URL, URLResponse)
+        do {
+            result = try await URLSession.shared.download(for: request)
+        } catch {
+            Log.app.error("Update download failed: \(error.localizedDescription, privacy: .public)")
+            throw Failure.download
+        }
+        let (file, response) = result
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            try? FileManager.default.removeItem(at: file)
+            throw Failure.download
+        }
+        try FileManager.default.moveItem(at: file, to: destination)
+        let data = try Data(contentsOf: destination, options: .mappedIfSafe)
+        if let size = asset.size, data.count != size {
+            throw Failure.damaged
+        }
+        if let expected = asset.sha256 {
+            let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            guard actual == expected else { throw Failure.damaged }
+        }
+    }
+
+    private static func findApp(in folder: URL) throws -> URL {
+        let expected = folder.appendingPathComponent("Meno.app", isDirectory: true)
+        if FileManager.default.fileExists(atPath: expected.path) { return expected }
+        let contents = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
+        guard let app = contents.first(where: { $0.pathExtension == "app" }) else { throw Failure.damaged }
+        return app
+    }
+
+    private static func check(_ app: URL, version: AppVersion) throws {
+        let plist = app.appendingPathComponent("Contents/Info.plist")
+        guard let info = NSDictionary(contentsOf: plist) as? [String: Any],
+              info["CFBundleIdentifier"] as? String == AppInfo.bundleIdentifier,
+              let text = info["CFBundleShortVersionString"] as? String,
+              AppVersion(text) == version
+        else { throw Failure.unexpectedApp }
+
+        var code: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(app as CFURL, [], &code) == errSecSuccess, let code else {
+            throw Failure.invalidSignature
+        }
+        let flags = SecCSFlags(rawValue:
+            UInt32(kSecCSCheckAllArchitectures) | UInt32(kSecCSCheckNestedCode) | UInt32(kSecCSStrictValidate)
+        )
+        guard SecStaticCodeCheckValidityWithErrors(code, flags, nil, nil) == errSecSuccess else {
+            throw Failure.invalidSignature
+        }
+        if let requirement = CodeSigning.requirementForUpdates,
+           SecStaticCodeCheckValidityWithErrors(code, flags, requirement, nil) != errSecSuccess {
+            throw Failure.differentSigner
+        }
+        guard CodeSigning.identifier(of: code) == AppInfo.bundleIdentifier else {
+            throw Failure.unexpectedApp
+        }
+    }
+
+    /// Downloads made by Meno are not quarantined, but an archive that was
+    /// would pass it on. The person chose to install this checked copy, so it
+    /// should open without Gatekeeper asking again.
+    private static func releaseFromQuarantine(_ app: URL) {
+        let attribute = "com.apple.quarantine"
+        removexattr(app.path, attribute, XATTR_NOFOLLOW)
+        guard let enumerator = FileManager.default.enumerator(at: app, includingPropertiesForKeys: nil) else { return }
+        for case let url as URL in enumerator {
+            removexattr(url.path, attribute, XATTR_NOFOLLOW)
+        }
+    }
+
+    private static func run(_ path: String, _ arguments: [String]) async -> Int32 {
+        await withCheckedContinuation { continuation in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: path)
+            process.arguments = arguments
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            process.terminationHandler = { process in
+                continuation.resume(returning: process.terminationStatus)
+            }
+            do {
+                try process.run()
+            } catch {
+                continuation.resume(returning: -1)
+            }
+        }
+    }
+}

@@ -42,13 +42,10 @@ struct AboutPane: View {
                 infoRow(String(localized: "Liquid Glass"), AppInfo.hasLiquidGlass ? String(localized: "Available") : String(localized: "Not available, using frosted glass"))
             }
 
+            UpdateCard(updates: model.updates)
+
             HStack(spacing: 10) {
-                Button {
-                    Task { await model.updates.check(userInitiated: true) }
-                } label: {
-                    Label("Check for Updates", systemImage: "arrow.down.circle")
-                }
-                .menoGlassButtonStyle()
+                CheckForUpdatesButton(updates: model.updates)
                 Link(destination: AppInfo.repositoryURL) {
                     Label("Source Code", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
@@ -80,6 +77,83 @@ struct AboutPane: View {
                 .font(.system(size: 12, weight: .medium))
                 .textSelection(.enabled)
         }
+    }
+}
+
+/// Offers a newer release and shows how installing it goes.
+private struct UpdateCard: View {
+    @ObservedObject var updates: UpdateChecker
+
+    var body: some View {
+        if let release = updates.available, let version = release.version {
+            SettingsCard("Update Available", symbol: "arrow.down.circle") {
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Meno \(version.description) is available.")
+                            .font(.system(size: 13, weight: .semibold))
+                        note
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 8)
+                    switch updates.phase {
+                    case .downloading, .installing:
+                        ProgressView()
+                            .controlSize(.small)
+                        Group {
+                            if updates.phase == .downloading {
+                                Text("Downloading…")
+                            } else {
+                                Text("Installing…")
+                            }
+                        }
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                    case .idle, .checking:
+                        Button("Release Notes") {
+                            NSWorkspace.shared.open(release.htmlURL)
+                        }
+                        .menoGlassButtonStyle()
+                        if updates.canInstall {
+                            Button("Install and Relaunch") {
+                                Task { await updates.install() }
+                            }
+                            .menoGlassButtonStyle(prominent: true)
+                        } else {
+                            Button("Download") {
+                                NSWorkspace.shared.open(release.htmlURL)
+                            }
+                            .menoGlassButtonStyle(prominent: true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var note: Text {
+        if let blocker = UpdateInstaller.blocker {
+            return Text(verbatim: blocker.localizedDescription)
+        }
+        if CodeSigning.isAdHoc {
+            return Text("Meno quits and opens again. macOS then asks you to allow Meno in Accessibility again.")
+        }
+        return Text("Meno quits and opens again.")
+    }
+}
+
+private struct CheckForUpdatesButton: View {
+    @ObservedObject var updates: UpdateChecker
+
+    var body: some View {
+        Button {
+            Task { await updates.check(userInitiated: true) }
+        } label: {
+            Label("Check for Updates", systemImage: "arrow.down.circle")
+        }
+        .menoGlassButtonStyle()
+        .disabled(updates.phase != .idle)
     }
 }
 

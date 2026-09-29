@@ -8,7 +8,8 @@ enum Diagnostics {
     static func report(for model: AppModel) -> String {
         let state = model.statusBar.state
         var lines = [
-            "Meno \(AppInfo.version) (\(AppInfo.build))",
+            "Meno \(AppInfo.version) (\(AppInfo.build)) · signed \(CodeSigning.isAdHoc ? "ad hoc" : "with a certificate")"
+                + " · \((Bundle.main.bundlePath as NSString).abbreviatingWithTildeInPath)",
             "macOS \(AppInfo.osVersionString) · \(architecture) · \(Locale.current.identifier)",
             "Engine: \(model.statusBar.engine) · hidden \(state.hiddenCollapsed ? "collapsed" : "shown")"
                 + " · stash \(state.stashCollapsed ? "collapsed" : "shown") · zen \(state.zen ? "on" : "off")",

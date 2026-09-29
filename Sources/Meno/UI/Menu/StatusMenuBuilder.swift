@@ -59,13 +59,38 @@ struct StatusMenuBuilder {
         menu.addItem(item(String(localized: "About Meno"), symbol: "info.circle") {
             model.openSettings(.about)
         })
-        menu.addItem(item(String(localized: "Check for Updates…"), symbol: "arrow.down.circle") {
-            Task { await model.updates.check(userInitiated: true) }
-        })
+        menu.addItem(updateItem())
         menu.addItem(item(String(localized: "Quit Meno"), symbol: "power", keyEquivalent: "q") {
             NSApp.terminate(nil)
         })
         return menu
+    }
+
+    /// Installs a release a check found, or checks for one.
+    private func updateItem() -> NSMenuItem {
+        let updates = model.updates
+        guard let release = updates.available, let version = release.version?.description else {
+            let check = item(String(localized: "Check for Updates…"), symbol: "arrow.down.circle") {
+                Task { await model.updates.check(userInitiated: true) }
+            }
+            check.isEnabled = updates.phase == .idle
+            return check
+        }
+        switch updates.phase {
+        case .downloading, .installing:
+            let busy = item(String(localized: "Installing Meno \(version)…"), symbol: "arrow.down.circle") {}
+            busy.isEnabled = false
+            return busy
+        case .idle, .checking:
+            if updates.canInstall {
+                return item(String(localized: "Install Meno \(version) and Relaunch"), symbol: "arrow.down.circle.fill") {
+                    Task { await model.updates.install() }
+                }
+            }
+            return item(String(localized: "Download Meno \(version)…"), symbol: "arrow.down.circle.fill") {
+                NSWorkspace.shared.open(release.htmlURL)
+            }
+        }
     }
 
     private func scenesItem() -> NSMenuItem {
