@@ -89,13 +89,15 @@ struct FrostedGlass<S: Shape>: ViewModifier {
     var clear: Bool
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
 
     func body(content: Content) -> some View {
         let dark = colorScheme == .dark
+        let increased = contrast == .increased
         content
             .background {
                 ZStack {
-                    shape.fill(clear ? Material.ultraThinMaterial : Material.thinMaterial)
+                    shape.fill(increased ? Material.regularMaterial : clear ? Material.ultraThinMaterial : Material.thinMaterial)
                     if let tint {
                         shape.fill(tint.opacity(0.18))
                     }
@@ -109,18 +111,23 @@ struct FrostedGlass<S: Shape>: ViewModifier {
                 }
             }
             .overlay {
-                shape.stroke(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(dark ? 0.38 : 0.8),
-                            Color.white.opacity(0.06),
-                            Color.white.opacity(dark ? 0.16 : 0.4),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
+                if increased {
+                    // Increase Contrast asks for edges that stand out.
+                    shape.stroke(Color.primary.opacity(0.55), lineWidth: 1)
+                } else {
+                    shape.stroke(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(dark ? 0.38 : 0.8),
+                                Color.white.opacity(0.06),
+                                Color.white.opacity(dark ? 0.16 : 0.4),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+                }
             }
             .shadow(color: Color.black.opacity(dark ? 0.32 : 0.12), radius: 14, x: 0, y: 8)
     }
@@ -129,8 +136,11 @@ struct FrostedGlass<S: Shape>: ViewModifier {
 struct FrostedButtonStyle: ButtonStyle {
     var prominent = false
 
+    @Environment(\.colorSchemeContrast) private var contrast
+
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        let rim = contrast == .increased ? Color.primary.opacity(0.55) : Color.white.opacity(prominent ? 0.25 : 0.45)
+        return configuration.label
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
             .foregroundStyle(prominent ? Color.white : Color.primary)
@@ -138,7 +148,7 @@ struct FrostedButtonStyle: ButtonStyle {
                 Capsule().fill(prominent ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Material.thinMaterial))
             }
             .overlay {
-                Capsule().stroke(Color.white.opacity(prominent ? 0.25 : 0.45), lineWidth: 0.8)
+                Capsule().stroke(rim, lineWidth: 0.8)
             }
             .contentShape(Capsule())
             .opacity(configuration.isPressed ? 0.75 : 1)

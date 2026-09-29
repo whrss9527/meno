@@ -213,10 +213,22 @@ final class QuickOpenController: ObservableObject {
             QuickCommand(id: "settings", title: String(localized: "Settings…"), symbol: "gearshape") {
                 model.openSettings()
             },
-            QuickCommand(id: "updates", title: String(localized: "Check for Updates"), symbol: "arrow.down.circle") {
-                Task { await model.updates.check(userInitiated: true) }
-            },
         ]
+        let updates = model.updates
+        if let version = updates.available?.version?.description, updates.canInstall, updates.phase == .idle {
+            commands.append(QuickCommand(
+                id: "install-update",
+                title: String(localized: "Install Meno \(version) and Relaunch"),
+                symbol: "arrow.down.circle.fill",
+                keywords: [String(localized: "Check for Updates")]
+            ) {
+                Task { await updates.install() }
+            })
+        } else {
+            commands.append(QuickCommand(id: "updates", title: String(localized: "Check for Updates"), symbol: "arrow.down.circle") {
+                Task { await model.updates.check(userInitiated: true) }
+            })
+        }
         return commands
     }
 
