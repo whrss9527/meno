@@ -112,8 +112,16 @@ final class StatusBarController: NSObject {
                 ?? NSImage(systemSymbolName: "square.grid.2x2", accessibilityDescription: group.name)
             image?.isTemplate = true
             item.button?.image = image
-            item.button?.toolTip = group.name
             item.button?.setAccessibilityLabel(group.name)
+        }
+        refreshGroupTooltips()
+    }
+
+    /// Names the group and its items in each group icon's tooltip.
+    func refreshGroupTooltips() {
+        for group in model.settings.groups {
+            let names = group.items.compactMap { model.inventory.item(for: $0)?.displayName }
+            groupItems[group.id]?.button?.toolTip = names.isEmpty ? group.name : group.name + "\n" + names.joined(separator: ", ")
         }
     }
 

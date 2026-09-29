@@ -28,9 +28,24 @@ final class ItemGroupTests: XCTestCase {
         XCTAssertEqual(groups[0].items, [sync])
     }
 
+    func testGroupShortcutsCountAsConflicts() {
+        let combo = KeyCombo(keyCode: 5, modifiers: [.command, .option])
+        var bindings = HotkeyBindings()
+        bindings[.quickOpen] = combo
+        XCTAssertEqual(bindings.conflicts(with: [], groupHotkeys: [combo]), [combo])
+        XCTAssertTrue(bindings.conflicts(with: [], groupHotkeys: []).isEmpty)
+    }
+
+    func testGroupsFromBeforeShortcutsStillLoad() throws {
+        let json = #"{"groups": [{"id": "5B0F7F7E-8E6C-4B0E-9C57-3A1D1D6C2E11", "name": "Tools", "symbol": "hammer", "items": []}]}"#
+        let settings = try MenoSettings.decode(from: Data(json.utf8))
+        XCTAssertEqual(settings.groups.map(\.name), ["Tools"])
+        XCTAssertNil(settings.groups.first?.hotkey)
+    }
+
     func testGroupsSurviveSaving() throws {
         var settings = MenoSettings()
-        settings.groups = [ItemGroup(name: "Tools", symbol: "hammer", items: [sync, vpn])]
+        settings.groups = [ItemGroup(name: "Tools", symbol: "hammer", items: [sync, vpn], hotkey: KeyCombo(keyCode: 17, modifiers: [.control, .option]))]
         let decoded = try MenoSettings.decode(from: settings.encoded())
         XCTAssertEqual(decoded.groups, settings.groups)
         XCTAssertEqual(try MenoSettings.decode(from: Data("{}".utf8)).groups, [])

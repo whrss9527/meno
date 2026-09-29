@@ -207,6 +207,9 @@ final class AppModel: ObservableObject {
         }
         if old.groups != new.groups {
             statusBar.syncGroups()
+            if old.groups.map(\.hotkey) != new.groups.map(\.hotkey) {
+                registerHotkeys()
+            }
         }
         if old.revealOnChange != new.revealOnChange {
             changes.settingsChanged()
@@ -280,6 +283,13 @@ final class AppModel: ObservableObject {
             let click = binding.click
             hotkeys.register(binding.combo) { [weak self] in
                 self?.openItem(withKey: key, click: click, source: .hotkey)
+            }
+        }
+        for group in settings.groups {
+            guard let combo = group.hotkey else { continue }
+            let id = group.id
+            hotkeys.register(combo) { [weak self] in
+                self?.shelf.toggle(group: id)
             }
         }
     }

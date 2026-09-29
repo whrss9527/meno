@@ -131,14 +131,17 @@ public struct HotkeyBindings: Codable, Equatable, Sendable {
         set { bindings[action.rawValue] = newValue }
     }
 
-    /// Actions whose shortcut is also used by another action or item hotkey.
-    public func conflicts(with itemHotkeys: [ItemHotkey]) -> Set<KeyCombo> {
+    /// Shortcuts used more than once by actions, item hotkeys and groups.
+    public func conflicts(with itemHotkeys: [ItemHotkey], groupHotkeys: [KeyCombo] = []) -> Set<KeyCombo> {
         var counts: [KeyCombo: Int] = [:]
         for action in HotkeyAction.allCases {
             if let combo = self[action] { counts[combo, default: 0] += 1 }
         }
         for hotkey in itemHotkeys {
             counts[hotkey.combo, default: 0] += 1
+        }
+        for combo in groupHotkeys {
+            counts[combo, default: 0] += 1
         }
         return Set(counts.filter { $0.value > 1 }.keys)
     }

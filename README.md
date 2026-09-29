@@ -29,7 +29,7 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 - **Quick Open:** a Spotlight-style palette (fuzzy search, pinyin and initials included) to open any menu bar item from the keyboard, or to run Meno's actions such as applying a scene or turning on Zen. ↩ opens, ⌘↩ opens the secondary menu, ⌥↩ reveals the item in place, ⌘1–⌘9 pick a result.
 - **Layout editor:** drag items between the Visible, Hidden and Stash lanes, or next to other items to reorder them. Meno performs the ⌘-drags for you. Items can be renamed, which helps with items that macOS reports without a useful name.
 - **Show when it changes:** pick hidden items that Meno shows for a moment when their icon or text changes, for example when a sync fails.
-- **Groups:** put items that belong together behind one icon of their own. Clicking the icon shows the group in a Shelf right below it, and the items stay out of the menu bar.
+- **Groups:** put items that belong together behind one icon of their own. Clicking the icon, or the group's own shortcut, shows the group in a Shelf right below it, and the items stay out of the menu bar.
 - Liquid Glass on macOS 26 and later; a frosted-glass look with a light rim on macOS 14 and 15.
 
 ### Make it yours

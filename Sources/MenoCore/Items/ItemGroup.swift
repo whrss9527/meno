@@ -10,12 +10,15 @@ public struct ItemGroup: Codable, Hashable, Identifiable, Sendable {
     public var symbol: String
     /// In the order they are shown.
     public var items: [MenuItemKey]
+    /// A global shortcut that shows or hides the group's Shelf.
+    public var hotkey: KeyCombo?
 
-    public init(id: UUID = UUID(), name: String, symbol: String = "square.grid.2x2", items: [MenuItemKey] = []) {
+    public init(id: UUID = UUID(), name: String, symbol: String = "square.grid.2x2", items: [MenuItemKey] = [], hotkey: KeyCombo? = nil) {
         self.id = id
         self.name = name
         self.symbol = symbol
         self.items = items
+        self.hotkey = hotkey
     }
 
     /// Symbols offered for group icons.

@@ -32,6 +32,8 @@ struct GroupRow: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 220)
                 Spacer()
+                ShortcutRecorder(combo: $group.hotkey)
+                    .help(Text("A shortcut that shows the group"))
                 Button(role: .destructive, action: onDelete) {
                     Image(systemName: "trash")
                 }
