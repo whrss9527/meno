@@ -30,6 +30,7 @@ final class AppModel: ObservableObject {
     lazy var quickOpen = QuickOpenController(model: self)
     lazy var automation = AutomationController(model: self)
     lazy var changes = ChangeWatcher(model: self)
+    lazy var updates = UpdateChecker(model: self)
     lazy var markers = MarkerController(model: self)
     lazy var spacing = SpacingController(model: self)
     lazy var tint = TintOverlayController(model: self)
@@ -72,6 +73,7 @@ final class AppModel: ObservableObject {
         reveal.start()
         automation.start()
         changes.settingsChanged()
+        updates.settingsChanged()
         tint.update()
         observeSystem()
         updateUsageMonitor()
@@ -183,6 +185,9 @@ final class AppModel: ObservableObject {
         }
         if old.revealOnChange != new.revealOnChange {
             changes.settingsChanged()
+        }
+        if old.general.checksForUpdates != new.general.checksForUpdates {
+            updates.settingsChanged()
         }
     }
 

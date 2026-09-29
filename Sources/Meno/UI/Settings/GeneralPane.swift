@@ -22,6 +22,11 @@ struct GeneralPane: View {
                     "Launch Meno at login",
                     isOn: Binding(get: { model.launchAtLogin }, set: { model.setLaunchAtLogin($0) })
                 )
+                ToggleRow(
+                    "Check for updates once a day",
+                    subtitle: "Meno asks GitHub whether there is a newer release. Nothing about you or your Mac is sent.",
+                    isOn: $model.settings.general.checksForUpdates
+                )
             }
 
             SettingsCard("Revealing hidden items", symbol: "eye") {

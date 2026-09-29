@@ -82,7 +82,7 @@ make test       # 运行单元测试
 
 与麦克风、摄像头有关的规则只会询问 macOS 设备是否在运行，不需要任何权限，Meno 也不会录制任何内容。
 
-Meno 没有联网功能、数据分析或账户。设置与统计数据保存在 `~/Library/Application Support/Meno`。
+Meno 没有数据分析或账户。它只会在检查更新时联网，向 GitHub 查询最新版本：在“设置 › 关于”里点“检查更新”时，或在“通用”里开启每日检查后每天一次。设置与统计数据保存在 `~/Library/Application Support/Meno`。
 
 ## 链接
 

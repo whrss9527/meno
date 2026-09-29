@@ -82,7 +82,7 @@ You can also open `Package.swift` in Xcode to edit and debug. When Meno runs out
 
 Rules about a microphone or camera in use only ask macOS whether a device is running, which needs no permission. Meno never records anything.
 
-Meno has no network features, analytics or accounts. Settings and statistics live in `~/Library/Application Support/Meno`.
+Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*. Settings and statistics live in `~/Library/Application Support/Meno`.
 
 ## Links
 

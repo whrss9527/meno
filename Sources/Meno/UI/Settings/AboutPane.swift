@@ -41,6 +41,12 @@ struct AboutPane: View {
             }
 
             HStack(spacing: 10) {
+                Button {
+                    Task { await model.updates.check(userInitiated: true) }
+                } label: {
+                    Label("Check for Updates", systemImage: "arrow.down.circle")
+                }
+                .menoGlassButtonStyle()
                 Link(destination: AppInfo.repositoryURL) {
                     Label("Source Code", systemImage: "chevron.left.forwardslash.chevron.right")
                 }

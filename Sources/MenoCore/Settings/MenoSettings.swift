@@ -62,6 +62,8 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
     public var usageTracking = true
     /// Shows the number of hidden items next to the Meno icon.
     public var showsHiddenCount = false
+    /// Looks for a newer release on GitHub once a day.
+    public var checksForUpdates = false
 
     public init() {}
 }
