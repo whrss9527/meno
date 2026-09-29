@@ -110,7 +110,7 @@ struct InsightsPane: View {
                 let item = inventory.item(for: entry.key)
                 HStack(spacing: 10) {
                     if let item {
-                        Image(nsImage: images.image(for: item))
+                        Image(menuItemImage: images.image(for: item))
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 18, height: 18)
@@ -155,7 +155,7 @@ struct InsightsPane: View {
                 let item = inventory.item(for: suggestion.key)
                 HStack(spacing: 10) {
                     if let item {
-                        Image(nsImage: images.image(for: item))
+                        Image(menuItemImage: images.image(for: item))
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 18, height: 18)

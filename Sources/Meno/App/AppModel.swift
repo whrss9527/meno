@@ -79,6 +79,10 @@ final class AppModel: ObservableObject {
         }
         if !settings.onboardingCompleted {
             onboarding.show()
+        } else if !permissions.accessibility {
+            // Most often right after an update, when macOS no longer counts
+            // the entry of the previous build.
+            openSettings(.permissions)
         }
         usage.prune(keepingDays: 90)
     }
@@ -420,6 +424,18 @@ final class AppModel: ObservableObject {
 
     func makeStatusMenu() -> NSMenu {
         StatusMenuBuilder(model: self).build()
+    }
+
+    /// Replaces Meno's Accessibility entry with one for this build.
+    func resetAccessibility() {
+        Task {
+            if !(await permissions.resetAccessibility()) {
+                toasts.show(
+                    String(localized: "Could not reset the entry. Remove Meno from the Accessibility list in System Settings, then add it again."),
+                    symbol: "exclamationmark.triangle.fill"
+                )
+            }
+        }
     }
 
     func completeOnboarding() {

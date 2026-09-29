@@ -124,7 +124,7 @@ private struct QuickOpenRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(nsImage: image)
+            Image(menuItemImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 22, height: 22)

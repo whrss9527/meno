@@ -62,7 +62,11 @@ final class ItemImageCache: ObservableObject {
             for (key, image) in images {
                 let scale = NSScreen.main?.backingScaleFactor ?? 2
                 let size = NSSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)
-                updated[key] = NSImage(cgImage: image, size: size)
+                let glyph = NSImage(cgImage: image, size: size)
+                // Single-color glyphs follow the text color where Meno shows
+                // them, so white glyphs stay visible on light surfaces.
+                glyph.isTemplate = WindowCapture.isMonochrome(image)
+                updated[key] = glyph
             }
             self.captured = updated
             self.revision += 1

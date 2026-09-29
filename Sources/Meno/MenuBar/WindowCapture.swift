@@ -87,6 +87,27 @@ enum WindowCapture {
         return unsafeBitCast(symbol, to: CreateImage.self)
     }()
 
+    /// Whether a capture is a single-color glyph, as most menu bar items are.
+    static func isMonochrome(_ image: CGImage) -> Bool {
+        let width = min(image.width, 64)
+        let height = max(1, Int((Double(image.height) * Double(width) / Double(max(image.width, 1))).rounded()))
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(
+                data: buffer.baseAddress,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: width * 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        return drawn && GlyphAnalysis.isMonochrome(rgba: pixels, width: width, height: height)
+    }
+
     static func capture(windowID: CGWindowID) -> CGImage? {
         guard let createImage else { return nil }
         let listOption = CGWindowListOption.optionIncludingWindow.rawValue

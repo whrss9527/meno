@@ -23,7 +23,16 @@ struct LayoutPane: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if !permissions.accessibility {
+            if permissions.needsAccessibilityAgain {
+                Banner(
+                    symbol: "arrow.triangle.2.circlepath",
+                    tint: .orange,
+                    title: "Grant access again after the update",
+                    message: "System Settings still lists the previous build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks.",
+                    actionTitle: "Reset and Grant Again",
+                    action: { model.resetAccessibility() }
+                )
+            } else if !permissions.accessibility {
                 Banner(
                     symbol: "hand.raised.fill",
                     tint: .orange,
@@ -218,7 +227,7 @@ private struct LayoutChip: View {
 
     var body: some View {
         HStack(spacing: 7) {
-            Image(nsImage: image)
+            Image(menuItemImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 18, height: 18)

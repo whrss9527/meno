@@ -78,7 +78,7 @@ struct HotkeysPane: View {
         let item = inventory.item(for: key)
         return HStack(spacing: 8) {
             if let item {
-                Image(nsImage: model.images.image(for: item))
+                Image(menuItemImage: model.images.image(for: item))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 18, height: 18)

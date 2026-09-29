@@ -46,6 +46,13 @@ extension ItemSection {
     }
 }
 
+extension Image {
+    /// Artwork of a menu bar item. Single-color glyphs take the text color.
+    init(menuItemImage image: NSImage) {
+        self = Image(nsImage: image).renderingMode(image.isTemplate ? .template : .original)
+    }
+}
+
 extension RevealStyle {
     var title: String {
         switch self {

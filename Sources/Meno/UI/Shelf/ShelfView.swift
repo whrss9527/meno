@@ -83,7 +83,7 @@ private struct ShelfItemButton: View {
     var body: some View {
         let size = CGFloat(settings.iconSize)
         VStack(spacing: 3) {
-            Image(nsImage: image)
+            Image(menuItemImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: image.isTemplate ? size : size + 4, height: image.isTemplate ? size : size + 4)

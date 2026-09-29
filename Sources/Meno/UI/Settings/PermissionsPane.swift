@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PermissionsPane: View {
+    @EnvironmentObject private var model: AppModel
     @ObservedObject var permissions: PermissionCenter
 
     var body: some View {
@@ -14,6 +15,16 @@ struct PermissionsPane: View {
                 grant: { permissions.requestAccessibility() },
                 openSettings: { permissions.open(.accessibility) }
             )
+            if !permissions.accessibility {
+                Banner(
+                    symbol: "arrow.triangle.2.circlepath",
+                    tint: .orange,
+                    title: "Already switched on?",
+                    message: "After an update, System Settings can still list an earlier build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks.",
+                    actionTitle: "Reset and Grant Again",
+                    action: { model.resetAccessibility() }
+                )
+            }
             PermissionCard(
                 title: "Screen Recording",
                 symbol: "rectangle.dashed.badge.record",

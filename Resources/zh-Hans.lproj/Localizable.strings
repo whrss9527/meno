@@ -26,6 +26,8 @@
 "Add Rule" = "添加规则";
 "Advanced" = "高级";
 "After" = "延迟";
+"After an update, System Settings can still list an earlier build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "更新之后，系统设置里可能还留着旧版本 Meno 的记录，它对新版本不生效。先清除这条记录，再在系统提示时打开 Meno 的开关。";
+"Already switched on?" = "开关已经打开了？";
 "Also hide the items in the Visible section" = "同时隐藏“常显”分区中的项目";
 "Always" = "始终";
 "Always shown in the menu bar." = "始终显示在菜单栏中。";
@@ -83,6 +85,7 @@
 "connected to power" = "连接电源";
 "Continue" = "继续";
 "Could not change the login item: %@" = "无法更改登录项：%@";
+"Could not reset the entry. Remove Meno from the Accessibility list in System Settings, then add it again." = "没能清除这条记录。请在系统设置的“辅助功能”列表里删掉 Meno，再重新添加。";
 "Current" = "当前";
 "Delete" = "删除";
 "Dividers" = "分隔符";
@@ -107,6 +110,7 @@
 "Global shortcuts" = "全局快捷键";
 "Good to know" = "小贴士";
 "Gradient" = "渐变";
+"Grant access again after the update" = "更新后需要重新授权";
 "Grant Accessibility Access…" = "授予辅助功能权限…";
 "Grant Access…" = "授予权限…";
 "Granted" = "已授权";
@@ -258,6 +262,7 @@
 "Reset" = "重置";
 "Reset all settings?" = "要重置所有设置吗？";
 "Reset All Settings…" = "重置所有设置…";
+"Reset and Grant Again" = "清除并重新授权";
 "Reset Statistics…" = "重置统计…";
 "Reset usage statistics?" = "要重置使用统计吗？";
 "Revealing hidden items" = "显示隐藏项目";
@@ -339,6 +344,7 @@
 "Swipe down to show, swipe up to hide." = "向下轻扫显示，向上轻扫隐藏。";
 "Symbol" = "符号";
 "Symbol: %@" = "符号：%@";
+"System Settings still lists the previous build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "系统设置里还留着上一个版本 Meno 的记录，它对新版本不生效。先清除这条记录，再在系统提示时打开 Meno 的开关。";
 "Text" = "文字";
 "That file does not contain Meno settings." = "该文件不包含 Meno 设置。";
 "That item is not in the menu bar right now." = "该项目目前不在菜单栏中。";
