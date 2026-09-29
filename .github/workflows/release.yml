@@ -45,6 +45,19 @@ jobs:
           xcodebuild -version
           swift --version
 
+      # A fixed certificate keeps the app's identity across releases, so
+      # Accessibility survives updates. Without one the build is ad hoc signed.
+      - name: Import signing certificate
+        env:
+          CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          if [[ -z "$CERTIFICATE_P12_BASE64" ]]; then
+            echo "::warning::MACOS_CERTIFICATE_P12 is not set, so this build is signed ad hoc and updates need Accessibility again. See scripts/create-signing-certificate.sh."
+            exit 0
+          fi
+          scripts/import-signing-certificate.sh
+
       - name: Build universal app
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
@@ -61,6 +74,7 @@ jobs:
           lipo -archs build/Meno.app/Contents/MacOS/Meno | grep -q x86_64
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" build/Meno.app/Contents/Info.plist
           codesign --verify --strict build/Meno.app
+          codesign -dvv build/Meno.app 2>&1 | grep -E "^(Identifier|Authority|Signature|Timestamp)=" || true
 
       - name: Upload app
         uses: actions/upload-artifact@v4

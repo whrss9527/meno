@@ -53,6 +53,8 @@ Meno 会把你不常用的菜单栏图标收起来，需要时点按、悬停、
 
 发布新版本时，推送 `v*` 标签，或在 *Release* 工作流中填写版本号手动运行即可。
 
+更新后，系统设置的“辅助功能”列表里可能还留着上一个版本的记录，它对新版本不生效。这时 Meno 会打开“设置 › 权限”，点“清除并重新授权”即可换成新版本的记录。想让更新后不再需要重新授权，可以用固定的证书给发布包签名：运行一次 `scripts/create-signing-certificate.sh`，把它最后打印的两项 `MACOS_CERTIFICATE_P12` 和 `MACOS_CERTIFICATE_PASSWORD` 添加到仓库的 Secrets 里，之后 *Release* 工作流会用这张证书签名。
+
 ## 构建与运行
 
 ```bash

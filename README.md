@@ -53,6 +53,8 @@ Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/
 
 New versions are published by pushing a `v*` tag or by running the *Release* workflow with a version number.
 
+After an update, macOS may keep an entry for the previous build in the Accessibility list that no longer counts. Meno then opens *Settings › Permissions*, where *Reset and Grant Again* replaces the entry. To keep the permission across updates altogether, sign releases with a fixed certificate: run `scripts/create-signing-certificate.sh` once and add the two secrets it prints, `MACOS_CERTIFICATE_P12` and `MACOS_CERTIFICATE_PASSWORD`, to the repository. The *Release* workflow then signs with it.
+
 ## Build and run
 
 ```bash

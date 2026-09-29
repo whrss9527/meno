@@ -6,6 +6,7 @@
 #   CONFIG         release (default) or debug
 #   UNIVERSAL=1    build a universal (arm64 + x86_64) binary
 #   SIGN_IDENTITY  codesign identity; defaults to "-" (ad-hoc)
+#   SIGN_KEYCHAIN  keychain that holds the identity (optional)
 #   VERSION        marketing version; defaults to the VERSION file
 #   OUT_DIR        output directory; defaults to ./build
 set -euo pipefail
@@ -47,7 +48,11 @@ echo "==> Signing with identity: $SIGN_IDENTITY"
 if [[ "$SIGN_IDENTITY" == "-" ]]; then
   codesign --force --options runtime --timestamp=none --sign - "$APP"
 else
-  codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP"
+  keychain_args=()
+  if [[ -n "${SIGN_KEYCHAIN:-}" ]]; then
+    keychain_args=(--keychain "$SIGN_KEYCHAIN")
+  fi
+  codesign --force --options runtime --timestamp ${keychain_args[@]+"${keychain_args[@]}"} --sign "$SIGN_IDENTITY" "$APP"
 fi
 codesign --verify --strict "$APP"
 
