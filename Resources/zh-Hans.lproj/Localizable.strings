@@ -122,12 +122,12 @@
 "Dots" = "圆点";
 "Download" = "下载";
 "Drop items here" = "拖到这里";
-"Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items with Group in their menu. Hold ⌘ and drag a group's icon to move it." = "每个分组在菜单栏里都有自己的图标，点按即可在托盘中显示组内的项目。在项目菜单的“分组”里加入项目；按住 ⌘ 拖移分组图标可以调整它的位置。";
+"Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items by dragging them onto a group, or with Group in their menu. Hold ⌘ and drag a group's icon to move it." = "每个分组在菜单栏里都有自己的图标，点按即可在托盘中显示组内的项目。把项目拖到分组上，或在项目菜单的“分组”里加入；按住 ⌘ 拖移分组图标可以调整它的位置。";
 "Edit Groups…" = "编辑分组…";
 "Edit Rule" = "编辑规则";
 "Edit…" = "编辑…";
 "Empty menu bar" = "菜单栏空白处";
-"Empty. Choose Group in an item's menu to add it." = "还是空的。在项目菜单的“分组”里即可加入。";
+"Empty. Drag items here, or choose Group in an item's menu." = "还是空的。把项目拖到这里，或在项目菜单的“分组”里加入。";
 "Experimental" = "实验性";
 "Export Settings…" = "导出设置…";
 "Eye" = "眼睛";

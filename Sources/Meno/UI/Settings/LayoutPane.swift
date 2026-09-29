@@ -19,6 +19,7 @@ struct LayoutPane: View {
     @State private var isRenaming = false
     @State private var renamingKey: MenuItemKey?
     @State private var newName = ""
+    @State private var targetedGroup: UUID?
     @State private var isNamingGroup = false
     @State private var groupDraftKey: MenuItemKey?
     @State private var groupName = ""
@@ -117,7 +118,7 @@ struct LayoutPane: View {
         SettingsCard(
             "Groups",
             symbol: "square.grid.2x2",
-            footnote: "Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items with Group in their menu. Hold ⌘ and drag a group's icon to move it."
+            footnote: "Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items by dragging them onto a group, or with Group in their menu. Hold ⌘ and drag a group's icon to move it."
         ) {
             if model.settings.groups.isEmpty {
                 Text("No groups yet.")
@@ -125,13 +126,29 @@ struct LayoutPane: View {
                     .foregroundStyle(.secondary)
             }
             ForEach($model.settings.groups) { $group in
+                let id = group.id
                 GroupRow(
                     group: $group,
                     items: group.items.compactMap { inventory.item(for: $0) },
                     images: images,
+                    isTargeted: targetedGroup == id,
                     onRemoveItem: { model.removeItemFromGroups($0) },
-                    onDelete: { model.deleteGroup(group.id) }
+                    onDelete: { model.deleteGroup(id) }
                 )
+                .onDrop(of: [.plainText], isTargeted: Binding {
+                    targetedGroup == id
+                } set: { isTargeted in
+                    if isTargeted {
+                        targetedGroup = id
+                    } else if targetedGroup == id {
+                        targetedGroup = nil
+                    }
+                }) { _ in
+                    guard let key = draggedKey else { return false }
+                    draggedKey = nil
+                    model.addItem(key, toGroup: id)
+                    return true
+                }
             }
             Button {
                 groupName = ""
@@ -708,6 +725,8 @@ private struct GroupRow: View {
     @Binding var group: ItemGroup
     let items: [MenuBarItem]
     @ObservedObject var images: ItemImageCache
+    /// Whether an item is being dragged over the group.
+    let isTargeted: Bool
     let onRemoveItem: (MenuItemKey) -> Void
     let onDelete: () -> Void
 
@@ -740,7 +759,7 @@ private struct GroupRow: View {
                 .help(Text("Delete Group"))
             }
             if items.isEmpty {
-                Text("Empty. Choose Group in an item's menu to add it.")
+                Text("Empty. Drag items here, or choose Group in an item's menu.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             } else {
@@ -773,7 +792,12 @@ private struct GroupRow: View {
         .padding(10)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.primary.opacity(0.04))
+                .fill(isTargeted ? Color.accentColor.opacity(0.16) : Color.primary.opacity(0.04))
         }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color.accentColor.opacity(isTargeted ? 0.8 : 0), lineWidth: 1.5)
+        }
+        .animation(.easeOut(duration: 0.15), value: isTargeted)
     }
 }
