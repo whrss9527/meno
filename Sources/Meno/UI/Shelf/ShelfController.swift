@@ -15,6 +15,9 @@ final class ShelfController: ObservableObject {
     /// The group whose items the Shelf shows, or `nil` for hidden items.
     @Published private(set) var groupID: UUID?
     @Published var hoveredKey: MenuItemKey?
+    /// The item picked with the arrow keys, when the Shelf was opened with
+    /// a hotkey.
+    @Published private(set) var keyboardSelection: MenuItemKey?
 
     private var panel: FloatingPanel?
     private var hideTask: Task<Void, Never>?
@@ -24,16 +27,19 @@ final class ShelfController: ObservableObject {
         self?.clickedOutside()
     }
     private lazy var keyMonitor = LocalEventMonitor(mask: [.keyDown]) { [weak self] event in
-        guard let self, self.isVisible, event.keyCode == 0x35 else { return false }
-        self.hide()
-        return true
+        self?.handleKey(event) ?? false
     }
 
     init(model: AppModel) {
         self.model = model
     }
 
-    var items: [MenuBarItem] {
+    /// The items in the order the Shelf shows them.
+    var shownItems: [MenuBarItem] {
+        if let groupID {
+            let group = model.settings.groups.first { $0.id == groupID }
+            return (group?.items ?? []).compactMap { model.inventory.item(for: $0) }
+        }
         let hidden = crowdedItems + model.inventory.items(in: .hidden)
         guard includesStash, model.settings.general.stashEnabled else { return hidden }
         return hidden + model.inventory.items(in: .stash)
@@ -84,6 +90,10 @@ final class ShelfController: ObservableObject {
         hideTask = nil
         includesStash = includeStash
         let panel = self.panel ?? makePanel()
+        // Opened from the keyboard, the Shelf takes the arrow keys.
+        let usesKeyboard = trigger == .hotkey
+        panel.allowsKey = usesKeyboard
+        keyboardSelection = usesKeyboard ? shownItems.first?.key : nil
         isVisible = true
         layout()
         Task { [weak self] in
@@ -91,7 +101,11 @@ final class ShelfController: ObservableObject {
             self?.layout()
         }
         panel.alphaValue = 0
-        panel.orderFrontRegardless()
+        if usesKeyboard {
+            panel.makeKeyAndOrderFront(nil)
+        } else {
+            panel.orderFrontRegardless()
+        }
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.16
             panel.animator().alphaValue = 1
@@ -127,6 +141,7 @@ final class ShelfController: ObservableObject {
         guard isVisible else { return }
         isVisible = false
         hoveredKey = nil
+        keyboardSelection = nil
         outsideClickMonitor.stop()
         keyMonitor.stop()
         guard let panel else { return }
@@ -149,6 +164,32 @@ final class ShelfController: ObservableObject {
         Task {
             await model.activator.open(item, click: secondary ? .secondary : .primary, source: .shelf)
         }
+    }
+
+    /// Escape closes the Shelf; while it has the keyboard, the arrow keys
+    /// pick an item and Return opens it (⌘Return for its secondary menu).
+    private func handleKey(_ event: NSEvent) -> Bool {
+        guard isVisible else { return false }
+        switch event.keyCode {
+        case 0x35: // escape
+            hide()
+        case 0x7B, 0x7C: // left, right
+            guard keyboardSelection != nil else { return false }
+            moveSelection(by: event.keyCode == 0x7B ? -1 : 1)
+        case 0x24, 0x4C: // return, enter
+            guard let key = keyboardSelection, let item = model.inventory.item(for: key) else { return false }
+            open(item, secondary: event.modifierFlags.contains(.command))
+        default:
+            return false
+        }
+        return true
+    }
+
+    private func moveSelection(by delta: Int) {
+        let items = shownItems
+        guard !items.isEmpty else { return }
+        let index = keyboardSelection.flatMap { key in items.firstIndex { $0.key == key } } ?? 0
+        keyboardSelection = items[(index + delta + items.count) % items.count].key
     }
 
     private func clickedOutside() {

@@ -141,6 +141,12 @@ private struct ShelfItemButton: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color.primary.opacity(isHovering ? 0.12 : 0))
         }
+        .overlay {
+            if shelf.keyboardSelection == item.key {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(Color.accentColor, lineWidth: 2)
+            }
+        }
         .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onHover { hovering in
             isHovering = hovering

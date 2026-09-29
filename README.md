@@ -25,7 +25,7 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 
 ### Glass interface
 
-- **Shelf:** a Liquid Glass bar below the menu bar that shows hidden items. Useful next to the camera housing, where the menu bar runs out of space. With *Automatic* reveal, Meno picks the Shelf only when items would not fit. Visible items that macOS put behind the camera housing come first, so they can still be clicked.
+- **Shelf:** a Liquid Glass bar below the menu bar that shows hidden items. Useful next to the camera housing, where the menu bar runs out of space. With *Automatic* reveal, Meno picks the Shelf only when items would not fit. Visible items that macOS put behind the camera housing come first, so they can still be clicked. Opened with a hotkey, it works from the keyboard: ← and → pick an item, ↩ opens it.
 - **Quick Open:** a Spotlight-style palette (fuzzy search, pinyin and initials included) to open any menu bar item from the keyboard, or to run Meno's actions such as applying a scene or turning on Zen. ↩ opens, ⌘↩ opens the secondary menu, ⌥↩ reveals the item in place, ⌘1–⌘9 pick a result.
 - **Layout editor:** drag items between the Visible, Hidden and Stash lanes, or next to other items to reorder them. Meno performs the ⌘-drags for you. Items can be renamed, which helps with items that macOS reports without a useful name.
 - **Show when it changes:** pick hidden items that Meno shows for a moment when their icon or text changes, for example when a sync fails.
