@@ -1,6 +1,7 @@
 /* Meno — Simplified Chinese. Keys are the English source strings. */
 
 " and " = "且";
+"%@ changed." = "%@ 有变化。";
 "%@ could not be opened." = "无法打开 %@。";
 "%@ did not move. Try dragging it with ⌘ held down." = "%@ 没有移动。请按住 ⌘ 手动拖移试试。";
 "%@ is in front" = "%@ 在前台";

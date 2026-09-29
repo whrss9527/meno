@@ -71,6 +71,8 @@ final class ChangeWatcher {
     private func show(_ item: MenuBarItem) {
         Log.menuBar.info("Showing \(item.key.rawValue, privacy: .public) after a change")
         model.reveal.requestReveal(all: item.section == .stash, trigger: .change)
+        // Several items may be shown at once; the notice says which one changed.
+        model.toasts.show(String(localized: "\(item.displayName) changed."), symbol: "bell.fill", duration: Self.showDuration)
         if model.shelf.isVisible {
             model.shelf.hide(after: Self.showDuration)
         } else {
