@@ -232,7 +232,7 @@ public enum RuleAction: Codable, Hashable, Sendable {
     }
 }
 
-/// "When all conditions are true, perform the action."
+/// "When all (or any) of the conditions are true, perform the action."
 public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
     public var id: UUID
     public var name: String
@@ -241,6 +241,8 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
     public var action: RuleAction
     /// Undo the action once the conditions stop being true.
     public var revertsWhenInactive: Bool
+    /// Whether all conditions have to be true, or any one of them.
+    public var requiresAll: Bool
 
     public init(
         id: UUID = UUID(),
@@ -248,7 +250,8 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
         isEnabled: Bool = true,
         conditions: [RuleCondition],
         action: RuleAction,
-        revertsWhenInactive: Bool = true
+        revertsWhenInactive: Bool = true,
+        requiresAll: Bool = true
     ) {
         self.id = id
         self.name = name
@@ -256,10 +259,31 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
         self.conditions = conditions
         self.action = action
         self.revertsWhenInactive = revertsWhenInactive
+        self.requiresAll = requiresAll
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, isEnabled, conditions, action, revertsWhenInactive, requiresAll
+    }
+
+    /// Rules are stored in a list, where missing fields are not filled in
+    /// from defaults, so fields added later are optional here.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+        conditions = try container.decode([RuleCondition].self, forKey: .conditions)
+        action = try container.decode(RuleAction.self, forKey: .action)
+        revertsWhenInactive = try container.decodeIfPresent(Bool.self, forKey: .revertsWhenInactive) ?? true
+        requiresAll = try container.decodeIfPresent(Bool.self, forKey: .requiresAll) ?? true
     }
 
     public func matches(_ context: RuleContext) -> Bool {
-        isEnabled && !conditions.isEmpty && conditions.allSatisfy { $0.isSatisfied(by: context) }
+        guard isEnabled, !conditions.isEmpty else { return false }
+        return requiresAll
+            ? conditions.allSatisfy { $0.isSatisfied(by: context) }
+            : conditions.contains { $0.isSatisfied(by: context) }
     }
 
     /// Whether a condition of the rule runs a shell command.

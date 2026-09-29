@@ -48,6 +48,35 @@ final class RuleTests: XCTestCase {
         XCTAssertFalse(RuleCondition.displayConnected(name: "").isSatisfied(by: RuleContext(displayNames: [""])))
     }
 
+    func testAnyOfTheConditions() {
+        var rule = AutomationRule(name: "Calls", conditions: [.appFrontmost(bundleID: "us.zoom.xos"), .microphoneInUse], action: .zen)
+        let zoomOnly = RuleContext(frontmostBundleID: "us.zoom.xos")
+        XCTAssertFalse(rule.matches(zoomOnly))
+        rule.requiresAll = false
+        XCTAssertTrue(rule.matches(zoomOnly))
+        XCTAssertTrue(rule.matches(RuleContext(microphoneInUse: true)))
+        XCTAssertFalse(rule.matches(RuleContext()))
+        rule.isEnabled = false
+        XCTAssertFalse(rule.matches(zoomOnly))
+    }
+
+    func testRulesFromOlderVersionsStillLoad() throws {
+        // A rule saved before "any of these" existed.
+        let json = #"{"rules":[{"id":"6F1C2A7E-2B1D-4C8A-9E3F-1A2B3C4D5E6F","name":"Battery","isEnabled":true,"conditions":[{"onBattery":{}}],"action":{"zen":{}},"revertsWhenInactive":false}]}"#
+        let settings = try MenoSettings.decode(from: Data(json.utf8))
+        let rule = try XCTUnwrap(settings.rules.first)
+        XCTAssertEqual(rule.name, "Battery")
+        XCTAssertTrue(rule.requiresAll)
+        XCTAssertFalse(rule.revertsWhenInactive)
+        XCTAssertEqual(rule.conditions, [.onBattery])
+
+        var any = rule
+        any.requiresAll = false
+        var saved = MenoSettings()
+        saved.rules = [any]
+        XCTAssertEqual(try MenoSettings.decode(from: saved.encoded()).rules, [any])
+    }
+
     func testPausedRulesDoNotApply() {
         var settings = MenoSettings()
         settings.rules = [

@@ -9,6 +9,7 @@ struct RuleEditor: View {
     @State private var conditions: [EditableCondition]
     @State private var action: RuleAction
     @State private var reverts: Bool
+    @State private var requiresAll: Bool
 
     private let ruleID: UUID
     private let isEnabled: Bool
@@ -27,6 +28,7 @@ struct RuleEditor: View {
         _conditions = State(initialValue: draft.conditions.map { EditableCondition(condition: $0) })
         _action = State(initialValue: draft.action)
         _reverts = State(initialValue: draft.revertsWhenInactive)
+        _requiresAll = State(initialValue: draft.requiresAll)
         ruleID = draft.id
         isEnabled = draft.isEnabled
         self.isNew = isNew
@@ -44,9 +46,15 @@ struct RuleEditor: View {
                 .textFieldStyle(.roundedBorder)
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("When all of these are true")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                Picker(selection: $requiresAll) {
+                    Text("When all of these are true").tag(true)
+                    Text("When any of these is true").tag(false)
+                } label: {
+                    Text("Conditions")
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .fixedSize()
                 ForEach($conditions) { $entry in
                     HStack(spacing: 8) {
                         ConditionEditor(condition: $entry.condition)
@@ -130,7 +138,8 @@ struct RuleEditor: View {
             isEnabled: isEnabled,
             conditions: conditions.map(\.condition),
             action: action,
-            revertsWhenInactive: reverts
+            revertsWhenInactive: reverts,
+            requiresAll: requiresAll
         )
         if trimmed.isEmpty {
             rule.name = RuleDescriber.describe(action, scenes: scenes, items: items).capitalizedFirstLetter

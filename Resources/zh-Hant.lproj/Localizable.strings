@@ -1,6 +1,7 @@
 /* Meno — Traditional Chinese (Taiwan). Keys are the English source strings. */
 
 " and " = "且";
+" or " = "或";
 "%@ changed." = "%@ 有變化。";
 "%@ could not be opened." = "無法開啟 %@。";
 "%@ did not move. Try dragging it with ⌘ held down." = "%@ 沒有移動。請按住 ⌘ 手動拖移試試。";
@@ -111,6 +112,7 @@
 "Close" = "關閉";
 "Close after opening an item" = "開啟項目後關閉托盤";
 "Commands run with zsh every 10 seconds while the rule is on. A command counts as true when it exits with status 0; one that takes longer than 5 seconds is stopped." = "規則開啟時，指令每 10 秒用 zsh 執行一次。指令以狀態 0 結束時條件成立；執行超過 5 秒的指令會被終止。";
+"Conditions" = "條件";
 "Connected to power" = "接上電源";
 "connected to power" = "接上電源";
 "Continue" = "繼續";
@@ -507,6 +509,7 @@
 "When %@: %@." = "當%@時，%@。";
 "When a new item appears" = "出現新項目時";
 "When all of these are true" = "當以下條件全部滿足時";
+"When any of these is true" = "當以下任一條件滿足時";
 "When items need the room" = "項目需要空間時";
 "When the pointer leaves the menu bar" = "指標離開選單列時";
 "When you switch to another app or click elsewhere" = "切換到其他 App 或按一下別處時";

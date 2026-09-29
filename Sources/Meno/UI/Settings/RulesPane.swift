@@ -150,7 +150,8 @@ private struct RuleCard: View {
 /// Builds sentences such as "When Keynote is in front, turn on Zen."
 enum RuleDescriber {
     static func describe(_ rule: AutomationRule, scenes: [LayoutScene], items: [MenuBarItem]) -> String {
-        let conditions = rule.conditions.map(describe).joined(separator: String(localized: " and "))
+        let separator = rule.requiresAll ? String(localized: " and ") : String(localized: " or ")
+        let conditions = rule.conditions.map(describe).joined(separator: separator)
         let action = describe(rule.action, scenes: scenes, items: items)
         var sentence = String(localized: "When \(conditions): \(action).")
         if rule.revertsWhenInactive {
