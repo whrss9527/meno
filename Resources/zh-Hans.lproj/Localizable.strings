@@ -68,11 +68,13 @@
 "Choose App" = "选取 App";
 "Choose Item" = "选取项目";
 "Choose Scene" = "选取场景";
+"Choose which items stay in the menu bar and which ones Meno tucks away." = "选择哪些项目留在菜单栏里，哪些交给 Meno 收起来。";
 "Circle" = "圆形";
 "Clear" = "透明";
 "Clear the app menus" = "清空 App 菜单";
 "Click" = "点按";
 "Click an empty part of the menu bar" = "点按菜单栏的空白处";
+"Click an item to choose where it goes: another section, or one step to the left or right." = "点一下项目，选择把它放到哪里：别的分区，或者往左、往右挪一格。";
 "Click the Meno icon to show or hide items." = "点按 Meno 图标即可显示或隐藏项目。";
 "Clicking again hides the items." = "再次点按会重新隐藏。";
 "Close" = "关闭";
@@ -88,8 +90,6 @@
 "Done" = "完成";
 "Dot" = "圆点";
 "Dots" = "圆点";
-"Drag an item to another section, or next to another item to change the order." = "把项目拖到其他分区，或拖到其他项目旁边以调整顺序。";
-"Drag items between sections to arrange your menu bar." = "在分区之间拖移项目来整理菜单栏。";
 "Drop items here" = "拖到这里";
 "Edit Rule" = "编辑规则";
 "Edit…" = "编辑…";
@@ -183,8 +183,11 @@
 "Menu bar tint" = "菜单栏着色";
 "Menu bar, calmed" = "让菜单栏安静下来";
 "Most used in the last 30 days" = "最近 30 天最常用";
+"Move Left" = "向左移一格";
+"Move Right" = "向右移一格";
 "Move to Hidden" = "移到隐藏";
 "Move to Stash" = "移到暗格";
+"Move to Visible" = "移到常显";
 "Moving item %lld of %lld…" = "正在移动第 %lld 项（共 %lld 项）…";
 "Moving items briefly takes over the pointer." = "移动项目时会短暂接管鼠标指针。";
 "Moving…" = "正在移动…";
@@ -223,6 +226,7 @@
 "Optional" = "可选";
 "Optional. Shows the real artwork of hidden items instead of app icons (macOS 14 to 26). Meno only captures menu bar items, never your screen." = "可选。显示隐藏项目的真实图标，而不是 App 图标（macOS 14 至 26）。Meno 只截取菜单栏项目，绝不会截取你的屏幕。";
 "Optional. Shows the real icons of hidden items on macOS 14 to 26." = "可选。在 macOS 14 至 26 上显示隐藏项目的真实图标。";
+"Or drag it onto a section, or onto another item. A line shows on which side it will land." = "也可以直接拖：拖到某个分区，或拖到另一个项目上，竖线标出它会落在哪一边。";
 "Permissions" = "权限";
 "Please leave the mouse alone for a moment." = "请暂时不要移动鼠标。";
 "Pointer" = "指针";

@@ -18,6 +18,8 @@ final class ItemInventory: ObservableObject {
     private var cachedSections: [MenuItemKey: ItemSection] = [:]
     private var cachedPositions: [MenuItemKey: CGFloat] = [:]
     private var knownKeys: Set<String>?
+    /// Items that were missing from the last scan but kept.
+    private var missingOnce: Set<MenuItemKey> = []
     private var refreshTask: Task<Void, Never>?
     private var scheduledTask: Task<Void, Never>?
     private var refreshAgain = false
@@ -56,10 +58,7 @@ final class ItemInventory: ObservableObject {
 
     /// Items and Meno's dividers in left-to-right order, for planning moves.
     func layoutTokens() -> [LayoutToken] {
-        var entries: [(x: CGFloat, token: LayoutToken)] = items.map { item in
-            let token: LayoutToken = item.isMovable ? .item(item.key) : .anchor("pinned:\(item.key.rawValue)")
-            return (item.frame.midX, token)
-        }
+        var entries: [(x: CGFloat, token: LayoutToken)] = items.map { ($0.frame.midX, $0.layoutToken) }
         if let hidden = model.statusBar.hiddenDividerFrame {
             entries.append((hidden.midX, LayoutPlanner.hiddenDivider))
         }
@@ -112,7 +111,7 @@ final class ItemInventory: ObservableObject {
         defer { isRefreshing = false }
 
         let raw = await MenuBarScanner.scan(MenuBarScanner.currentTargets())
-        let built = build(from: raw)
+        let built = keepingBriefAbsences(build(from: raw))
         if built != items {
             items = built
         }
@@ -133,9 +132,28 @@ final class ItemInventory: ObservableObject {
         }
     }
 
+    /// A busy app can miss the scan's timeout, which would make its items
+    /// vanish for one scan. Items of running apps are dropped only when they
+    /// are missing twice in a row.
+    private func keepingBriefAbsences(_ built: [MenuBarItem]) -> [MenuBarItem] {
+        let present = Set(built.map(\.key))
+        var kept: [MenuBarItem] = []
+        var missing: Set<MenuItemKey> = []
+        for item in items where item.kind != .marker && !present.contains(item.key) && !missingOnce.contains(item.key) {
+            guard let app = NSRunningApplication(processIdentifier: item.pid), !app.isTerminated else { continue }
+            kept.append(item)
+            missing.insert(item.key)
+        }
+        missingOnce = missing
+        guard !kept.isEmpty else { return built }
+        return (built + kept).sorted { $0.frame.minX < $1.frame.minX }
+    }
+
     private func build(from raw: [RawMenuBarItem]) -> [MenuBarItem] {
         let reliable = framesAreReliable
         let dividers = model.statusBar.dividerLayout
+        let menoFrames = [model.statusBar.hiddenDividerFrame, model.statusBar.stashDividerFrame, model.statusBar.toggleFrame]
+            .compactMap { $0 }
         var result: [MenuBarItem] = []
 
         let grouped = Dictionary(grouping: raw) { $0.target.bundleID ?? $0.target.name }
@@ -150,7 +168,7 @@ final class ItemInventory: ObservableObject {
                 let name = Self.displayName(for: entry, siblings: sorted.count, isSystem: isSystem)
                 var frame = entry.frame
                 var section = ItemSection.visible
-                let trustworthy = reliable || isOnScreen(frame)
+                let trustworthy = (reliable || isOnScreen(frame)) && !Self.overlaps(frame, menoFrames)
                 if trustworthy, let dividers {
                     section = SectionResolver.section(of: HorizontalSpan(minX: Double(frame.minX), maxX: Double(frame.maxX)), dividers: dividers)
                     cachedSections[key] = section
@@ -188,6 +206,12 @@ final class ItemInventory: ObservableObject {
         }
         result += model.markers.inventoryItems(sections: markerSections)
         return result.sorted { $0.frame.minX < $1.frame.minX }
+    }
+
+    /// Items never overlap Meno's own items. One reported inside a divider
+    /// still has its position from before the divider grew over it.
+    static func overlaps(_ frame: CGRect, _ menoFrames: [CGRect]) -> Bool {
+        menoFrames.contains { $0.minX < frame.midX && frame.midX < $0.maxX }
     }
 
     private func isOnScreen(_ frame: CGRect) -> Bool {

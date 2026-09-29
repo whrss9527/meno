@@ -33,7 +33,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     var subtitle: String {
         switch self {
         case .general: return String(localized: "How hidden items appear and disappear.")
-        case .layout: return String(localized: "Drag items between sections to arrange your menu bar.")
+        case .layout: return String(localized: "Choose which items stay in the menu bar and which ones Meno tucks away.")
         case .appearance: return String(localized: "The Meno icon, the Shelf and the look of the menu bar.")
         case .hotkeys: return String(localized: "Keyboard shortcuts that work in every app.")
         case .rules: return String(localized: "Let the menu bar adapt to what you are doing.")
@@ -109,7 +109,9 @@ final class SettingsWindowController: NSObject, ObservableObject, NSWindowDelega
         window.title = String(localized: "Meno Settings")
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
-        window.isMovableByWindowBackground = true
+        // Dragging the background would move the window instead of the items
+        // in the Layout pane; the window still moves by its title bar.
+        window.isMovableByWindowBackground = false
         window.isOpaque = false
         window.backgroundColor = .clear
         window.isReleasedWhenClosed = false

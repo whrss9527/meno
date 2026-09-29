@@ -20,6 +20,15 @@ extension ItemSection {
         }
     }
 
+    /// The command that moves an item into this section.
+    var moveTitle: String {
+        switch self {
+        case .visible: return String(localized: "Move to Visible")
+        case .hidden: return String(localized: "Move to Hidden")
+        case .stash: return String(localized: "Move to Stash")
+        }
+    }
+
     var symbol: String {
         switch self {
         case .visible: return "eye"

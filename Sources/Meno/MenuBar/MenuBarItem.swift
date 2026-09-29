@@ -58,6 +58,12 @@ struct MenuBarItem: Identifiable, Hashable {
 }
 
 extension MenuBarItem {
+    /// How layout plans refer to the item. Items macOS keeps in place are
+    /// anchors that other items line up against.
+    var layoutToken: LayoutToken {
+        isMovable ? .item(key) : .anchor("pinned:\(key.rawValue)")
+    }
+
     /// Whether the item is currently drawn on one of the screens.
     @MainActor
     var isOnScreen: Bool {
