@@ -7,6 +7,16 @@ struct GeneralPane: View {
 
     var body: some View {
         VStack(spacing: 16) {
+            if !model.settings.appearance.showsMenoIcon && !model.settings.canRevealWithoutIcon {
+                Banner(
+                    symbol: "eye.trianglebadge.exclamationmark",
+                    tint: .orange,
+                    title: "Hidden items cannot be shown",
+                    message: "The Meno icon is hidden and no other way to show items is on. Turn one on below, or show the icon again.",
+                    actionTitle: "Show the Meno Icon",
+                    action: { model.setShowsMenoIcon(true) }
+                )
+            }
             SettingsCard("Startup", symbol: "power") {
                 ToggleRow(
                     "Launch Meno at login",

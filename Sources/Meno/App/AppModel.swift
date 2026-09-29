@@ -329,6 +329,15 @@ final class AppModel: ObservableObject {
         settings.itemNames[key.rawValue] = trimmed.isEmpty ? nil : trimmed
     }
 
+    /// Shows or hides the Meno icon. Without it, clicking an empty part of
+    /// the menu bar reveals items unless another way is set up.
+    func setShowsMenoIcon(_ shows: Bool) {
+        settings.appearance.showsMenoIcon = shows
+        guard !shows, !settings.canRevealWithoutIcon else { return }
+        settings.reveal.onEmptyAreaClick = true
+        toasts.show(String(localized: "Click an empty part of the menu bar to show hidden items."), symbol: "cursorarrow.click")
+    }
+
     /// Whether a hidden item is shown for a moment when it changes.
     func showsOnChange(_ key: MenuItemKey) -> Bool {
         settings.revealOnChange.contains(key.rawValue)

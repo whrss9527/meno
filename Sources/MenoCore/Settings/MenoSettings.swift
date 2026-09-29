@@ -27,6 +27,13 @@ public struct MenoSettings: Codable, Equatable, Sendable {
 
     public init() {}
 
+    /// Whether hidden items can be shown without the Meno icon: by clicking,
+    /// hovering or scrolling over the menu bar, or with a hotkey.
+    public var canRevealWithoutIcon: Bool {
+        reveal.onEmptyAreaClick || reveal.onHover || reveal.onScroll
+            || hotkeys[.toggleHidden] != nil || hotkeys[.toggleShelf] != nil
+    }
+
     /// Decodes settings, filling in defaults for anything missing.
     public static func decode(from data: Data) throws -> MenoSettings {
         try TolerantJSON.decode(MenoSettings.self, from: data, defaults: MenoSettings())
@@ -140,6 +147,9 @@ public struct RevealSettings: Codable, Equatable, Sendable {
 // MARK: - Appearance
 
 public struct AppearanceSettings: Codable, Equatable, Sendable {
+    /// Whether the Meno icon is in the menu bar. Without it, hidden items
+    /// are shown from the empty part of the menu bar or with a hotkey.
+    public var showsMenoIcon = true
     public var icon: MenoIcon = .meno
     /// Show the section dividers while items are revealed.
     public var showsDividers = true

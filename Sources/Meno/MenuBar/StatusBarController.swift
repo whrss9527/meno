@@ -196,12 +196,18 @@ final class StatusBarController: NSObject {
         state.zen && model.settings.zen.hidesVisibleItems
     }
 
+    /// Without the Meno icon, its item stays in place with no width, so
+    /// Zen can still grow it and the dividers keep their order.
+    private var toggleLength: CGFloat {
+        model.settings.appearance.showsMenoIcon ? NSStatusItem.variableLength : 0
+    }
+
     private func applyWide() {
         for group in SpacerGroup.allCases { removeSpacers(group) }
         let wide = CGFloat(CollapseMetrics.wideLength(screenWidths: ScreenGeometry.screenWidths))
         hiddenDivider?.length = state.hiddenCollapsed ? wide : expandedDividerLength
         stashDivider?.length = state.stashCollapsed ? wide : expandedDividerLength
-        toggle?.length = zenPushesVisibleItems ? wide : NSStatusItem.variableLength
+        toggle?.length = zenPushesVisibleItems ? wide : toggleLength
     }
 
     private func applyStepped() async {
@@ -220,7 +226,7 @@ final class StatusBarController: NSObject {
         }
         if !zenPushesVisibleItems {
             removeSpacers(.zen)
-            toggle?.length = NSStatusItem.variableLength
+            toggle?.length = toggleLength
         }
 
         // Growing happens in small steps so the neighbours are carried along.
@@ -309,7 +315,9 @@ final class StatusBarController: NSObject {
     func refreshAppearance() {
         let appearance = model.settings.appearance
         if let button = toggle?.button {
-            if state.zen {
+            if !appearance.showsMenoIcon && !zenPushesVisibleItems {
+                button.image = nil
+            } else if state.zen {
                 button.image = zenPushesVisibleItems ? nil : MenoIconRenderer.zenGlyph()
             } else {
                 button.image = MenoIconRenderer.toggleImage(for: appearance.icon, revealed: !state.hiddenCollapsed)
@@ -332,7 +340,8 @@ final class StatusBarController: NSObject {
 
     private func updateBadge(on button: NSStatusBarButton) {
         let count = model.inventory.items(in: .hidden).count
-        if model.settings.general.showsHiddenCount, state.hiddenCollapsed, !state.zen, count > 0 {
+        if model.settings.general.showsHiddenCount, model.settings.appearance.showsMenoIcon,
+           state.hiddenCollapsed, !state.zen, count > 0 {
             button.title = "\(count)"
             button.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
             button.imagePosition = .imageLeading
@@ -457,10 +466,16 @@ final class StatusBarController: NSObject {
         model.reveal.emptyAreaClicked()
     }
 
-    /// Shows Meno's menu below the Meno icon.
+    /// Shows Meno's menu below the Meno icon, or at the pointer while the
+    /// icon is hidden.
     func showMenu() {
         guard let toggle else { return }
-        toggle.menu = model.makeStatusMenu()
+        let menu = model.makeStatusMenu()
+        guard model.settings.appearance.showsMenoIcon, toggleFrame != nil else {
+            menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+            return
+        }
+        toggle.menu = menu
         toggle.button?.performClick(nil)
         toggle.menu = nil
     }

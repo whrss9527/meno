@@ -26,6 +26,16 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(decoded.itemNames, settings.itemNames)
     }
 
+    func testRevealingWithoutTheIcon() {
+        var settings = MenoSettings()
+        XCTAssertTrue(settings.appearance.showsMenoIcon)
+        XCTAssertTrue(settings.canRevealWithoutIcon)
+        settings.reveal.onEmptyAreaClick = false
+        XCTAssertFalse(settings.canRevealWithoutIcon)
+        settings.hotkeys[.toggleHidden] = KeyCombo(keyCode: 4, modifiers: [.command, .option])
+        XCTAssertTrue(settings.canRevealWithoutIcon)
+    }
+
     func testUnknownKeysAreIgnored() throws {
         let json = #"{"futureFeature": {"x": 1}, "shelf": {"iconSize": 22, "brandNew": true}}"#
         let settings = try MenoSettings.decode(from: Data(json.utf8))

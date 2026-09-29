@@ -27,6 +27,11 @@ struct AppearancePane: View {
 
     private var iconCard: some View {
         SettingsCard("Meno icon", symbol: "menubar.rectangle") {
+            ToggleRow(
+                "Show the Meno icon in the menu bar",
+                subtitle: "Without it, click, hover or scroll over an empty part of the menu bar, or use a hotkey. Right-click an empty part for Meno's menu, and open Meno again for Settings.",
+                isOn: Binding(get: { model.settings.appearance.showsMenoIcon }, set: { model.setShowsMenoIcon($0) })
+            )
             LazyVGrid(columns: iconColumns, spacing: 10) {
                 ForEach(MenoIcon.allCases, id: \.self) { icon in
                     let selected = model.settings.appearance.icon == icon
@@ -60,6 +65,8 @@ struct AppearancePane: View {
                     .buttonStyle(.plain)
                 }
             }
+            .disabled(!model.settings.appearance.showsMenoIcon)
+            .opacity(model.settings.appearance.showsMenoIcon ? 1 : 0.45)
         }
     }
 

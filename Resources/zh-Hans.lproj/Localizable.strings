@@ -81,6 +81,7 @@
 "Clear the app menus" = "清空 App 菜单";
 "Click" = "点按";
 "Click an empty part of the menu bar" = "点按菜单栏的空白处";
+"Click an empty part of the menu bar to show hidden items." = "点按菜单栏的空白处即可显示隐藏的项目。";
 "Click an item to choose where it goes: another section, or one step to the left or right." = "点一下项目，选择把它放到哪里：别的分区，或者往左、往右挪一格。";
 "Click the Meno icon to show or hide items." = "点按 Meno 图标即可显示或隐藏项目。";
 "Clicking again hides the items." = "再次点按会重新隐藏。";
@@ -125,6 +126,7 @@
 "Grant…" = "授权…";
 "Hidden" = "隐藏";
 "Hidden and Stash" = "隐藏与暗格";
+"Hidden items cannot be shown" = "隐藏的项目无法显示";
 "Hidden section divider" = "隐藏分区分隔符";
 "Hide" = "隐藏";
 "hide %@" = "隐藏 %@";
@@ -333,6 +335,8 @@
 "Show or hide the Shelf" = "显示或隐藏托盘";
 "Show the battery when it runs low" = "电量低时显示电池";
 "Show the dividers while items are revealed" = "展开时显示分隔符";
+"Show the Meno Icon" = "显示 Meno 图标";
+"Show the Meno icon in the menu bar" = "在菜单栏中显示 Meno 图标";
 "Show When It Changes" = "变化时显示";
 "Shown for a moment when it changes" = "变化时会显示一会儿";
 "Shown when you click the Meno icon, hover, scroll or use a hotkey." = "点按 Meno 图标、悬停、滚动或使用快捷键时显示。";
@@ -368,6 +372,7 @@
 "The item is no longer in the menu bar." = "该项目已不在菜单栏中。";
 "The layout could not be planned." = "无法规划布局。";
 "The Mac is offline" = "Mac 处于离线状态";
+"The Meno icon is hidden and no other way to show items is on. Turn one on below, or show the icon again." = "Meno 图标已隐藏，也没有开启其他显示项目的方式。请在下方开启一种，或重新显示图标。";
 "The Meno icon, the Shelf and the look of the menu bar." = "Meno 图标、托盘以及菜单栏的外观。";
 "The menu bar adapts to apps, displays, power and time." = "菜单栏会随 App、显示器、电源和时间自动调整。";
 "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing." = "当菜单栏放不下时（例如刘海附近），托盘能让项目依然触手可及。";
@@ -412,6 +417,7 @@
 "When you switch to another app or click elsewhere" = "切换到其他 App 或点按别处时";
 "While Meno moves an item it briefly takes over the pointer. It puts the pointer back when it is done." = "Meno 移动项目时会短暂接管指针，完成后会把指针放回原处。";
 "Wide divider" = "宽分隔符";
+"Without it, click, hover or scroll over an empty part of the menu bar, or use a hotkey. Right-click an empty part for Meno's menu, and open Meno again for Settings." = "隐藏后，可以点按、悬停或滚动菜单栏的空白处，或使用快捷键来显示项目。右键点按空白处可打开 Meno 的菜单，再次打开 Meno 即可进入设置。";
 "Work" = "工作";
 "You can also hold ⌘ and drag icons directly in the menu bar. Meno's dividers mark the sections: the single chevron starts the Hidden section, the double chevron the Stash." = "你也可以直接在菜单栏中按住 ⌘ 拖移图标。Meno 的分隔符标记了各个分区：单箭头是“隐藏”分区的起点，双箭头是“暗格”的起点。";
 "You're all set" = "一切就绪";
