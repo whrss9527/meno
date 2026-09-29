@@ -84,10 +84,13 @@
 "Connected to power" = "连接电源";
 "connected to power" = "连接电源";
 "Continue" = "继续";
+"Copies the macOS version, permissions and the menu bar items Meno sees, to help find problems." = "复制 macOS 版本、权限状态和 Meno 读到的菜单栏项目，方便排查问题。";
+"Copy Diagnostic Report" = "复制诊断报告";
 "Could not change the login item: %@" = "无法更改登录项：%@";
 "Could not reset the entry. Remove Meno from the Accessibility list in System Settings, then add it again." = "没能清除这条记录。请在系统设置的“辅助功能”列表里删掉 Meno，再重新添加。";
 "Current" = "当前";
 "Delete" = "删除";
+"Diagnostic report copied. Paste it into an issue or a message." = "诊断报告已复制，可以粘贴到问题反馈或消息里。";
 "Dividers" = "分隔符";
 "Dividers mark where each section starts. Drag them with ⌘ to change what is hidden." = "分隔符标记每个分区的起点。按住 ⌘ 拖移分隔符即可改变隐藏的内容。";
 "Done" = "完成";

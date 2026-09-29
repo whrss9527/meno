@@ -14,6 +14,8 @@ final class ItemInventory: ObservableObject {
     @Published private(set) var items: [MenuBarItem] = []
     @Published private(set) var lastRefresh: Date?
     @Published private(set) var isRefreshing = false
+    /// Unnamed elements of Apple's processes left out of the last scan, by owner.
+    private(set) var skippedElements: [String: Int] = [:]
 
     private var cachedSections: [MenuItemKey: ItemSection] = [:]
     private var cachedPositions: [MenuItemKey: CGFloat] = [:]
@@ -156,9 +158,14 @@ final class ItemInventory: ObservableObject {
             .compactMap { $0 }
         var result: [MenuBarItem] = []
 
+        var skipped: [String: Int] = [:]
         let named = raw.filter { entry in
-            !ItemNaming.isUnnamedSystemElement(owner: entry.target.bundleID ?? entry.target.name, texts: [entry.detail, entry.title, entry.help])
+            let owner = entry.target.bundleID ?? entry.target.name
+            guard ItemNaming.isUnnamedSystemElement(owner: owner, texts: [entry.detail, entry.title, entry.help]) else { return true }
+            skipped[owner, default: 0] += 1
+            return false
         }
+        skippedElements = skipped
         let grouped = Dictionary(grouping: named) { $0.target.bundleID ?? $0.target.name }
         for (owner, group) in grouped {
             let sorted = group.sorted { $0.frame.minX < $1.frame.minX }

@@ -70,8 +70,8 @@ private struct SettingsSidebar: View {
             .padding(.horizontal, 8)
             .padding(.bottom, 14)
 
-            ForEach(SettingsPane.allCases) { pane in
-                SidebarButton(pane: pane, isSelected: pane == selection) {
+            ForEach(Array(SettingsPane.allCases.enumerated()), id: \.element) { index, pane in
+                SidebarButton(pane: pane, isSelected: pane == selection, shortcut: index < 9 ? index + 1 : nil) {
                     withAnimation(.easeOut(duration: 0.15)) {
                         selection = pane
                     }
@@ -94,6 +94,8 @@ private struct SettingsSidebar: View {
 private struct SidebarButton: View {
     let pane: SettingsPane
     let isSelected: Bool
+    /// The number of its ⌘-shortcut.
+    let shortcut: Int?
     let action: () -> Void
 
     @State private var isHovering = false
@@ -119,6 +121,10 @@ private struct SidebarButton: View {
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
+        // The selection already shows where you are; a focus ring on another
+        // row looked like a second selection. ⌘1–⌘9 switch panes instead.
+        .focusEffectDisabled()
+        .keyboardShortcut(shortcut.map { KeyboardShortcut(KeyEquivalent(Character(String($0))), modifiers: .command) })
         .onHover { isHovering = $0 }
     }
 }

@@ -49,6 +49,15 @@ struct AboutPane: View {
                     Label("Report an Issue", systemImage: "exclamationmark.bubble")
                 }
                 .menoGlassButtonStyle()
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(Diagnostics.report(for: model), forType: .string)
+                    model.toasts.show(String(localized: "Diagnostic report copied. Paste it into an issue or a message."), symbol: "doc.on.clipboard")
+                } label: {
+                    Label("Copy Diagnostic Report", systemImage: "doc.on.clipboard")
+                }
+                .menoGlassButtonStyle()
+                .help(Text("Copies the macOS version, permissions and the menu bar items Meno sees, to help find problems."))
             }
         }
     }
