@@ -46,6 +46,10 @@ Meno 会把你不常用的菜单栏图标收起来，需要时点按、悬停、
 - macOS 14 Sonoma 或更高版本。液态玻璃需要 macOS 26，并使用 Xcode 26 构建。
 - 构建需要 Xcode 16 或更高版本（液态玻璃需 Xcode 26）。
 
+## 下载
+
+预编译版本会附在 [Releases](https://github.com/whrss9527/meno/releases) 中（推送 `v0.1.0` 这样的版本标签即可自动发布），每次 CI 运行也会上传 `Meno.zip` 构建产物。这些版本使用临时签名，首次打开时 macOS 会要求确认：右键点按 Meno.app 并选择“打开”，或运行 `xattr -dr com.apple.quarantine /Applications/Meno.app`。
+
 ## 构建与运行
 
 ```bash

@@ -75,7 +75,7 @@ final class ToastCenter: ObservableObject {
 
     private func makePanel() -> FloatingPanel {
         let panel = FloatingPanel(level: .statusBar)
-        let view = NSHostingView(rootView: ToastView(toast: nil, center: self))
+        let view = FirstMouseHostingView(rootView: ToastView(toast: nil, center: self))
         panel.contentView = view
         self.panel = panel
         hostingView = view
@@ -86,7 +86,7 @@ final class ToastCenter: ObservableObject {
         guard let panel, let hostingView else { return }
         hostingView.layoutSubtreeIfNeeded()
         let size = hostingView.fittingSize
-        let screen = screenProvider() ?? NSScreen.screens[0]
+        guard let screen = screenProvider() ?? NSScreen.screens.first else { return }
         let top = screen.frame.maxY - ScreenGeometry.menuBarHeight(on: screen) - 8
         panel.setFrame(
             NSRect(x: screen.frame.midX - size.width / 2, y: top - size.height, width: size.width, height: size.height),

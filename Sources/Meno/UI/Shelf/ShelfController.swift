@@ -105,7 +105,7 @@ final class ShelfController: ObservableObject {
 
     private func makePanel() -> FloatingPanel {
         let panel = FloatingPanel(level: .statusBar)
-        let view = NSHostingView(rootView: ShelfView(model: model, shelf: self, inventory: model.inventory, images: model.images))
+        let view = FirstMouseHostingView(rootView: ShelfView(model: model, shelf: self, inventory: model.inventory, images: model.images))
         panel.contentView = view
         self.panel = panel
         hostingView = view
@@ -137,7 +137,7 @@ final class ShelfController: ObservableObject {
         guard isVisible, let panel, let hostingView else { return }
         let size = hostingView.fittingSize
         guard size.width > 0, size.height > 0 else { return }
-        let screen = model.statusBar.screen ?? NSScreen.main ?? NSScreen.screens[0]
+        guard let screen = model.statusBar.screen ?? NSScreen.main ?? NSScreen.screens.first else { return }
         let menuBarBottom = screen.frame.maxY - ScreenGeometry.menuBarHeight(on: screen)
         var x: CGFloat
         switch model.settings.shelf.placement {

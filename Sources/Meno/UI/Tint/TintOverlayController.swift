@@ -26,9 +26,14 @@ final class TintOverlayController {
             return
         }
         subscribeIfNeeded()
+        // With "Automatically hide and show the menu bar" the tint would sit
+        // on top of windows, so it is only drawn where the bar is reserved.
+        let menuBarAutoHides = UserDefaults.standard.bool(forKey: "_HIHideMenuBar")
         var seen = Set<CGDirectDisplayID>()
         for screen in NSScreen.screens {
-            guard let id = ScreenGeometry.displayID(of: screen) else { continue }
+            guard let id = ScreenGeometry.displayID(of: screen),
+                  !menuBarAutoHides,
+                  screen.frame.maxY - screen.visibleFrame.maxY > 0 else { continue }
             seen.insert(id)
             let panel = panels[id] ?? makePanel()
             panels[id] = panel

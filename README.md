@@ -46,6 +46,10 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 - macOS 14 Sonoma or later. Liquid Glass needs macOS 26 and a build made with Xcode 26.
 - Building needs Xcode 16 or later (Xcode 26 for Liquid Glass).
 
+## Download
+
+Prebuilt builds are attached to [Releases](https://github.com/whrss9527/meno/releases) (tag a version such as `v0.1.0` to publish one), and every CI run uploads `Meno.zip` as an artifact. These builds are signed ad hoc, so macOS asks for confirmation on first launch: right-click Meno.app and choose *Open*, or run `xattr -dr com.apple.quarantine /Applications/Meno.app`.
+
 ## Build and run
 
 ```bash

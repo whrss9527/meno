@@ -213,6 +213,14 @@ struct AuroraBackground: View {
 
 // MARK: - Panels
 
+/// A hosting view that reacts to the first click, even while its panel is
+/// not key, so buttons in glass panels work with a single click.
+final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+}
+
 /// A borderless, transparent, non-activating panel for glass overlays.
 final class FloatingPanel: NSPanel {
     /// Whether the panel may become key (needed for text input).

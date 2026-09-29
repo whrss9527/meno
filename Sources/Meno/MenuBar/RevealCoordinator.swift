@@ -141,15 +141,13 @@ final class RevealCoordinator: ObservableObject {
 
     /// The Meno icon was clicked.
     func primaryClick() {
-        if visibility == .collapsed {
-            requestReveal(all: false, trigger: .click)
-        } else {
-            collapse(trigger: .click)
-        }
+        toggle(trigger: .click)
     }
 
     func toggle(trigger: RevealTrigger) {
-        if visibility == .collapsed {
+        if model.shelf.isVisible {
+            model.shelf.hide()
+        } else if visibility == .collapsed {
             requestReveal(all: false, trigger: trigger)
         } else {
             collapse(trigger: trigger)
@@ -157,7 +155,9 @@ final class RevealCoordinator: ObservableObject {
     }
 
     func toggleAll(trigger: RevealTrigger) {
-        if visibility == .revealedAll {
+        if model.shelf.isVisible {
+            model.shelf.hide()
+        } else if visibility == .revealedAll {
             collapse(trigger: trigger)
         } else {
             requestReveal(all: true, trigger: trigger)

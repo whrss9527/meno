@@ -159,7 +159,7 @@ final class QuickOpenController: ObservableObject {
         let panel = FloatingPanel(level: .modalPanel)
         panel.allowsKey = true
         panel.becomesKeyOnlyIfNeeded = false
-        let view = NSHostingView(rootView: QuickOpenView(controller: self, model: model, images: model.images))
+        let view = FirstMouseHostingView(rootView: QuickOpenView(controller: self, model: model, images: model.images))
         panel.contentView = view
         self.panel = panel
         hostingView = view
@@ -189,7 +189,9 @@ final class QuickOpenController: ObservableObject {
         guard isVisible, let panel, let hostingView else { return }
         let size = hostingView.fittingSize
         guard size.width > 0, size.height > 0 else { return }
-        let screen = ScreenGeometry.screen(containingCocoa: NSEvent.mouseLocation) ?? NSScreen.main ?? NSScreen.screens[0]
+        guard let screen = ScreenGeometry.screen(containingCocoa: NSEvent.mouseLocation) ?? NSScreen.main ?? NSScreen.screens.first else {
+            return
+        }
         let top = screen.frame.maxY - screen.frame.height * 0.2
         let frame = NSRect(x: screen.frame.midX - size.width / 2, y: top - size.height, width: size.width, height: size.height)
         panel.setFrame(frame, display: true)
