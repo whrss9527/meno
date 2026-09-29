@@ -4,6 +4,7 @@ import SwiftUI
 struct OnboardingView: View {
     @ObservedObject var permissions: PermissionCenter
     let finish: (_ openLayout: Bool) -> Void
+    @EnvironmentObject private var model: AppModel
 
     @State private var page = 0
     private let pageCount = 4
@@ -166,6 +167,24 @@ struct OnboardingView: View {
             tip("keyboard", "Set up shortcuts in Settings › Hotkeys, and open any item with Quick Open.")
             tip("rectangle.3.group", "Arrange items by dragging them in Settings › Layout.")
             tip("square.grid.2x2", "Put items that belong together into a group with an icon of its own, from an item's menu in Settings › Layout.")
+            // New versions can be installed from within Meno once it knows of them.
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 34, height: 34)
+                    .menoGlass(in: Circle())
+                Toggle(isOn: $model.settings.general.checksForUpdates) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Check for updates once a day")
+                            .font(.system(size: 13))
+                        Text("Meno asks GitHub whether there is a newer release. Nothing about you or your Mac is sent.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .toggleStyle(.switch)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
