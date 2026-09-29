@@ -68,6 +68,14 @@ struct GroupRow: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background { Capsule().fill(Color.primary.opacity(0.07)) }
+                        .contextMenu {
+                            Button("Move Left") { move(item.key, by: -1) }
+                                .disabled(items.first?.key == item.key)
+                            Button("Move Right") { move(item.key, by: 1) }
+                                .disabled(items.last?.key == item.key)
+                            Divider()
+                            Button("Remove from Group") { onRemoveItem(item.key) }
+                        }
                     }
                 }
             }
@@ -82,5 +90,16 @@ struct GroupRow: View {
                 .strokeBorder(Color.accentColor.opacity(isTargeted ? 0.8 : 0), lineWidth: 1.5)
         }
         .animation(.easeOut(duration: 0.15), value: isTargeted)
+    }
+
+    /// Swaps an item with its shown neighbour, which changes where it
+    /// appears in the group's Shelf. Items of apps that are not running
+    /// keep their place.
+    private func move(_ key: MenuItemKey, by offset: Int) {
+        guard let shown = items.firstIndex(where: { $0.key == key }),
+              items.indices.contains(shown + offset),
+              let from = group.items.firstIndex(of: key),
+              let to = group.items.firstIndex(of: items[shown + offset].key) else { return }
+        group.items.swapAt(from, to)
     }
 }
