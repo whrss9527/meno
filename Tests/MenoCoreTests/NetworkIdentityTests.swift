@@ -14,6 +14,7 @@ final class NetworkIdentityTests: XCTestCase {
                0         0         0         0         0         0      1500         0
         """
         XCTAssertEqual(NetworkIdentity.gateway(inRouteOutput: output), "192.168.1.1")
+        XCTAssertEqual(NetworkIdentity.interface(inRouteOutput: output), "en0")
         // A route without a router, or through an IPv6 one, names no network here.
         XCTAssertNil(NetworkIdentity.gateway(inRouteOutput: "   route to: default\n  interface: utun3\n"))
         XCTAssertNil(NetworkIdentity.gateway(inRouteOutput: "    gateway: fe80::1%en0\n"))
@@ -34,6 +35,21 @@ final class NetworkIdentityTests: XCTestCase {
         XCTAssertNil(NetworkIdentity.hardwareAddress(inARPOutput: "192.168.1.1 (192.168.1.1) -- no entry"))
         XCTAssertNil(NetworkIdentity.hardwareAddress(inARPOutput: "? (192.168.1.255) at ff:ff:ff:ff:ff:ff on en0 ifscope [ethernet]"))
         XCTAssertNil(NetworkIdentity.normalizedHardwareAddress("a4:2b:b0:1:2"))
+
+        // The same address on two interfaces, or not resolved on one of them.
+        let twice = """
+        ? (192.168.1.1) at (incomplete) on en0 ifscope [ethernet]
+        ? (192.168.1.1) at 0:11:32:ab:cd:9 on en7 ifscope [ethernet]
+        ? (192.168.1.1) at a4:2b:b0:1:2:3 on en8 ifscope [ethernet]
+        """
+        XCTAssertNil(NetworkIdentity.hardwareAddress(inARPOutput: twice, interface: "en0"))
+        XCTAssertEqual(NetworkIdentity.hardwareAddress(inARPOutput: twice, interface: "en7"), "00:11:32:ab:cd:09")
+        XCTAssertEqual(NetworkIdentity.hardwareAddress(inARPOutput: twice, interface: "en8"), "a4:2b:b0:01:02:03")
+        XCTAssertEqual(NetworkIdentity.hardwareAddress(inARPOutput: twice), "00:11:32:ab:cd:09")
+        XCTAssertEqual(
+            NetworkIdentity.identifier(hardwareAddress: "a4:2b:b0:01:02:03", gateway: "192.168.1.1"),
+            "a4:2b:b0:01:02:03@192.168.1.1"
+        )
         XCTAssertNil(NetworkIdentity.normalizedHardwareAddress("a4:2b:b0:1:2:xyz"))
     }
 

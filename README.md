@@ -86,7 +86,7 @@ You can also open `Package.swift` in Xcode to edit and debug. When Meno runs out
 
 Rules about a microphone or camera in use only ask macOS whether a device is running, which needs no permission. Meno never records anything.
 
-A rule condition that runs a command runs exactly the command you typed, every 10 seconds with zsh, and only while the rule is on. Rules with commands are turned off when you import settings, so a settings file cannot run anything before you have looked at it.
+A rule condition that runs a command runs exactly the command you typed, every 10 seconds with zsh, and only while the rule is on. While a rule depends on a network, Meno runs `route` and `arp` when the network changes and every 30 seconds, which read the router of each connection from what macOS already knows and send nothing. Rules with commands are turned off when you import settings, so a settings file cannot run anything before you have looked at it.
 
 Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*; and to download a release you chose to install. Settings and statistics live in `~/Library/Application Support/Meno`.
 
@@ -120,8 +120,8 @@ Menu bar items are read through each app's accessibility tree, which works on ev
 - **Meno does not respond after an update.** Builds without a fixed certificate get a new Accessibility entry with every update. Meno replaces the old entry and macOS asks again; if it does not, open *Settings › Permissions* and click *Reset and Grant Again*.
 - **An update cannot be installed from within Meno.** Meno replaces itself only where it may write, for example in *Applications* with an administrator account, and not while macOS runs it from a temporary copy of a download. Otherwise it offers the download instead.
 - **An app's icon or the Meno icon is missing on macOS 26 or later.** macOS only shows the items of apps that are allowed in *System Settings › Menu Bar*. Meno's own icon can also be turned off in *Settings › Appearance*; open Settings from Quick Open, with `open meno://settings` or by opening Meno again.
-- **An item moves back after you moved it.** Meno only puts an item back when its app has just started and placed the item elsewhere. Items you move stay where you put them. To stop this, turn off *Keep items where you put them* in *General › Sections*.
-- **macOS asks every month whether Meno may keep recording the screen (macOS 15 and later).** Screen Recording is optional: without it the Shelf shows app icons instead of the items' own artwork, and changes are noticed by text only.
+- **An item moves back after you moved it.** Meno only puts an item back when its app, or Meno itself, has just started and the item is not where it was last left while Meno ran. Items you move while Meno runs stay where you put them. To stop this, turn off *Keep items where you put them* in *General › Sections*.
+- **macOS asks every month whether Meno may keep recording the screen (macOS 15 to 26).** Screen Recording is optional: without it the Shelf shows app icons instead of the items' own artwork, and changes are noticed by text only.
 - Anything else: *Settings › About › Copy Diagnostic Report* copies what Meno sees, to paste into an issue.
 
 ## Good to know

@@ -21,6 +21,9 @@ final class ChangeWatcher: ObservableObject {
 
     private var tracker = ChangeTracker()
     private var loop: Task<Void, Never>?
+    /// Until when items are shown because they changed. Changes of other
+    /// watched items meanwhile are still news.
+    private var showingChangesUntil = Date.distantPast
 
     init(model: AppModel) {
         self.model = model
@@ -84,8 +87,8 @@ final class ChangeWatcher: ObservableObject {
         }
         // While items are shown or rearranged they may be in use, so what
         // changes then is not news.
-        let absorbing = model.reveal.visibility != .collapsed || model.shelf.isVisible
-            || model.mover.isMoving || model.isZenActive
+        let revealed = model.reveal.visibility != .collapsed || model.shelf.isVisible
+        let absorbing = (revealed && Date() >= showingChangesUntil) || model.mover.isMoving || model.isZenActive
         let changed = tracker.update(samples, at: Date(), absorbing: absorbing)
             .compactMap { model.inventory.item(for: $0) }
         if !changed.isEmpty {
@@ -96,6 +99,7 @@ final class ChangeWatcher: ObservableObject {
     private func show(_ items: [MenuBarItem]) {
         Log.menuBar.info("Showing \(items.map(\.key.rawValue).joined(separator: ", "), privacy: .public) after a change")
         changedItems.formUnion(items.map(\.key))
+        showingChangesUntil = Date().addingTimeInterval(showDuration)
         model.reveal.requestReveal(all: items.contains { $0.section == .stash }, trigger: .change)
         // A whole section is shown, so the notice says which items changed.
         let names = ListFormatter.localizedString(byJoining: items.map(\.displayName))

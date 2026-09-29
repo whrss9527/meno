@@ -1,27 +1,59 @@
 import Foundation
 
-/// Tells networks apart by the hardware address of their router.
+/// Tells networks apart by their router: its hardware address together
+/// with its IPv4 address, since a guest network often shares the address
+/// of its router's main network, and some routers share a well-known
+/// virtual hardware address.
 ///
 /// macOS only gives apps the name of the Wi-Fi network with Location
 /// Services, while the router's address is in the ARP table that anyone may
-/// read, for Wi-Fi and Ethernet alike, without sending anything.
+/// read, for Wi-Fi and Ethernet alike, without sending anything. Networks
+/// with only IPv6 are not recognized.
 public enum NetworkIdentity {
+    /// How a network is stored in a rule, for example
+    /// `a4:2b:b0:01:02:03@192.168.1.1`.
+    public static func identifier(hardwareAddress: String, gateway: String) -> String {
+        "\(hardwareAddress)@\(gateway)"
+    }
+
     /// The IPv4 gateway in the output of `route -n get default`.
     public static func gateway(inRouteOutput output: String) -> String? {
-        for line in output.split(whereSeparator: \.isNewline) {
-            let parts = line.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-            guard parts.count == 2, parts[0] == "gateway", isIPv4(parts[1]) else { continue }
-            return parts[1]
-        }
-        return nil
+        value(of: "gateway", inRouteOutput: output).flatMap { isIPv4($0) ? $0 : nil }
+    }
+
+    /// The interface in the output of `route -n get default`, such as `en0`.
+    public static func interface(inRouteOutput output: String) -> String? {
+        value(of: "interface", inRouteOutput: output)
     }
 
     /// The hardware address in the output of `arp -n <address>`, for
     /// example `? (192.168.1.1) at a4:2b:b0:1:2:3 on en0 ifscope [ethernet]`.
-    public static func hardwareAddress(inARPOutput output: String) -> String? {
-        let words = output.split(whereSeparator: \.isWhitespace)
-        guard let index = words.firstIndex(of: "at"), words.index(after: index) < words.endIndex else { return nil }
-        return normalizedHardwareAddress(String(words[words.index(after: index)]))
+    /// With `interface`, only an entry on that interface counts: the same
+    /// address can be known on several interfaces.
+    public static func hardwareAddress(inARPOutput output: String, interface: String? = nil) -> String? {
+        for line in output.split(whereSeparator: \.isNewline) {
+            let words = line.split(whereSeparator: \.isWhitespace)
+            if let interface {
+                guard let on = words.firstIndex(of: "on"), words.index(after: on) < words.endIndex,
+                      words[words.index(after: on)] == interface
+                else { continue }
+            }
+            guard let at = words.firstIndex(of: "at"), words.index(after: at) < words.endIndex,
+                  let address = normalizedHardwareAddress(String(words[words.index(after: at)]))
+            else { continue }
+            return address
+        }
+        return nil
+    }
+
+    private static func value(of key: String, inRouteOutput output: String) -> String? {
+        for line in output.split(whereSeparator: \.isNewline) {
+            let parts = line.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+            if parts.count == 2, parts[0] == key, !parts[1].isEmpty {
+                return parts[1]
+            }
+        }
+        return nil
     }
 
     /// A hardware address as six lowercase two-digit groups, or `nil` for

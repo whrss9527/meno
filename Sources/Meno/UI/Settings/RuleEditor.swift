@@ -155,6 +155,8 @@ struct RuleEditor: View {
                 if id.isEmpty { return false }
             case .commandSucceeds:
                 if entry.condition.command == nil { return false }
+            case .network(let router, _):
+                if router.isEmpty { return false }
             default:
                 break
             }
@@ -174,8 +176,13 @@ private struct ConditionEditor: View {
     @Binding var condition: RuleCondition
     @State private var isTesting = false
     @State private var testResult: Bool?
-    /// The routers of the networks the Mac is on, once looked up.
+    /// The networks the Mac is on, once looked up.
     @State private var currentRouters: Set<String>?
+    /// Set to look up the current network for the condition.
+    @State private var lookup: UUID?
+    @State private var isLookingUp = false
+    /// The last lookup found no network.
+    @State private var lookupFailed = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -189,9 +196,26 @@ private struct ConditionEditor: View {
             parameters
         }
         .task(id: condition.kind) {
+            testResult = nil
+            lookupFailed = false
             // Whether the network of the condition is the current one.
-            guard condition.kind == .network, currentRouters == nil else { return }
-            currentRouters = await NetworkRouters.current()
+            guard condition.kind == .network else { return }
+            let networks = await NetworkRouters.current()
+            guard !Task.isCancelled else { return }
+            currentRouters = Set(networks.map(\.identifier))
+        }
+        .task(id: lookup) {
+            guard lookup != nil else { return }
+            isLookingUp = true
+            let networks = await NetworkRouters.current()
+            // A row that was removed meanwhile is gone, and one that is no
+            // longer about a network keeps what it is.
+            guard !Task.isCancelled else { return }
+            isLookingUp = false
+            currentRouters = Set(networks.map(\.identifier))
+            lookupFailed = networks.isEmpty
+            guard let network = networks.first, case .network(_, let name) = condition else { return }
+            condition = .network(router: network.identifier, name: name)
         }
     }
 
@@ -247,36 +271,45 @@ private struct ConditionEditor: View {
                     .accessibilityLabel(label)
             }
         case .network(let router, let name):
-            TextField(
-                String(localized: "Network name"),
-                text: Binding(get: { name }, set: { condition = .network(router: router, name: $0) })
-            )
-            .textFieldStyle(.roundedBorder)
-            .frame(width: 120)
-            Button {
-                useCurrentNetwork(name: name)
-            } label: {
-                if isTesting {
-                    ProgressView()
-                        .controlSize(.small)
-                } else {
-                    Text("Use Current Network")
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    TextField(
+                        String(localized: "Network name"),
+                        text: Binding(get: { name }, set: { condition = .network(router: router, name: $0) })
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 140)
+                    if !router.isEmpty, let currentRouters {
+                        let connected = currentRouters.contains(router)
+                        let label = connected ? String(localized: "Connected now") : String(localized: "Not connected now")
+                        Image(systemName: connected ? "checkmark.circle.fill" : "circle.dashed")
+                            .foregroundStyle(connected ? Color.green : Color.secondary)
+                            .help(label)
+                            .accessibilityLabel(label)
+                    }
                 }
-            }
-            .disabled(isTesting)
-            .help(Text("Meno recognizes a network by its router, without needing Location Services."))
-            if let currentRouters {
-                if router.isEmpty, currentRouters.isEmpty {
+                Button {
+                    lookup = UUID()
+                } label: {
+                    if isLookingUp {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Text("Use Current Network")
+                    }
+                }
+                .disabled(isLookingUp)
+                .help(Text("Meno recognizes a network by its router, without needing Location Services."))
+                if lookupFailed {
                     Text("Meno could not tell which network this is.")
                         .font(.system(size: 11))
                         .foregroundStyle(.orange)
-                } else if !router.isEmpty {
-                    let connected = currentRouters.contains(router)
-                    let label = connected ? String(localized: "Connected now") : String(localized: "Not connected now")
-                    Image(systemName: connected ? "checkmark.circle.fill" : "circle.dashed")
-                        .foregroundStyle(connected ? Color.green : Color.secondary)
-                        .help(label)
-                        .accessibilityLabel(label)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if router.isEmpty {
+                    Text("Click Use Current Network while the Mac is on it.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         default:
@@ -286,18 +319,6 @@ private struct ConditionEditor: View {
 }
 
 extension ConditionEditor {
-    /// Takes the network the Mac is on now.
-    private func useCurrentNetwork(name: String) {
-        isTesting = true
-        Task {
-            let routers = await NetworkRouters.current()
-            isTesting = false
-            currentRouters = routers
-            guard let router = routers.sorted().first else { return }
-            condition = .network(router: router, name: name)
-        }
-    }
-
     /// Runs the command once, off the main thread, and shows the result.
     private func test(_ command: String) {
         isTesting = true

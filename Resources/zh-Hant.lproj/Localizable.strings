@@ -111,6 +111,7 @@
 "Click an empty part of the menu bar to show hidden items." = "按一下選單列的空白處即可顯示隱藏的項目。";
 "Click an item to choose where it goes: another section, or one step to the left or right." = "按一下項目，選擇把它放到哪裡：別的區段，或者往左、往右挪一格。";
 "Click the Meno icon to show or hide items." = "按一下 Meno 圖示即可顯示或隱藏項目。";
+"Click Use Current Network while the Mac is on it." = "請在 Mac 連接這個網路時按一下「使用目前網路」。";
 "Clicking again hides the items." = "再次按一下會重新隱藏。";
 "Close" = "關閉";
 "Close after opening an item" = "開啟項目後關閉托盤";

@@ -121,7 +121,12 @@ final class UpdateChecker: ObservableObject {
             try? await Task.sleep(nanoseconds: 250_000_000)
             waited += 1
         }
-        guard phase == .idle, var release = available, var version = release.version else { return }
+        guard phase == .idle else { return }
+        guard var release = available, var version = release.version else {
+            // The check that ran meanwhile found nothing newer.
+            model.toasts.show(String(localized: "Meno is up to date."), symbol: "checkmark.circle.fill")
+            return
+        }
         phase = .downloading
         model.toasts.show(
             String(localized: "Downloading Meno \(version.description)…"),
@@ -178,6 +183,8 @@ final class UpdateChecker: ObservableObject {
         var request = URLRequest(url: latestReleaseURL, timeoutInterval: 15)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("Meno/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
+        // Otherwise the Mac's preferred languages would be sent along.
+        request.setValue("en", forHTTPHeaderField: "Accept-Language")
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             throw URLError(.badServerResponse)

@@ -25,7 +25,7 @@ SECOND_ARGUMENT = ["tip(", "pill("]
 # Keys produced outside the patterns above.
 EXTRA = ["Beta", "Experimental"]
 # Matches of the patterns above that are not user-facing.
-IGNORE = {"%@.network", "%@.capture", "%@.commands"}
+IGNORE = {"%@.network", "%@.capture", "%@.commands", "%@.routers"}
 
 INT_HINTS = (".count", "total", "uses", "days", "percent", "min(", "entry.value")
 

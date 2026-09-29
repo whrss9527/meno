@@ -30,7 +30,14 @@ final class AutomationController: ObservableObject {
     private(set) var succeededCommands: Set<String> = []
     /// The routers of the networks the Mac is on, while a rule depends on them.
     private(set) var routers: Set<String> = []
-    private var routerLookup = 0
+    /// When routers that no lookup found since were last there.
+    private var routersMissingSince: [String: Date] = [:]
+    private var isLookingUpRouters = false
+    private var looksUpRoutersAgain = false
+    /// How long a router may be missing before its network counts as left:
+    /// a network briefly drops out, for example while Wi-Fi reconnects
+    /// after sleep, and rules should not flip meanwhile.
+    private static let routerGrace: TimeInterval = 20
     private lazy var commandChecks = CommandChecks { [weak self] succeeded in
         MainActor.assumeIsolated {
             guard let self else { return }
@@ -160,20 +167,51 @@ final class AutomationController: ObservableObject {
     }
 
     /// Looks up the routers of the networks the Mac is on, while an enabled
-    /// rule depends on them, and evaluates the rules when they changed.
+    /// rule depends on them, and evaluates the rules when they changed. One
+    /// lookup runs at a time; asking meanwhile runs one more afterwards.
     private func refreshRouters() {
-        routerLookup += 1
-        let lookup = routerLookup
         guard model.settings.effectiveRules.watchesNetworks else {
             routers = []
+            routersMissingSince = [:]
             return
         }
-        Task { [weak self] in
-            let found = await NetworkRouters.current()
-            guard let self, lookup == self.routerLookup, found != self.routers else { return }
-            self.routers = found
-            self.evaluate()
+        guard !isLookingUpRouters else {
+            looksUpRoutersAgain = true
+            return
         }
+        isLookingUpRouters = true
+        Task { [weak self] in
+            let found = Set(await NetworkRouters.current().map(\.identifier))
+            guard let self else { return }
+            self.isLookingUpRouters = false
+            self.take(routers: found)
+            if self.looksUpRoutersAgain {
+                self.looksUpRoutersAgain = false
+                self.refreshRouters()
+            }
+        }
+    }
+
+    private func take(routers found: Set<String>) {
+        // Rules may have stopped depending on networks meanwhile.
+        guard model.settings.effectiveRules.watchesNetworks else { return }
+        let now = Date()
+        var next = found
+        for router in found {
+            routersMissingSince[router] = nil
+        }
+        for router in routers where !found.contains(router) {
+            let since = routersMissingSince[router] ?? now
+            if now.timeIntervalSince(since) < Self.routerGrace {
+                routersMissingSince[router] = since
+                next.insert(router)
+            } else {
+                routersMissingSince[router] = nil
+            }
+        }
+        guard next != routers else { return }
+        routers = next
+        evaluate()
     }
 
     /// Microphones and cameras are only watched while an enabled rule

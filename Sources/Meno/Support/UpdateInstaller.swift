@@ -175,6 +175,7 @@ enum UpdateInstaller {
     private static func download(_ asset: UpdateRelease.Asset, to destination: URL) async throws {
         var request = URLRequest(url: asset.downloadURL, timeoutInterval: 60)
         request.setValue("Meno/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
+        request.setValue("en", forHTTPHeaderField: "Accept-Language")
         let result: (URL, URLResponse)
         do {
             result = try await URLSession.shared.download(for: request)
