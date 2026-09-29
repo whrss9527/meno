@@ -36,9 +36,9 @@ enum Diagnostics {
         lines.append("Meno icon \(describe(model.statusBar.toggleFrame))"
             + " · hidden divider \(describe(model.statusBar.hiddenDividerFrame))"
             + " · stash divider \(describe(model.statusBar.stashDividerFrame))")
-        let skipped = model.inventory.skippedElements
-        if !skipped.isEmpty {
-            lines.append("Skipped unnamed elements: " + skipped.sorted { $0.key < $1.key }.map { "\($0.key) ×\($0.value)" }.joined(separator: ", "))
+        let skipped = model.inventory.skipped
+        for (label, counts) in [("unnamed", skipped.unnamed), ("duplicate", skipped.duplicates), ("empty", skipped.empty)] where !counts.isEmpty {
+            lines.append("Skipped \(label) elements: " + counts.sorted { $0.key < $1.key }.map { "\($0.key) ×\($0.value)" }.joined(separator: ", "))
         }
         let items = model.inventory.items
         lines.append("Items (\(items.count)):")

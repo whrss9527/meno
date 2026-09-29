@@ -14,8 +14,17 @@ final class ItemInventory: ObservableObject {
     @Published private(set) var items: [MenuBarItem] = []
     @Published private(set) var lastRefresh: Date?
     @Published private(set) var isRefreshing = false
-    /// Unnamed elements of Apple's processes left out of the last scan, by owner.
-    private(set) var skippedElements: [String: Int] = [:]
+    /// Elements left out of the last scan, for the diagnostic report.
+    private(set) var skipped = SkippedElements()
+
+    struct SkippedElements {
+        /// Unnamed elements of Apple's processes, by owner.
+        var unnamed: [String: Int] = [:]
+        /// Elements that repeat another app's item, by owner.
+        var duplicates: [String: Int] = [:]
+        /// Elements without width, by owner.
+        var empty: [String: Int] = [:]
+    }
 
     private var cachedSections: [MenuItemKey: ItemSection] = [:]
     private var cachedPositions: [MenuItemKey: CGFloat] = [:]
@@ -158,14 +167,30 @@ final class ItemInventory: ObservableObject {
             .compactMap { $0 }
         var result: [MenuBarItem] = []
 
-        var skipped: [String: Int] = [:]
-        let named = raw.filter { entry in
+        var skipped = SkippedElements()
+        var named = raw.filter { entry in
             let owner = entry.target.bundleID ?? entry.target.name
             guard ItemNaming.isUnnamedSystemElement(owner: owner, texts: [entry.detail, entry.title, entry.help]) else { return true }
-            skipped[owner, default: 0] += 1
+            skipped.unnamed[owner, default: 0] += 1
             return false
         }
-        skippedElements = skipped
+        // Positions of hidden items are only compared while they are known.
+        let placements = named.map { entry in
+            let frame = reliable || isOnScreen(entry.frame) ? entry.frame : .zero
+            return HostedItems.Element(
+                owner: entry.target.bundleID ?? entry.target.name,
+                identifier: entry.identifier,
+                minX: Double(frame.minX), maxX: Double(frame.maxX),
+                minY: Double(frame.minY), maxY: Double(frame.maxY)
+            )
+        }
+        let duplicates = HostedItems.duplicates(in: placements)
+        if !duplicates.isEmpty {
+            for index in duplicates {
+                skipped.duplicates[placements[index].owner, default: 0] += 1
+            }
+            named = named.enumerated().filter { !duplicates.contains($0.offset) }.map(\.element)
+        }
         let grouped = Dictionary(grouping: named) { $0.target.bundleID ?? $0.target.name }
         for (owner, group) in grouped {
             let sorted = group.sorted { $0.frame.minX < $1.frame.minX }
@@ -174,6 +199,10 @@ final class ItemInventory: ObservableObject {
             })
             for (entry, token) in zip(sorted, tokens) {
                 let key = MenuItemKey(owner: owner, token: token)
+                if isLeftoverSlot(entry.frame, key: key, reliable: reliable) {
+                    skipped.empty[owner, default: 0] += 1
+                    continue
+                }
                 let isSystem = owner.hasPrefix("com.apple.")
                 let name = Self.displayName(for: entry, siblings: sorted.count, isSystem: isSystem)
                 var frame = entry.frame
@@ -208,6 +237,8 @@ final class ItemInventory: ObservableObject {
             }
         }
 
+        self.skipped = skipped
+
         var markerSections: [UUID: ItemSection] = [:]
         if let dividers {
             for (id, frame) in model.markers.frames() {
@@ -222,6 +253,18 @@ final class ItemInventory: ObservableObject {
     /// still has its position from before the divider grew over it.
     static func overlaps(_ frame: CGRect, _ menoFrames: [CGRect]) -> Bool {
         menoFrames.contains { $0.minX < frame.midX && frame.midX < $0.maxX }
+    }
+
+    /// An element without width is left over from an item that is gone
+    /// (for example after its app crashed). While positions are unreliable,
+    /// only items that were seen with a width before are kept.
+    private func isLeftoverSlot(_ frame: CGRect, key: MenuItemKey, reliable: Bool) -> Bool {
+        guard frame.width < 1 else { return false }
+        guard reliable else { return cachedSections[key] == nil }
+        return NSScreen.screens.contains { screen in
+            let bounds = ScreenGeometry.quartzRect(fromCocoa: screen.frame)
+            return bounds.minX <= frame.midX && frame.midX <= bounds.maxX
+        }
     }
 
     private func isOnScreen(_ frame: CGRect) -> Bool {
