@@ -27,6 +27,11 @@ enum Diagnostics {
             rules += " · camera \(capture.camera ? "in use" : "idle")"
         }
         lines.append(rules)
+        if !model.settings.groups.isEmpty {
+            lines.append("Groups: " + model.settings.groups.map { group in
+                "\(group.name) (\(group.items.count) items, icon \(describe(model.statusBar.groupIconFrame(group.id).map(ScreenGeometry.quartzRect(fromCocoa:)))))"
+            }.joined(separator: ", "))
+        }
         for screen in NSScreen.screens {
             let frame = screen.frame
             let menuBarHeight = Int(frame.maxY - screen.visibleFrame.maxY)
