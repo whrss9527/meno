@@ -387,6 +387,17 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Undoes the last change made through Meno, reporting problems as a toast.
+    func undoLayoutChange() {
+        Task {
+            do {
+                try await mover.undo()
+            } catch {
+                toasts.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
+            }
+        }
+    }
+
     /// Moves an item next to another one, reporting problems as a toast.
     func move(_ key: MenuItemKey, placement: Placement) {
         Task {

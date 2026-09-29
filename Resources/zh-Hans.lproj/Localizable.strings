@@ -266,6 +266,7 @@
 "Privacy" = "隐私";
 "Private usage stats with suggestions for a tidier bar." = "私密的使用统计，并给出整理菜单栏的建议。";
 "Put it in the Stash" = "放入暗格";
+"Puts the items back where they were before the last change" = "把项目放回上一次更改之前的位置";
 "Quick Open" = "快速打开";
 "Quick Open…" = "快速打开…";
 "Quiet menu bar in the evening" = "晚间保持菜单栏安静";
@@ -408,6 +409,7 @@
 "Turn Zen on or off" = "开启或关闭禅模式";
 "Two levels of hiding, revealed by click, hover, scroll or hotkey." = "两级隐藏，可通过点按、悬停、滚动或快捷键展开。";
 "Type a shortcut…" = "请按下快捷键…";
+"Undo" = "撤销";
 "Undo when the conditions stop being true" = "条件不再满足时撤销";
 "Undone afterwards." = "条件结束后撤销。";
 "Untitled Rule" = "未命名规则";

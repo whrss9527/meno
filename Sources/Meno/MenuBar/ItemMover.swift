@@ -43,6 +43,8 @@ final class ItemMover: ObservableObject {
 
     @Published private(set) var isMoving = false
     @Published private(set) var progress: (done: Int, total: Int)?
+    /// The arrangement before the last change the person made through Meno.
+    @Published private(set) var undoLayout: SceneLayout?
 
     init(model: AppModel) {
         self.model = model
@@ -68,7 +70,13 @@ final class ItemMover: ObservableObject {
         try await perform(steps, layout: nil, automatic: false)
     }
 
-    private func perform(_ plannedSteps: [MoveStep]?, layout: SceneLayout?, automatic: Bool) async throws {
+    /// Puts the items back where they were before the last change.
+    func undo() async throws {
+        guard let layout = undoLayout else { return }
+        try await perform(nil, layout: layout, automatic: false, isUndo: true)
+    }
+
+    private func perform(_ plannedSteps: [MoveStep]?, layout: SceneLayout?, automatic: Bool, isUndo: Bool = false) async throws {
         guard model.permissions.accessibility else { throw MoveError.noPermission }
         if automatic {
             try await waitForIdleInput(duringMove: false)
@@ -83,6 +91,7 @@ final class ItemMover: ObservableObject {
         do {
             try await Task.sleep(nanoseconds: 450_000_000)
             await model.inventory.refresh()
+            let before = model.inventory.currentLayout()
             var steps = plannedSteps ?? []
             if let layout {
                 let target = LayoutPlanner.targetOrder(for: layout, includesStash: model.settings.general.stashEnabled)
@@ -100,6 +109,13 @@ final class ItemMover: ObservableObject {
                 try await execute(step)
             }
             progress = (steps.count, steps.count)
+            // Rules undo their own changes, so only changes made by the
+            // person can be undone here.
+            if isUndo {
+                undoLayout = nil
+            } else if !automatic, !steps.isEmpty {
+                undoLayout = before
+            }
             model.reveal.endLayoutSession()
             model.inventory.scheduleRefresh(after: 0.5)
         } catch {

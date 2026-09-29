@@ -103,6 +103,16 @@ struct LayoutPane: View {
             }
             .menoGlassButtonStyle()
 
+            Button {
+                model.undoLayoutChange()
+            } label: {
+                Label("Undo", systemImage: "arrow.uturn.backward")
+            }
+            .menoGlassButtonStyle()
+            .keyboardShortcut("z", modifiers: .command)
+            .disabled(mover.undoLayout == nil || mover.isMoving)
+            .help(Text("Puts the items back where they were before the last change"))
+
             Spacer()
             if let date = inventory.lastRefresh {
                 Text("Updated \(Formatters.relative(date))")
