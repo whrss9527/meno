@@ -19,7 +19,7 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 ### Hide and reveal
 
 - **Three sections.** *Visible* items are always shown. *Hidden* items appear on demand. The *Stash* is for items you almost never need: they never appear in the menu bar, only in the Shelf, Quick Open or with ⌥-click.
-- **Many ways to reveal:** click the Meno icon, click or hover over an empty part of the menu bar, scroll or swipe down over it, or press a global shortcut.
+- **Many ways to reveal:** click the Meno icon, click or hover over an empty part of the menu bar (hovering can require a held key), scroll or swipe down over it, press a global shortcut, or drag a file onto the menu bar to drop it on a hidden item.
 - **Smart re-hiding:** after a delay, when you switch apps or click elsewhere, or when the pointer leaves the menu bar. Items stay put while one of their menus is open.
 - **Room when you need it:** Meno can clear the frontmost app's menus while items are revealed, so a long row of icons fits.
 

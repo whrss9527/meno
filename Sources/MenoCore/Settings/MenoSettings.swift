@@ -133,6 +133,12 @@ public struct RevealSettings: Codable, Equatable, Sendable {
     public var onHover = false
     /// Seconds the pointer must rest before revealing.
     public var hoverDelay: Double = 0.25
+    /// A key that has to be held for hovering to reveal, so passing over
+    /// the menu bar does not.
+    public var hoverModifier: HoverModifier = .none
+    /// Reveal while a file or other content is dragged onto the menu bar,
+    /// so it can be dropped on a hidden item.
+    public var onDrag = true
     /// Toggle when an empty part of the menu bar is clicked.
     public var onEmptyAreaClick = true
     /// Reveal or collapse with a scroll or two-finger swipe over the menu bar.
@@ -147,6 +153,24 @@ public struct RevealSettings: Codable, Equatable, Sendable {
     public var rehideOnMouseExit = false
 
     public init() {}
+}
+
+/// A modifier key that has to be held for hovering to reveal.
+public enum HoverModifier: String, Codable, CaseIterable, Sendable {
+    case none
+    case option
+    case control
+    case command
+
+    /// Whether the key is among the held modifiers. Always true for `none`.
+    public func isHeld(in modifiers: KeyModifiers) -> Bool {
+        switch self {
+        case .none: return true
+        case .option: return modifiers.contains(.option)
+        case .control: return modifiers.contains(.control)
+        case .command: return modifiers.contains(.command)
+        }
+    }
 }
 
 // MARK: - Appearance

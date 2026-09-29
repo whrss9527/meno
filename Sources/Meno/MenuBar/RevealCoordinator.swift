@@ -28,6 +28,8 @@ enum RevealTrigger: String {
     case change
     /// A `meno://` link.
     case link
+    /// Something was dragged onto the menu bar.
+    case drag
 }
 
 /// Decides when hidden items are shown and hidden again.
@@ -67,9 +69,16 @@ final class RevealCoordinator: ObservableObject {
     private var lastScroll = Date.distantPast
     private var observers: [NSObjectProtocol] = []
 
-    private lazy var pointerMonitor = GlobalEventMonitor(mask: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
+    private lazy var pointerMonitor = GlobalEventMonitor(mask: [.mouseMoved, .leftMouseDragged, .flagsChanged]) { [weak self] event in
         self?.pointerMoved(event)
     }
+
+    /// Notices drags of files and other content onto the menu bar.
+    private lazy var dragMonitor = GlobalEventMonitor(mask: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]) { [weak self] event in
+        self?.dragged(event)
+    }
+    private var dragPasteboardCount = 0
+    private var revealedByDrag = false
 
     private lazy var clickMonitor = GlobalEventMonitor(mask: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
         self?.clickedElsewhere(event)
@@ -109,6 +118,11 @@ final class RevealCoordinator: ObservableObject {
             pointerMonitor.stop()
         }
         clickMonitor.start()
+        if reveal.onDrag {
+            dragMonitor.start()
+        } else {
+            dragMonitor.stop()
+        }
         if reveal.onScroll {
             scrollMonitor.start()
         } else {
@@ -397,7 +411,7 @@ final class RevealCoordinator: ObservableObject {
         }
 
         // While the Shelf shows the items, the menu bar stays as it is.
-        if settings.onHover, visibility == .collapsed, !model.shelf.isVisible, !passiveRevealBlocked {
+        if settings.onHover, visibility == .collapsed, !model.shelf.isVisible, !passiveRevealBlocked, hoverKeyIsHeld {
             let point = ScreenGeometry.quartzPoint(fromCocoa: location)
             if inMenuBar, isEmptySpot(point) {
                 if hoverTask == nil {
@@ -407,7 +421,7 @@ final class RevealCoordinator: ObservableObject {
                         guard let self, !Task.isCancelled else { return }
                         self.hoverTask = nil
                         let current = ScreenGeometry.quartzPoint(fromCocoa: NSEvent.mouseLocation)
-                        if self.visibility == .collapsed, !self.model.shelf.isVisible, self.isEmptySpot(current) {
+                        if self.visibility == .collapsed, !self.model.shelf.isVisible, self.hoverKeyIsHeld, self.isEmptySpot(current) {
                             self.requestReveal(all: false, trigger: .hover)
                         }
                     }
@@ -430,6 +444,39 @@ final class RevealCoordinator: ObservableObject {
                     self.collapse(trigger: .pointerExit)
                 }
             }
+        }
+    }
+
+    /// Whether the key that hovering needs, if any, is held.
+    private var hoverKeyIsHeld: Bool {
+        model.settings.reveal.hoverModifier.isHeld(in: KeyboardLayout.modifiers(from: NSEvent.modifierFlags))
+    }
+
+    /// Shows hidden items while a file or other content is dragged onto
+    /// the menu bar, so it can be dropped on one of them. A drag carries
+    /// content when the drag pasteboard changed since the mouse went down,
+    /// which moving windows or selecting text does not do.
+    private func dragged(_ event: NSEvent) {
+        switch event.type {
+        case .leftMouseDown:
+            dragPasteboardCount = NSPasteboard(name: .drag).changeCount
+        case .leftMouseDragged:
+            guard visibility == .collapsed, !model.shelf.isVisible, !passiveRevealBlocked,
+                  ScreenGeometry.isInMenuBar(cocoa: NSEvent.mouseLocation),
+                  NSPasteboard(name: .drag).changeCount != dragPasteboardCount else { return }
+            if model.isZenActive {
+                model.setZen(false)
+            }
+            revealedByDrag = true
+            reveal(all: false, trigger: .drag)
+        case .leftMouseUp:
+            guard revealedByDrag else { return }
+            revealedByDrag = false
+            // The item that took the drop may show a menu; rehiding waits
+            // for it.
+            scheduleRehide(after: 1.5, force: true)
+        default:
+            break
         }
     }
 

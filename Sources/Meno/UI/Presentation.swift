@@ -321,6 +321,18 @@ extension RevealTrigger {
         case .zen: return "Zen"
         case .change: return String(localized: "Item changed")
         case .link: return String(localized: "Link")
+        case .drag: return String(localized: "Dragging onto the menu bar")
+        }
+    }
+}
+
+extension HoverModifier {
+    var title: String {
+        switch self {
+        case .none: return String(localized: "No key needed")
+        case .option: return String(localized: "Hold ⌥ Option")
+        case .control: return String(localized: "Hold ⌃ Control")
+        case .command: return String(localized: "Hold ⌘ Command")
         }
     }
 }

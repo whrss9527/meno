@@ -148,6 +148,31 @@ final class KeyComboTests: XCTestCase {
         XCTAssertEqual(KeyCombo(keyCode: 0x2E, modifiers: .command).displayString(keyName: "Ь"), "⌘Ь")
     }
 
+    func testRevealDefaultsForOlderSettings() throws {
+        // Settings saved before these options existed get their defaults.
+        let old = #"{"reveal":{"onHover":true,"hoverDelay":0.5}}"#
+        let settings = try MenoSettings.decode(from: Data(old.utf8))
+        XCTAssertTrue(settings.reveal.onHover)
+        XCTAssertEqual(settings.reveal.hoverDelay, 0.5)
+        XCTAssertEqual(settings.reveal.hoverModifier, .none)
+        XCTAssertTrue(settings.reveal.onDrag)
+
+        var changed = MenoSettings()
+        changed.reveal.hoverModifier = .option
+        changed.reveal.onDrag = false
+        let decoded = try MenoSettings.decode(from: changed.encoded())
+        XCTAssertEqual(decoded.reveal.hoverModifier, .option)
+        XCTAssertFalse(decoded.reveal.onDrag)
+    }
+
+    func testHoverModifier() {
+        XCTAssertTrue(HoverModifier.none.isHeld(in: []))
+        XCTAssertFalse(HoverModifier.option.isHeld(in: []))
+        XCTAssertTrue(HoverModifier.option.isHeld(in: [.option, .shift]))
+        XCTAssertFalse(HoverModifier.command.isHeld(in: [.option]))
+        XCTAssertTrue(HoverModifier.control.isHeld(in: .control))
+    }
+
     func testGlobalShortcutValidity() {
         XCTAssertNil(KeyCombo(keyCode: 0x00, modifiers: .command).problem(osMajorVersion: 26))
         XCTAssertEqual(KeyCombo(keyCode: 0x00, modifiers: []).problem(osMajorVersion: 26), .needsModifier)

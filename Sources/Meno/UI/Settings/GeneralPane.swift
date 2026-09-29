@@ -44,7 +44,15 @@ struct GeneralPane: View {
                 ToggleRow("Hover over an empty part of the menu bar", isOn: $model.settings.reveal.onHover)
                 if model.settings.reveal.onHover {
                     SliderRow("Hover delay", value: $model.settings.reveal.hoverDelay, in: 0...1.5, step: 0.05, format: Formatters.seconds)
+                    SettingRow("Key for hovering", subtitle: "Passing over the menu bar without it shows nothing.") {
+                        EnumPicker(selection: $model.settings.reveal.hoverModifier, title: \.title, width: 180)
+                    }
                 }
+                ToggleRow(
+                    "Drag a file onto the menu bar",
+                    subtitle: "Hidden items appear, so the file can be dropped on one of them.",
+                    isOn: $model.settings.reveal.onDrag
+                )
                 ToggleRow(
                     "Scroll or swipe over the menu bar",
                     subtitle: "Swipe down to show, swipe up to hide.",

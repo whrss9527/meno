@@ -127,6 +127,8 @@
 "Dot" = "圆点";
 "Dots" = "圆点";
 "Download" = "下载";
+"Drag a file onto the menu bar" = "把文件拖到菜单栏上";
+"Dragging onto the menu bar" = "拖到菜单栏";
 "Drop items here" = "拖到这里";
 "Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items by dragging them onto a group, or with Group in their menu. Hold ⌘ and drag a group's icon to move it." = "每个分组在菜单栏里都有自己的图标，点按即可在托盘中显示组内的项目。把项目拖到分组上，或在项目菜单的“分组”里加入；按住 ⌘ 拖移分组图标可以调整它的位置。";
 "Edit Groups…" = "编辑分组…";
@@ -160,6 +162,7 @@
 "Hidden" = "隐藏";
 "Hidden and Stash" = "隐藏与暗格";
 "Hidden items appear for a moment when something happens." = "隐藏的项目有变化时会短暂出现。";
+"Hidden items appear, so the file can be dropped on one of them." = "隐藏的项目会显示出来，方便把文件放到其中一个项目上。";
 "Hidden items cannot be shown" = "隐藏的项目无法显示";
 "Hidden section divider" = "隐藏分区分隔符";
 "Hide" = "隐藏";
@@ -173,8 +176,11 @@
 "Hiding again" = "重新隐藏";
 "Hiding engine" = "隐藏引擎";
 "Highlight padding" = "高亮边距";
+"Hold ⌃ Control" = "按住 ⌃ Control";
 "Hold ⌘ and drag icons across the dividers, or use Meno's Layout pane." = "按住 ⌘ 把图标拖过分隔符，或使用 Meno 的“布局”面板。";
 "Hold ⌘ and drag Meno's dividers to the left of the Meno icon." = "请按住 ⌘，把 Meno 的分隔符拖到 Meno 图标的左侧。";
+"Hold ⌘ Command" = "按住 ⌘ Command";
+"Hold ⌥ Option" = "按住 ⌥ Option";
 "Hotkey" = "快捷键";
 "Hotkeys" = "快捷键";
 "Hover" = "悬停";
@@ -203,6 +209,7 @@
 "keep %@ visible" = "让 %@ 保持显示";
 "Keep an item visible" = "让某个项目保持显示";
 "Keep Visible" = "保持显示";
+"Key for hovering" = "悬停时需按住的键";
 "Keyboard shortcuts that work in every app." = "在任何 App 中都可用的键盘快捷键。";
 "Kind" = "类型";
 "Label" = "标签";
@@ -272,6 +279,7 @@
 "no external display is connected" = "未连接外接显示器";
 "No groups yet." = "还没有分组。";
 "No item shortcuts yet." = "还没有项目快捷键。";
+"No key needed" = "无需按键";
 "No matching items" = "没有匹配的项目";
 "No rules yet. Presets are a good way to begin." = "还没有规则。可以从预设开始。";
 "No Scenes Yet" = "还没有场景";
@@ -301,6 +309,7 @@
 "Optional. Shows the real icons of hidden items on macOS 14 to 26." = "可选。在 macOS 14 至 26 上显示隐藏项目的真实图标。";
 "Or drag it onto a section, or onto another item. A line shows on which side it will land." = "也可以直接拖：拖到某个分区，或拖到另一个项目上，竖线标出它会落在哪一边。";
 "Other colors in Dark Mode" = "深色模式使用其他颜色";
+"Passing over the menu bar without it shows nothing." = "不按住这个键时，指针经过菜单栏不会显示任何项目。";
 "Permissions" = "权限";
 "Please leave the mouse alone for a moment." = "请暂时不要移动鼠标。";
 "Pointer" = "指针";
