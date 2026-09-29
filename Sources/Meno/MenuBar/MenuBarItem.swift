@@ -1,5 +1,5 @@
 import AppKit
-import ApplicationServices
+@preconcurrency import ApplicationServices
 import MenoCore
 
 /// A menu bar item as Meno sees it right now.

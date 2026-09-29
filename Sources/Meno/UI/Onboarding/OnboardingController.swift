@@ -59,5 +59,8 @@ final class OnboardingController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         model.completeOnboarding()
+        if !model.settingsWindow.isVisible {
+            NSApp.hide(nil)
+        }
     }
 }

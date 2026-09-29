@@ -1,5 +1,5 @@
 import AppKit
-import ApplicationServices
+@preconcurrency import ApplicationServices
 import CoreGraphics
 
 /// Tracks the privacy permissions Meno uses.

@@ -319,6 +319,13 @@ final class RevealCoordinator: ObservableObject {
             previousApp = nil
         }
         guard visibility != .collapsed, holds == 0, model.settings.reveal.rehideOnFocusChange else { return }
+        // An item that opens a window or popover may activate its app; keep
+        // the items in place until that is dismissed.
+        let height = model.statusBar.screen.map { ScreenGeometry.menuBarHeight(on: $0) } ?? 24
+        if WindowCapture.anyMenuOpen() || WindowCapture.hasOpenPopup(ownedBy: pid, menuBarHeight: height) {
+            scheduleRehide()
+            return
+        }
         collapse(trigger: .focus)
     }
 

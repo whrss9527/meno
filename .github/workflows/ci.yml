@@ -24,7 +24,7 @@ jobs:
           - name: "15 / Xcode 16"
             runner: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 

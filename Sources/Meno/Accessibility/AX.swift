@@ -1,4 +1,4 @@
-import ApplicationServices
+@preconcurrency import ApplicationServices
 import AppKit
 
 /// Thin helpers around the C Accessibility API.

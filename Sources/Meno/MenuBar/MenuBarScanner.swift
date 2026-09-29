@@ -1,5 +1,5 @@
 import AppKit
-import ApplicationServices
+@preconcurrency import ApplicationServices
 
 /// A running app whose menu bar items should be read.
 struct ScanTarget: Sendable {

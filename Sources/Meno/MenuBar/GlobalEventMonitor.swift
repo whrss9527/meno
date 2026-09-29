@@ -31,14 +31,15 @@ final class GlobalEventMonitor {
     }
 }
 
-/// Observes events sent to Meno's own windows.
+/// Observes events sent to Meno's own windows. The handler returns `true`
+/// to consume an event.
 @MainActor
 final class LocalEventMonitor {
     private let mask: NSEvent.EventTypeMask
-    private let handler: (NSEvent) -> NSEvent?
+    private let handler: (NSEvent) -> Bool
     private var token: Any?
 
-    init(mask: NSEvent.EventTypeMask, handler: @escaping (NSEvent) -> NSEvent?) {
+    init(mask: NSEvent.EventTypeMask, handler: @escaping (NSEvent) -> Bool) {
         self.mask = mask
         self.handler = handler
     }
@@ -46,10 +47,10 @@ final class LocalEventMonitor {
     func start() {
         guard token == nil else { return }
         token = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
-            MainActor.assumeIsolated {
-                guard let self else { return event }
-                return self.handler(event)
+            let consumed = MainActor.assumeIsolated {
+                self?.handler(event) ?? false
             }
+            return consumed ? nil : event
         }
     }
 

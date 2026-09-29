@@ -69,6 +69,7 @@ final class SettingsWindowController: NSObject, ObservableObject, NSWindowDelega
     @Published var pane: SettingsPane = .general
 
     private var window: NSWindow?
+    private var previousApp: NSRunningApplication?
 
     init(model: AppModel) {
         self.model = model
@@ -84,6 +85,9 @@ final class SettingsWindowController: NSObject, ObservableObject, NSWindowDelega
             self.pane = pane
         }
         let window = self.window ?? makeWindow()
+        if !NSApp.isActive, let front = NSWorkspace.shared.frontmostApplication, front.processIdentifier != AppInfo.ownPID {
+            previousApp = front
+        }
         NSApp.activate()
         window.makeKeyAndOrderFront(nil)
         Task {
@@ -120,5 +124,9 @@ final class SettingsWindowController: NSObject, ObservableObject, NSWindowDelega
 
     func windowWillClose(_ notification: Notification) {
         model.reveal.scheduleRehide()
+        guard !model.onboarding.isVisible, let previousApp, !previousApp.isTerminated else { return }
+        self.previousApp = nil
+        NSApp.yieldActivation(to: previousApp)
+        _ = previousApp.activate(options: [])
     }
 }

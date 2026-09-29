@@ -21,9 +21,9 @@ final class ShelfController: ObservableObject {
         self?.clickedOutside()
     }
     private lazy var keyMonitor = LocalEventMonitor(mask: [.keyDown]) { [weak self] event in
-        guard let self, self.isVisible, event.keyCode == 0x35 else { return event }
+        guard let self, self.isVisible, event.keyCode == 0x35 else { return false }
         self.hide()
-        return nil
+        return true
     }
 
     init(model: AppModel) {

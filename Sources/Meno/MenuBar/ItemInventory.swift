@@ -117,6 +117,7 @@ final class ItemInventory: ObservableObject {
             items = built
         }
         lastRefresh = Date()
+        model.statusBar.ensureDividerOrder()
         model.statusBar.refreshAppearance()
         detectNewArrivals()
         model.images.refresh(for: items, captureAllowed: model.permissions.screenRecording)

@@ -51,7 +51,7 @@ struct ShortcutRecorder: View {
         model.hotkeys.unregisterAll()
         let monitor = LocalEventMonitor(mask: [.keyDown]) { event in
             handle(event)
-            return nil
+            return true
         }
         monitor.start()
         self.monitor = monitor

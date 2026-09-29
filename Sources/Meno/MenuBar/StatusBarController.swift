@@ -40,13 +40,15 @@ final class StatusBarController: NSObject {
     unowned let model: AppModel
 
     private(set) var toggle: NSStatusItem?
-    private(set) var hiddenDivider: NSStatusItem?
-    private(set) var stashDivider: NSStatusItem?
+    var hiddenDivider: NSStatusItem?
+    var stashDivider: NSStatusItem?
     private var spacers: [SpacerGroup: [NSStatusItem]] = [:]
     private(set) var state = BarState()
     private var applyTask: Task<Void, Never>?
     private var zenGlyphView: NSImageView?
     private var dividersForcedVisible = false
+    private var orderRepairs = 0
+    private var orderHintShown = false
 
     init(model: AppModel) {
         self.model = model
@@ -94,6 +96,52 @@ final class StatusBarController: NSObject {
         toggle = nil
         hiddenDivider = nil
         stashDivider = nil
+    }
+
+    /// Makes sure the dividers sit left of the Meno icon, and the Stash
+    /// divider left of the Hidden divider. Otherwise collapsing would push
+    /// the Meno icon itself out of the menu bar.
+    func ensureDividerOrder() {
+        guard let toggle, let toggleFrame, let hiddenFrame = hiddenDividerFrame else { return }
+        var repaired = false
+        if hiddenFrame.maxX > toggleFrame.maxX {
+            repaired = reseat(\.hiddenDivider, name: Name.hiddenDivider, leftOf: Name.toggle, item: toggle)
+        } else if let hiddenDivider, let stashFrame = stashDividerFrame, stashFrame.maxX > hiddenFrame.maxX {
+            repaired = reseat(\.stashDivider, name: Name.stashDivider, leftOf: Name.hiddenDivider, item: hiddenDivider)
+        } else {
+            return
+        }
+        if repaired {
+            apply(state)
+        } else if !orderHintShown {
+            orderHintShown = true
+            model.toasts.show(
+                String(localized: "Hold ⌘ and drag Meno's dividers to the left of the Meno icon."),
+                symbol: "exclamationmark.triangle.fill",
+                duration: 8
+            )
+        }
+    }
+
+    /// Recreates a divider right next to (left of) another item, using the
+    /// position macOS stored for that item.
+    private func reseat(
+        _ keyPath: ReferenceWritableKeyPath<StatusBarController, NSStatusItem?>,
+        name: String,
+        leftOf reference: String,
+        item: NSStatusItem
+    ) -> Bool {
+        guard orderRepairs < 2, let base = Self.preferredPosition(of: reference) else { return false }
+        orderRepairs += 1
+        Log.menuBar.info("Moving \(name, privacy: .public) back next to \(reference, privacy: .public)")
+        if let old = self[keyPath: keyPath] {
+            NSStatusBar.system.removeStatusItem(old)
+        }
+        let width = Double(item.button?.window?.frame.width ?? 20)
+        UserDefaults.standard.set(base + max(width / 2, 4), forKey: Self.positionKey(name))
+        let replacement = makeItem(name: name, action: #selector(dividerClicked(_:)))
+        self[keyPath: keyPath] = replacement
+        return true
     }
 
     private func makeItem(name: String, action: Selector) -> NSStatusItem {

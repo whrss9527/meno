@@ -21,8 +21,7 @@ final class QuickOpenController: ObservableObject {
     private var hostingView: NSHostingView<QuickOpenView>?
     private var subscriptions: Set<AnyCancellable> = []
     private lazy var keyMonitor = LocalEventMonitor(mask: [.keyDown]) { [weak self] event in
-        guard let self else { return event }
-        return self.handleKey(event)
+        self?.handleKey(event) ?? false
     }
     private lazy var outsideClickMonitor = GlobalEventMonitor(mask: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
         self?.hide()
@@ -124,38 +123,34 @@ final class QuickOpenController: ObservableObject {
         }
     }
 
-    private func handleKey(_ event: NSEvent) -> NSEvent? {
-        guard isVisible, let panel, panel.isKeyWindow else { return event }
+    /// Handles navigation keys. Returns `true` when the key was used.
+    private func handleKey(_ event: NSEvent) -> Bool {
+        guard isVisible, let panel, panel.isKeyWindow else { return false }
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         switch event.keyCode {
         case 0x35: // escape
             hide()
-            return nil
         case 0x7D: // down
             moveSelection(by: 1)
-            return nil
         case 0x7E: // up
             moveSelection(by: -1)
-            return nil
         case 0x30: // tab
             moveSelection(by: flags.contains(.shift) ? -1 : 1)
-            return nil
         case 0x24, 0x4C: // return, enter
             if flags.contains(.option) {
                 revealSelection()
             } else {
                 activateSelection(secondary: flags.contains(.command))
             }
-            return nil
         default:
-            if flags.contains(.command), let characters = event.charactersIgnoringModifiers,
-               let digit = Int(characters), (1...9).contains(digit), results.count >= digit {
-                selection = digit - 1
-                activateSelection(secondary: false)
-                return nil
+            guard flags.contains(.command), let characters = event.charactersIgnoringModifiers,
+                  let digit = Int(characters), (1...9).contains(digit), results.count >= digit else {
+                return false
             }
-            return event
+            selection = digit - 1
+            activateSelection(secondary: false)
         }
+        return true
     }
 
     // MARK: - Panel
