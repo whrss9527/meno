@@ -175,6 +175,8 @@ private struct ConditionEditor: View {
             AppPicker(bundleID: Binding(get: { id }, set: { condition = .appFrontmost(bundleID: $0) }))
         case .appRunning(let id):
             AppPicker(bundleID: Binding(get: { id }, set: { condition = .appRunning(bundleID: $0) }))
+        case .displayConnected(let name):
+            DisplayPicker(name: Binding(get: { name }, set: { condition = .displayConnected(name: $0) }))
         case .batteryBelow(let percent):
             Stepper(value: Binding(get: { percent }, set: { condition = .batteryBelow(percent: $0) }), in: 5...95, step: 5) {
                 Text(verbatim: "\(percent)%")

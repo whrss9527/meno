@@ -18,6 +18,7 @@ enum SystemSignals {
             batteryLevel: power.level,
             isLowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
             externalDisplayCount: externalDisplays,
+            displayNames: Set(NSScreen.screens.map(\.localizedName)),
             minuteOfDay: (now.hour ?? 0) * 60 + (now.minute ?? 0),
             isOnline: isOnline,
             microphoneInUse: capture.microphone,

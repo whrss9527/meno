@@ -158,6 +158,8 @@ enum RuleDescriber {
             return String(localized: "an external display is connected")
         case .noExternalDisplay:
             return String(localized: "no external display is connected")
+        case .displayConnected(let name):
+            return String(localized: "“\(name)” is connected")
         case .timeWindow(let start, let end):
             return String(localized: "between \(Formatters.time(minuteOfDay: start)) and \(Formatters.time(minuteOfDay: end))")
         case .offline:

@@ -19,6 +19,7 @@
 "A scene remembers the section and order of every movable item. Applying it moves items back with ⌘-drag. Items of apps that are not running are skipped." = "场景会记住每个可移动项目所在的分区和顺序。应用场景时会通过 ⌘ 拖移把项目放回原位，未运行的 App 会被跳过。";
 "A scene remembers which items are visible, hidden or stashed." = "场景会记住哪些项目常显、隐藏或放在暗格中。";
 "A second hidden section for items you rarely need. They never appear in the menu bar, only in the Shelf, Quick Open or with ⌥-click." = "为很少用到的项目准备的第二个隐藏分区。它们从不出现在菜单栏中，只能通过托盘、快速打开或按住 ⌥ 点按来访问。";
+"A specific display is connected" = "连接了指定的显示器";
 "About" = "关于";
 "About Meno" = "关于 Meno";
 "Accessibility" = "辅助功能";
@@ -75,6 +76,7 @@
 "Chevron" = "箭头";
 "Choose Another App…" = "选取其他 App…";
 "Choose App" = "选取 App";
+"Choose Display" = "选择显示器";
 "Choose Item" = "选取项目";
 "Choose Scene" = "选取场景";
 "Choose Show When It Changes for a hidden item, and Meno shows it for a moment when its icon or text changes, for example when a sync fails. Icons are compared when Screen Recording is allowed." = "给隐藏的项目选择“变化时显示”，它的图标或文字变化时（比如同步失败），Meno 会把它显示一会儿。允许屏幕录制时还会比较图标。";
@@ -443,5 +445,6 @@
 "Zen is on. Click to leave Zen." = "禅模式已开启。点按以退出。";
 "Zen is on. Only system items remain." = "禅模式已开启，只保留系统项目。";
 "Zen while presenting with Keynote" = "用 Keynote 演示时开启禅模式";
+"“%@” is connected" = "已连接“%@”";
 "“%@” is not in the menu bar right now." = "“%@”现在不在菜单栏中。";
 "⌥-click it to include the Stash." = "按住 ⌥ 点按它可同时显示暗格。";

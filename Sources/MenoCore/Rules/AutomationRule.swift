@@ -9,6 +9,8 @@ public struct RuleContext: Equatable, Sendable {
     public var batteryLevel: Int?
     public var isLowPowerMode: Bool
     public var externalDisplayCount: Int
+    /// Names of the connected displays.
+    public var displayNames: Set<String>
     /// Minutes since local midnight.
     public var minuteOfDay: Int
     public var isOnline: Bool
@@ -24,6 +26,7 @@ public struct RuleContext: Equatable, Sendable {
         batteryLevel: Int? = nil,
         isLowPowerMode: Bool = false,
         externalDisplayCount: Int = 0,
+        displayNames: Set<String> = [],
         minuteOfDay: Int = 0,
         isOnline: Bool = true,
         microphoneInUse: Bool = false,
@@ -35,6 +38,7 @@ public struct RuleContext: Equatable, Sendable {
         self.batteryLevel = batteryLevel
         self.isLowPowerMode = isLowPowerMode
         self.externalDisplayCount = externalDisplayCount
+        self.displayNames = displayNames
         self.minuteOfDay = minuteOfDay
         self.isOnline = isOnline
         self.microphoneInUse = microphoneInUse
@@ -52,6 +56,8 @@ public enum RuleCondition: Codable, Hashable, Sendable {
     case lowPowerMode
     case externalDisplay
     case noExternalDisplay
+    /// A display with this name is connected, for example a monitor at the office.
+    case displayConnected(name: String)
     /// Between two times of day, given in minutes after midnight. The window
     /// wraps around midnight when `startMinute > endMinute`.
     case timeWindow(startMinute: Int, endMinute: Int)
@@ -78,6 +84,8 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             return context.externalDisplayCount > 0
         case .noExternalDisplay:
             return context.externalDisplayCount == 0
+        case .displayConnected(let name):
+            return !name.isEmpty && context.displayNames.contains(name)
         case .timeWindow(let start, let end):
             let minute = context.minuteOfDay
             if start == end { return true }
@@ -103,6 +111,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case .lowPowerMode: return .lowPowerMode
         case .externalDisplay: return .externalDisplay
         case .noExternalDisplay: return .noExternalDisplay
+        case .displayConnected: return .displayConnected
         case .timeWindow: return .timeWindow
         case .offline: return .offline
         case .microphoneInUse: return .microphoneInUse
@@ -119,6 +128,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case lowPowerMode
         case externalDisplay
         case noExternalDisplay
+        case displayConnected
         case timeWindow
         case offline
         case microphoneInUse
@@ -135,6 +145,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             case .lowPowerMode: return .lowPowerMode
             case .externalDisplay: return .externalDisplay
             case .noExternalDisplay: return .noExternalDisplay
+            case .displayConnected: return .displayConnected(name: "")
             case .timeWindow: return .timeWindow(startMinute: 9 * 60, endMinute: 18 * 60)
             case .offline: return .offline
             case .microphoneInUse: return .microphoneInUse

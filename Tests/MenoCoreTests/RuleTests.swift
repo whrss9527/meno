@@ -41,11 +41,19 @@ final class RuleTests: XCTestCase {
         }
     }
 
+    func testSpecificDisplay() {
+        let office = RuleCondition.displayConnected(name: "LG UltraFine")
+        XCTAssertTrue(office.isSatisfied(by: RuleContext(externalDisplayCount: 1, displayNames: ["Built-in Retina Display", "LG UltraFine"])))
+        XCTAssertFalse(office.isSatisfied(by: RuleContext(displayNames: ["Built-in Retina Display"])))
+        XCTAssertFalse(RuleCondition.displayConnected(name: "").isSatisfied(by: RuleContext(displayNames: [""])))
+    }
+
     func testNewConditionsSurviveSaving() throws {
         var settings = MenoSettings()
         settings.rules = [
             AutomationRule(name: "Calls", conditions: [.microphoneInUse, .cameraInUse], action: .zen),
             AutomationRule(name: "Saver", conditions: [.lowPowerMode], action: .collapse),
+            AutomationRule(name: "Office", conditions: [.displayConnected(name: "LG UltraFine")], action: .revealAll),
         ]
         let decoded = try MenoSettings.decode(from: settings.encoded())
         XCTAssertEqual(decoded.rules, settings.rules)

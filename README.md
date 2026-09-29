@@ -33,7 +33,7 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 
 ### Make it yours
 
-- **Rules:** "When a microphone is in use, turn on Zen." Conditions include the frontmost or running app, a microphone or camera in use, battery, power and Low Power Mode, external displays, the time of day and being offline. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically. Moves wait until you are not using the mouse and keyboard.
+- **Rules:** "When a microphone is in use, turn on Zen." Conditions include the frontmost or running app, a microphone or camera in use, battery, power and Low Power Mode, external or specific displays, the time of day and being offline. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically. Moves wait until you are not using the mouse and keyboard.
 - **Scenes:** save arrangements such as *Work*, *Home* or *Presenting* and switch between them from the menu or with a rule.
 - **Zen:** one shortcut clears every app icon, leaving only system status. Great for screenshots, recordings and talks.
 - **Item shortcuts:** open a specific item (Wi-Fi, a VPN, a timer…) from anywhere, even while it is hidden.

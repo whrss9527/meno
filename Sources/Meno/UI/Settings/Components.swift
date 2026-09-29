@@ -345,6 +345,22 @@ struct AppPicker: View {
     }
 }
 
+/// A menu that picks one of the connected displays by name.
+struct DisplayPicker: View {
+    @Binding var name: String
+
+    var body: some View {
+        Menu {
+            ForEach(NSScreen.screens.map(\.localizedName), id: \.self) { display in
+                Button(display) { name = display }
+            }
+        } label: {
+            Text(verbatim: name.isEmpty ? String(localized: "Choose Display") : name)
+        }
+        .frame(width: 200)
+    }
+}
+
 /// A menu that picks a menu bar item.
 struct ItemPicker: View {
     @Binding var selection: MenuItemKey

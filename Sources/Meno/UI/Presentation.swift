@@ -243,6 +243,7 @@ extension RuleCondition.Kind {
         case .lowPowerMode: return String(localized: "Low Power Mode is on")
         case .externalDisplay: return String(localized: "An external display is connected")
         case .noExternalDisplay: return String(localized: "No external display")
+        case .displayConnected: return String(localized: "A specific display is connected")
         case .timeWindow: return String(localized: "Time of day")
         case .offline: return String(localized: "The Mac is offline")
         case .microphoneInUse: return String(localized: "A microphone is in use")
@@ -260,6 +261,7 @@ extension RuleCondition.Kind {
         case .lowPowerMode: return "tortoise"
         case .externalDisplay: return "display.2"
         case .noExternalDisplay: return "laptopcomputer"
+        case .displayConnected: return "display"
         case .timeWindow: return "clock"
         case .offline: return "wifi.slash"
         case .microphoneInUse: return "mic"
