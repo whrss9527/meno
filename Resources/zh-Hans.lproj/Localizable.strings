@@ -260,6 +260,7 @@
 "Manage Scenes…" = "管理场景…";
 "Markers" = "标记";
 "Markers are small items you add to the menu bar to group other items: some space, a thin line, a dot, a symbol or a short label such as “Work”." = "标记是你添加到菜单栏中、用来给其他项目分组的小元素：一段空白、一条细线、一个圆点、一个符号，或像“工作”这样的简短标签。";
+"Meno %@ did not start on this Mac, so this version was put back." = "Meno %@ 没能在这台 Mac 上启动，已换回当前这个版本。";
 "Meno %@ is available." = "Meno %@ 已发布。";
 "Meno %@ is installed. Quit Meno and open it again to use it." = "Meno %@ 已安装。退出 Meno 再重新打开即可使用。";
 "Meno adds a few small dividers to your menu bar. Everything left of a divider belongs to that section." = "Meno 会在菜单栏中添加几个小小的分隔符。分隔符左侧的一切都属于对应的分区。";

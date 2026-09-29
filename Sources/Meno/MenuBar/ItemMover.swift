@@ -180,8 +180,8 @@ final class ItemMover: ObservableObject {
             if isUndo, !undoStack.isEmpty {
                 undoStack.removeLast()
             }
-            if automatic, !restoring {
-                keepUndoInStep(with: request)
+            if automatic {
+                keepUndoInStep(with: request, restoring: restoring)
             }
             if !restoring {
                 // Items that were placed now are no longer shown for a while.
@@ -221,11 +221,18 @@ final class ItemMover: ObservableObject {
 
     /// Keeps the undo snapshots in step with moves the person did not
     /// make, so undoing one of their changes does not undo those as well.
-    private func keepUndoInStep(with request: Request) {
+    /// Putting an item back only changes snapshots taken while it was out
+    /// of place.
+    private func keepUndoInStep(with request: Request, restoring: Bool = false) {
         switch request {
         case .moves(let moves):
-            for case .section(let key, let section, _) in moves {
-                undoStack = undoStack.map { $0.moving(key, to: section) }
+            for case .section(let key, let section, let from) in moves {
+                undoStack = undoStack.map { snapshot in
+                    if restoring, let from, snapshot.section(of: key) != from {
+                        return snapshot
+                    }
+                    return snapshot.moving(key, to: section)
+                }
             }
         case .layout:
             // A whole new arrangement makes the snapshots meaningless.

@@ -147,18 +147,29 @@ enum UpdateInstaller {
         try? FileManager.default.removeItem(at: prepared.folder)
     }
 
-    /// Deletes what an update left behind, once the new copy started: the
-    /// download and the previous copy.
-    static func removeLeftovers() {
+    /// Deletes what an update left behind once Meno has run for a few
+    /// seconds: the download and the previous copy. Until then the previous
+    /// copy is put back if this one quits. Returns the version of a new copy
+    /// that did not run and was replaced by this one again, if any.
+    static func removeLeftovers() -> String? {
         let defaults = UserDefaults.standard
-        guard let path = defaults.string(forKey: leftoversKey) else { return }
+        guard let path = defaults.string(forKey: leftoversKey) else { return nil }
         defaults.removeObject(forKey: leftoversKey)
         let folder = URL(fileURLWithPath: path, isDirectory: true)
+        let fileManager = FileManager.default
         // Only a folder made for an update, never one Meno runs from.
-        guard FileManager.default.fileExists(atPath: folder.appendingPathComponent("Meno.zip").path),
+        guard fileManager.fileExists(atPath: folder.appendingPathComponent("Meno.zip").path),
               !Bundle.main.bundlePath.hasPrefix(folder.path)
-        else { return }
-        try? FileManager.default.removeItem(at: folder)
+        else { return nil }
+        let rejected = [
+            folder.appendingPathComponent("Unpacked/Meno.app.rejected"),
+            folder.appendingPathComponent("Previous.app.rejected"),
+        ].first { fileManager.fileExists(atPath: $0.path) }
+        let version = rejected.flatMap {
+            NSDictionary(contentsOf: $0.appendingPathComponent("Contents/Info.plist"))?["CFBundleShortVersionString"] as? String
+        }
+        try? fileManager.removeItem(at: folder)
+        return version
     }
 
     private static func download(_ asset: UpdateRelease.Asset, to destination: URL) async throws {

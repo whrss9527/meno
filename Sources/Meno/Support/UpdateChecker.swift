@@ -127,11 +127,16 @@ final class UpdateChecker: ObservableObject {
             // What the check found may be a day old: files of a release can
             // be replaced, and a newer one may be out.
             let latest = try await Self.latestRelease()
-            if let latestVersion = latest.version, let current = AppVersion(AppInfo.version), current < latestVersion {
-                release = latest
-                version = latestVersion
-                available = latest
+            guard let latestVersion = latest.version, let current = AppVersion(AppInfo.version), current < latestVersion else {
+                // The release was withdrawn or is no longer the latest.
+                available = nil
+                phase = .idle
+                model.toasts.show(String(localized: "Meno is up to date."), symbol: "checkmark.circle.fill")
+                return
             }
+            release = latest
+            version = latestVersion
+            available = latest
             let ready = try await UpdateInstaller.prepare(release, repository: Self.repository)
             prepared = ready
             phase = .installing
