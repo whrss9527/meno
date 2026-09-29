@@ -44,6 +44,7 @@ final class AppModel: ObservableObject {
     lazy var updates = UpdateChecker(model: self)
     lazy var markers = MarkerController(model: self)
     lazy var spacing = SpacingController(model: self)
+    lazy var temporary = TemporaryPlacements(model: self)
     lazy var tint = TintOverlayController(model: self)
     lazy var settingsWindow = SettingsWindowController(model: self)
     lazy var onboarding = OnboardingController(model: self)
@@ -97,6 +98,7 @@ final class AppModel: ObservableObject {
             // Rules start once the menu bar is known, so that what they
             // change can be undone.
             automation.start()
+            temporary.schedule()
         }
         if !settings.onboardingCompleted {
             onboarding.show()

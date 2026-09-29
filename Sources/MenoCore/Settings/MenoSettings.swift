@@ -24,6 +24,8 @@ public struct MenoSettings: Codable, Equatable, Sendable {
     public var revealOnChange: [String] = []
     @LossyArray public var markers: [MenuMarker] = []
     @LossyArray public var groups: [ItemGroup] = []
+    /// Items shown in the menu bar for a while.
+    @LossyArray public var temporaryPlacements: [TemporaryPlacement] = []
     public var scenes: [LayoutScene] = []
     @LossyArray public var rules: [AutomationRule] = []
     /// Stops all rules for a while without turning each one off.

@@ -23,15 +23,19 @@ struct LayoutChip: View {
     let setShowsOnChange: (Bool) -> Void
     let copyLink: () -> Void
     let addHotkey: () -> Void
-    /// All groups, and the one the item is in.
     /// The symbol picked for the item, if any.
     let symbol: String?
     let setSymbol: (String?) -> Void
+    /// All groups, and the one the item is in.
     let groups: [ItemGroup]
     let groupID: UUID?
     /// Puts the item in a group, or takes it out with `nil`.
     let setGroup: (UUID?) -> Void
     let newGroup: () -> Void
+    /// When the item goes back, while it is shown for a while.
+    let temporaryUntil: Date?
+    let showForAWhile: (TimeInterval) -> Void
+    let putBack: () -> Void
 
     @State private var dropEdge: HorizontalEdge?
     @State private var isHovering = false
@@ -50,6 +54,12 @@ struct LayoutChip: View {
                     .font(.system(size: 8))
                     .foregroundStyle(.secondary)
                     .help(Text("Shown for a moment when it changes"))
+            }
+            if let temporaryUntil {
+                Image(systemName: "timer")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+                    .help(Text("Goes back at \(temporaryUntil.formatted(date: .omitted, time: .shortened))"))
             }
             if let group = groups.first(where: { $0.id == groupID }) {
                 Image(systemName: group.symbol)
@@ -140,6 +150,18 @@ struct LayoutChip: View {
         // group.
         if item.kind == .marker {
             return result
+        }
+        if item.section != .visible {
+            result.append(MoveCommand(
+                title: String(localized: "Show for a While"),
+                symbol: "timer",
+                startsGroup: true,
+                children: TemporaryPlacement.durations.map { duration in
+                    MoveCommand(title: Formatters.duration(duration), symbol: "clock") { showForAWhile(duration) }
+                }
+            ))
+        } else if temporaryUntil != nil {
+            result.append(MoveCommand(title: String(localized: "Put Back Now"), symbol: "arrow.uturn.backward", startsGroup: true, action: putBack))
         }
         if item.section != .visible {
             result.append(MoveCommand(

@@ -179,6 +179,14 @@ private struct ShelfItemButton: View {
                     shelf.hide()
                     shelf.model.move(item.key, to: .visible)
                 }
+                Menu("Show for a While") {
+                    ForEach(TemporaryPlacement.durations, id: \.self) { duration in
+                        Button(Formatters.duration(duration)) {
+                            shelf.hide()
+                            shelf.model.temporary.show(item.key, for: duration)
+                        }
+                    }
+                }
             }
             if item.section != .hidden {
                 Button("Move to Hidden") {

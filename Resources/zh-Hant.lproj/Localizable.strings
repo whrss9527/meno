@@ -156,6 +156,7 @@
 "General" = "一般";
 "Glass" = "玻璃";
 "Global shortcuts" = "全域快速鍵";
+"Goes back at %@" = "%@ 放回原處";
 "Good to know" = "小提示";
 "Gradient" = "漸層";
 "Gradient end color" = "漸層終點顏色";
@@ -328,6 +329,7 @@
 "Preview Shelf" = "預覽托盤";
 "Privacy" = "隱私";
 "Private usage stats with suggestions for a tidier bar." = "私密的使用統計，並給出整理選單列的建議。";
+"Put Back Now" = "立即放回";
 "Put it in the Stash" = "放入暗格";
 "Put items that belong together into a group with an icon of its own, from an item's menu in Settings › Layout." = "在「設定 › 佈局」的項目選單裡，可以把相關的項目放進一個擁有獨立圖示的群組。";
 "Puts the items back where they were before the last change. Undo again to go further back." = "把項目放回上一次更改之前的位置。再次還原可以繼續往前退。";
@@ -408,6 +410,7 @@
 "Show Everything" = "顯示全部";
 "Show everything" = "顯示全部";
 "show everything" = "顯示全部";
+"Show for a While" = "暫時顯示";
 "Show Group “%@”" = "顯示群組「%@」";
 "Show Hidden Items" = "顯示隱藏項目";
 "Show hidden items" = "顯示隱藏項目";

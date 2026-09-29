@@ -356,4 +356,12 @@ enum Formatters {
     static func relative(_ date: Date) -> String {
         date.formatted(.relative(presentation: .named))
     }
+
+    /// For example "15 minutes" or "1 hour".
+    static func duration(_ seconds: TimeInterval) -> String {
+        let formatter = DateComponentsFormatter()
+        formatter.unitsStyle = .full
+        formatter.allowedUnits = [.hour, .minute]
+        return formatter.string(from: seconds) ?? "\(Int(seconds / 60))"
+    }
 }

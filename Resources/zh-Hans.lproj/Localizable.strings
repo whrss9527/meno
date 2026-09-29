@@ -156,6 +156,7 @@
 "General" = "通用";
 "Glass" = "玻璃";
 "Global shortcuts" = "全局快捷键";
+"Goes back at %@" = "%@ 放回原处";
 "Good to know" = "小贴士";
 "Gradient" = "渐变";
 "Gradient end color" = "渐变终点颜色";
@@ -328,6 +329,7 @@
 "Preview Shelf" = "预览托盘";
 "Privacy" = "隐私";
 "Private usage stats with suggestions for a tidier bar." = "私密的使用统计，并给出整理菜单栏的建议。";
+"Put Back Now" = "立即放回";
 "Put it in the Stash" = "放入暗格";
 "Put items that belong together into a group with an icon of its own, from an item's menu in Settings › Layout." = "在“设置 › 布局”的项目菜单里，可以把相关的项目放进一个拥有独立图标的分组。";
 "Puts the items back where they were before the last change. Undo again to go further back." = "把项目放回上一次更改之前的位置。再次撤销可以继续往前退。";
@@ -408,6 +410,7 @@
 "Show Everything" = "显示全部";
 "Show everything" = "显示全部";
 "show everything" = "显示全部";
+"Show for a While" = "暂时显示";
 "Show Group “%@”" = "显示分组“%@”";
 "Show Hidden Items" = "显示隐藏项目";
 "Show hidden items" = "显示隐藏项目";

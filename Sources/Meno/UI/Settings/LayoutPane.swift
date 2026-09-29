@@ -309,7 +309,10 @@ struct LayoutPane: View {
                                 groupName = ""
                                 groupDraftKey = item.key
                                 isNamingGroup = true
-                            }
+                            },
+                            temporaryUntil: model.temporary.returnDate(of: item.key),
+                            showForAWhile: { model.temporary.show(item.key, for: $0) },
+                            putBack: { model.temporary.putBack(item.key) }
                         )
                         .opacity(matchesFilter(item) ? 1 : 0.25)
                         // VoiceOver skips the items the search leaves out.
