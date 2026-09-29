@@ -126,6 +126,7 @@
 "Hiding engine" = "隐藏引擎";
 "Highlight padding" = "高亮边距";
 "Hold ⌘ and drag icons across the dividers, or use Meno's Layout pane." = "按住 ⌘ 把图标拖过分隔符，或使用 Meno 的“布局”面板。";
+"Hold ⌘ and drag Meno's dividers to the left of the Meno icon." = "请按住 ⌘，把 Meno 的分隔符拖到 Meno 图标的左侧。";
 "Hotkey" = "快捷键";
 "Hotkeys" = "快捷键";
 "Hover" = "悬停";
