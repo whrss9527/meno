@@ -20,9 +20,9 @@ public struct MenoSettings: Codable, Equatable, Sendable {
     /// Keys of hidden items that are shown for a moment when their icon or
     /// text changes.
     public var revealOnChange: [String] = []
-    public var markers: [MenuMarker] = []
+    @LossyArray public var markers: [MenuMarker] = []
     public var scenes: [LayoutScene] = []
-    public var rules: [AutomationRule] = []
+    @LossyArray public var rules: [AutomationRule] = []
     public var onboardingCompleted = false
 
     public init() {}

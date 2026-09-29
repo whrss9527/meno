@@ -36,6 +36,35 @@ final class SettingsTests: XCTestCase {
         XCTAssertTrue(settings.canRevealWithoutIcon)
     }
 
+    func testRulesFromNewerVersionsAreSkipped() throws {
+        var settings = MenoSettings()
+        settings.rules = [
+            AutomationRule(name: "Known", conditions: [.onBattery], action: .zen),
+            AutomationRule(name: "Also known", conditions: [.offline], action: .revealHidden),
+        ]
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: settings.encoded()) as? [String: Any])
+        var rules = try XCTUnwrap(object["rules"] as? [[String: Any]])
+        // A rule with a condition this version does not know.
+        var future = rules[0]
+        future["name"] = "Future"
+        future["conditions"] = [["someFutureCondition": [:] as [String: Any]]]
+        rules.insert(future, at: 1)
+        object["rules"] = rules
+        let data = try JSONSerialization.data(withJSONObject: object)
+
+        let decoded = try MenoSettings.decode(from: data)
+        XCTAssertEqual(decoded.rules.map(\.name), ["Known", "Also known"])
+        XCTAssertEqual(decoded.onboardingCompleted, settings.onboardingCompleted)
+    }
+
+    func testLossyArraysKeepTheirShape() throws {
+        var settings = MenoSettings()
+        settings.rules = [AutomationRule(name: "Known", conditions: [.onBattery], action: .zen)]
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: settings.encoded()) as? [String: Any])
+        XCTAssertEqual((object["rules"] as? [Any])?.count, 1)
+        XCTAssertEqual((object["markers"] as? [Any])?.count, 0)
+    }
+
     func testUnknownKeysAreIgnored() throws {
         let json = #"{"futureFeature": {"x": 1}, "shelf": {"iconSize": 22, "brandNew": true}}"#
         let settings = try MenoSettings.decode(from: Data(json.utf8))
