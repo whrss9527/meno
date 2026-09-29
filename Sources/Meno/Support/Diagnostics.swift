@@ -15,6 +15,18 @@ enum Diagnostics {
             "Accessibility: \(model.permissions.accessibility ? "granted" : "missing")"
                 + " · Screen Recording: \(model.permissions.screenRecording ? "granted" : "missing")",
         ]
+        let automation = model.automation
+        var rules = "Rules: \(model.settings.rules.count), \(automation.activeRuleIDs.count) active"
+            + " · Low Power Mode \(ProcessInfo.processInfo.isLowPowerModeEnabled ? "on" : "off")"
+        if automation.watchesCaptureActivity {
+            let capture = automation.capture
+            rules += " · microphone \(capture.microphone ? "in use" : "idle")"
+            if !capture.microphoneUsers.isEmpty {
+                rules += " (\(capture.microphoneUsers.joined(separator: ", ")))"
+            }
+            rules += " · camera \(capture.camera ? "in use" : "idle")"
+        }
+        lines.append(rules)
         for screen in NSScreen.screens {
             let frame = screen.frame
             let menuBarHeight = Int(frame.maxY - screen.visibleFrame.maxY)

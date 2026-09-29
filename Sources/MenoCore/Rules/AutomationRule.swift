@@ -7,27 +7,38 @@ public struct RuleContext: Equatable, Sendable {
     public var isOnBattery: Bool
     /// Battery charge in percent, or `nil` without a battery.
     public var batteryLevel: Int?
+    public var isLowPowerMode: Bool
     public var externalDisplayCount: Int
     /// Minutes since local midnight.
     public var minuteOfDay: Int
     public var isOnline: Bool
+    /// Whether any app records from a microphone.
+    public var microphoneInUse: Bool
+    /// Whether any app uses a camera.
+    public var cameraInUse: Bool
 
     public init(
         frontmostBundleID: String? = nil,
         runningBundleIDs: Set<String> = [],
         isOnBattery: Bool = false,
         batteryLevel: Int? = nil,
+        isLowPowerMode: Bool = false,
         externalDisplayCount: Int = 0,
         minuteOfDay: Int = 0,
-        isOnline: Bool = true
+        isOnline: Bool = true,
+        microphoneInUse: Bool = false,
+        cameraInUse: Bool = false
     ) {
         self.frontmostBundleID = frontmostBundleID
         self.runningBundleIDs = runningBundleIDs
         self.isOnBattery = isOnBattery
         self.batteryLevel = batteryLevel
+        self.isLowPowerMode = isLowPowerMode
         self.externalDisplayCount = externalDisplayCount
         self.minuteOfDay = minuteOfDay
         self.isOnline = isOnline
+        self.microphoneInUse = microphoneInUse
+        self.cameraInUse = cameraInUse
     }
 }
 
@@ -38,12 +49,15 @@ public enum RuleCondition: Codable, Hashable, Sendable {
     case onBattery
     case onPower
     case batteryBelow(percent: Int)
+    case lowPowerMode
     case externalDisplay
     case noExternalDisplay
     /// Between two times of day, given in minutes after midnight. The window
     /// wraps around midnight when `startMinute > endMinute`.
     case timeWindow(startMinute: Int, endMinute: Int)
     case offline
+    case microphoneInUse
+    case cameraInUse
 
     public func isSatisfied(by context: RuleContext) -> Bool {
         switch self {
@@ -58,6 +72,8 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case .batteryBelow(let percent):
             guard let level = context.batteryLevel else { return false }
             return level < percent
+        case .lowPowerMode:
+            return context.isLowPowerMode
         case .externalDisplay:
             return context.externalDisplayCount > 0
         case .noExternalDisplay:
@@ -69,6 +85,10 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             return minute >= start || minute < end
         case .offline:
             return !context.isOnline
+        case .microphoneInUse:
+            return context.microphoneInUse
+        case .cameraInUse:
+            return context.cameraInUse
         }
     }
 
@@ -80,10 +100,13 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case .onBattery: return .onBattery
         case .onPower: return .onPower
         case .batteryBelow: return .batteryBelow
+        case .lowPowerMode: return .lowPowerMode
         case .externalDisplay: return .externalDisplay
         case .noExternalDisplay: return .noExternalDisplay
         case .timeWindow: return .timeWindow
         case .offline: return .offline
+        case .microphoneInUse: return .microphoneInUse
+        case .cameraInUse: return .cameraInUse
         }
     }
 
@@ -93,10 +116,13 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case onBattery
         case onPower
         case batteryBelow
+        case lowPowerMode
         case externalDisplay
         case noExternalDisplay
         case timeWindow
         case offline
+        case microphoneInUse
+        case cameraInUse
 
         /// A reasonable starting value for a new condition of this kind.
         public var defaultCondition: RuleCondition {
@@ -106,10 +132,13 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             case .onBattery: return .onBattery
             case .onPower: return .onPower
             case .batteryBelow: return .batteryBelow(percent: 20)
+            case .lowPowerMode: return .lowPowerMode
             case .externalDisplay: return .externalDisplay
             case .noExternalDisplay: return .noExternalDisplay
             case .timeWindow: return .timeWindow(startMinute: 9 * 60, endMinute: 18 * 60)
             case .offline: return .offline
+            case .microphoneInUse: return .microphoneInUse
+            case .cameraInUse: return .cameraInUse
             }
         }
     }

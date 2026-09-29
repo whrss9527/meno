@@ -16,7 +16,7 @@ struct RulesPane: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            SettingsCard("Rules", symbol: "wand.and.stars", footnote: "Rules are checked when apps switch, displays change, power or network changes, and every 30 seconds.") {
+            SettingsCard("Rules", symbol: "wand.and.stars", footnote: "Rules are checked when apps switch, displays change, power or network changes, a microphone or camera starts or stops, and every 30 seconds.") {
                 HStack(spacing: 10) {
                     Button {
                         editing = EditorState(rule: AutomationRule(name: "", conditions: [.onBattery], action: .revealHidden), isNew: true)
@@ -152,6 +152,8 @@ enum RuleDescriber {
             return String(localized: "connected to power")
         case .batteryBelow(let percent):
             return String(localized: "battery below \(percent)%")
+        case .lowPowerMode:
+            return String(localized: "Low Power Mode is on")
         case .externalDisplay:
             return String(localized: "an external display is connected")
         case .noExternalDisplay:
@@ -160,6 +162,10 @@ enum RuleDescriber {
             return String(localized: "between \(Formatters.time(minuteOfDay: start)) and \(Formatters.time(minuteOfDay: end))")
         case .offline:
             return String(localized: "offline")
+        case .microphoneInUse:
+            return String(localized: "a microphone is in use")
+        case .cameraInUse:
+            return String(localized: "a camera is in use")
         }
     }
 
@@ -194,7 +200,7 @@ enum RulePreset: CaseIterable {
     var title: String {
         switch self {
         case .presenting: return String(localized: "Zen while presenting with Keynote")
-        case .videoCall: return String(localized: "Zen during Zoom calls")
+        case .videoCall: return String(localized: "Zen during calls")
         case .lowBattery: return String(localized: "Show the battery when it runs low")
         case .desk: return String(localized: "Apply a scene at the desk")
         case .offline: return String(localized: "Show hidden items while offline")
@@ -208,7 +214,7 @@ enum RulePreset: CaseIterable {
         case .presenting:
             return AutomationRule(name: title, conditions: [.appFrontmost(bundleID: "com.apple.Keynote")], action: .zen)
         case .videoCall:
-            return AutomationRule(name: title, conditions: [.appFrontmost(bundleID: "us.zoom.xos")], action: .zen)
+            return AutomationRule(name: title, conditions: [.microphoneInUse], action: .zen)
         case .lowBattery:
             let battery = model.inventory.items.first {
                 $0.kind == .system && (($0.identifier ?? "") + $0.displayName).lowercased().contains("battery")

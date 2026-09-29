@@ -9,12 +9,22 @@ final class AutomationController: ObservableObject {
 
     @Published private(set) var context = RuleContext()
     @Published private(set) var activeRuleIDs: Set<UUID> = []
+    /// Microphone and camera use, while a rule watches it.
+    private(set) var capture = CaptureActivity.State()
 
     private var evaluator = RuleEvaluator()
     private var observers: [NSObjectProtocol] = []
     private var pathMonitor: NWPathMonitor?
     private var isOnline = true
     private var loopTask: Task<Void, Never>?
+    private(set) var watchesCaptureActivity = false
+    private lazy var captureActivity = CaptureActivity { [weak self] state in
+        MainActor.assumeIsolated {
+            guard let self else { return }
+            self.capture = state
+            self.evaluate()
+        }
+    }
 
     /// Work to undo when a rule stops applying.
     private struct Undo {
@@ -45,6 +55,13 @@ final class AutomationController: ObservableObject {
                 }
             })
         }
+        observers.append(NotificationCenter.default.addObserver(
+            forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.evaluate()
+            }
+        })
 
         let monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { [weak self] path in
@@ -64,6 +81,7 @@ final class AutomationController: ObservableObject {
                 self?.evaluate()
             }
         }
+        watchCaptureActivity()
         evaluate()
     }
 
@@ -74,11 +92,23 @@ final class AutomationController: ObservableObject {
             entry.cleanup()
             undo[id] = nil
         }
+        watchCaptureActivity()
         evaluate()
     }
 
+    /// Microphones and cameras are only watched while an enabled rule
+    /// depends on them.
+    private func watchCaptureActivity() {
+        let conditions = model.settings.rules.filter(\.isEnabled).flatMap(\.conditions)
+        let microphones = conditions.contains(.microphoneInUse)
+        let cameras = conditions.contains(.cameraInUse)
+        guard microphones || cameras || watchesCaptureActivity else { return }
+        watchesCaptureActivity = microphones || cameras
+        captureActivity.watch(microphones: microphones, cameras: cameras)
+    }
+
     func evaluate() {
-        context = SystemSignals.snapshot(isOnline: isOnline)
+        context = SystemSignals.snapshot(isOnline: isOnline, capture: capture)
         let transitions = evaluator.update(rules: model.settings.rules, context: context)
         activeRuleIDs = evaluator.activeRuleIDs
         for transition in transitions {

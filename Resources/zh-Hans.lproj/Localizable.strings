@@ -8,9 +8,13 @@
 "%@ is running" = "%@ 正在运行";
 "%lld items · %lld tucked away" = "共 %lld 项 · %lld 项已收起";
 "A calm menu bar, made with glass." = "一个安静的菜单栏，由玻璃打造。";
+"A camera is in use" = "摄像头正在使用";
+"a camera is in use" = "摄像头正在使用";
 "a deleted scene" = "已删除的场景";
 "A glass bar for items that do not fit next to the notch." = "为刘海旁放不下的图标准备的玻璃托盘。";
 "A little access" = "需要一点权限";
+"A microphone is in use" = "麦克风正在使用";
+"a microphone is in use" = "麦克风正在使用";
 "A scene remembers the section and order of every movable item. Applying it moves items back with ⌘-drag. Items of apps that are not running are skipped." = "场景会记住每个可移动项目所在的分区和顺序。应用场景时会通过 ⌘ 拖移把项目放回原位，未运行的 App 会被跳过。";
 "A scene remembers which items are visible, hidden or stashed." = "场景会记住哪些项目常显、隐藏或放在暗格中。";
 "A second hidden section for items you rarely need. They never appear in the menu bar, only in the Shelf, Quick Open or with ⌥-click." = "为很少用到的项目准备的第二个隐藏分区。它们从不出现在菜单栏中，只能通过托盘、快速打开或按住 ⌥ 点按来访问。";
@@ -165,6 +169,7 @@
 "Lets Meno read the items in the menu bar, open them from the Shelf, Quick Open and hotkeys, and arrange them with ⌘-drag." = "让 Meno 读取菜单栏中的项目，通过托盘、快速打开和快捷键打开它们，并用 ⌘ 拖移来整理。";
 "Line" = "竖线";
 "Liquid Glass" = "液态玻璃";
+"Low Power Mode is on" = "低电量模式已开启";
 "macOS applies Screen Recording access after Meno restarts." = "macOS 会在 Meno 重新打开后应用屏幕录制权限。";
 "macOS applies the spacing when an app starts, so apps with menu bar items are quit and reopened. Save your work in them first." = "macOS 只在 App 启动时读取间距设置，因此带有菜单栏项目的 App 会被退出并重新打开。请先存储这些 App 中的工作。";
 "macOS asks you to approve these. Meno works locally and never sends anything anywhere." = "macOS 会请你确认这些权限。Meno 只在本地工作，从不向任何地方发送数据。";
@@ -275,7 +280,7 @@
 "Right-click it for Quick Open, Zen, Scenes and Settings." = "右键点按它可使用快速打开、禅模式、场景和设置。";
 "Rules" = "规则";
 "Rules and Scenes" = "规则与场景";
-"Rules are checked when apps switch, displays change, power or network changes, and every 30 seconds." = "在切换 App、显示器变化、电源或网络变化时，以及每 30 秒检查一次规则。";
+"Rules are checked when apps switch, displays change, power or network changes, a microphone or camera starts or stops, and every 30 seconds." = "在切换 App、显示器变化、电源或网络变化、麦克风或摄像头开始或停止使用时，以及每 30 秒检查一次规则。";
 "Running on battery" = "使用电池供电";
 "Save" = "存储";
 "Save a scene first" = "请先存储一个场景";
@@ -403,7 +408,7 @@
 "You're all set" = "一切就绪";
 "Zen" = "禅模式";
 "Zen clears the menu bar for screenshots, recordings and presentations. Rules can turn it on for you, for example while Keynote is in front." = "禅模式会为截图、录屏和演示清空菜单栏。规则可以自动开启它，例如在 Keynote 位于前台时。";
-"Zen during Zoom calls" = "Zoom 通话时开启禅模式";
+"Zen during calls" = "通话时开启禅模式";
 "Zen is off." = "禅模式已关闭。";
 "Zen is on. Click to leave Zen." = "禅模式已开启。点按以退出。";
 "Zen is on. Only system items remain." = "禅模式已开启，只保留系统项目。";

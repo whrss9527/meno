@@ -240,10 +240,13 @@ extension RuleCondition.Kind {
         case .onBattery: return String(localized: "Running on battery")
         case .onPower: return String(localized: "Connected to power")
         case .batteryBelow: return String(localized: "Battery is below")
+        case .lowPowerMode: return String(localized: "Low Power Mode is on")
         case .externalDisplay: return String(localized: "An external display is connected")
         case .noExternalDisplay: return String(localized: "No external display")
         case .timeWindow: return String(localized: "Time of day")
         case .offline: return String(localized: "The Mac is offline")
+        case .microphoneInUse: return String(localized: "A microphone is in use")
+        case .cameraInUse: return String(localized: "A camera is in use")
         }
     }
 
@@ -254,10 +257,13 @@ extension RuleCondition.Kind {
         case .onBattery: return "battery.50"
         case .onPower: return "powerplug"
         case .batteryBelow: return "battery.25"
+        case .lowPowerMode: return "tortoise"
         case .externalDisplay: return "display.2"
         case .noExternalDisplay: return "laptopcomputer"
         case .timeWindow: return "clock"
         case .offline: return "wifi.slash"
+        case .microphoneInUse: return "mic"
+        case .cameraInUse: return "video"
         }
     }
 }

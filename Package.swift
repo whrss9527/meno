@@ -32,6 +32,8 @@ targets.append(
             .linkedFramework("AppKit"),
             .linkedFramework("ApplicationServices"),
             .linkedFramework("Carbon"),
+            .linkedFramework("CoreAudio"),
+            .linkedFramework("CoreMediaIO"),
             .linkedFramework("IOKit"),
             .linkedFramework("ServiceManagement"),
         ]

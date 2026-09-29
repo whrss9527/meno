@@ -25,6 +25,32 @@ final class RuleTests: XCTestCase {
         XCTAssertFalse(RuleCondition.batteryBelow(percent: 50).isSatisfied(by: RuleContext(batteryLevel: nil)))
     }
 
+    func testPowerAndCaptureConditions() {
+        let idle = RuleContext()
+        XCTAssertFalse(RuleCondition.lowPowerMode.isSatisfied(by: idle))
+        XCTAssertFalse(RuleCondition.microphoneInUse.isSatisfied(by: idle))
+        XCTAssertFalse(RuleCondition.cameraInUse.isSatisfied(by: idle))
+
+        let call = RuleContext(isLowPowerMode: true, microphoneInUse: true, cameraInUse: false)
+        XCTAssertTrue(RuleCondition.lowPowerMode.isSatisfied(by: call))
+        XCTAssertTrue(RuleCondition.microphoneInUse.isSatisfied(by: call))
+        XCTAssertFalse(RuleCondition.cameraInUse.isSatisfied(by: call))
+
+        for kind in RuleCondition.Kind.allCases {
+            XCTAssertEqual(kind.defaultCondition.kind, kind)
+        }
+    }
+
+    func testNewConditionsSurviveSaving() throws {
+        var settings = MenoSettings()
+        settings.rules = [
+            AutomationRule(name: "Calls", conditions: [.microphoneInUse, .cameraInUse], action: .zen),
+            AutomationRule(name: "Saver", conditions: [.lowPowerMode], action: .collapse),
+        ]
+        let decoded = try MenoSettings.decode(from: settings.encoded())
+        XCTAssertEqual(decoded.rules, settings.rules)
+    }
+
     func testTimeWindows() {
         func at(_ hour: Int, _ minute: Int = 0) -> RuleContext { RuleContext(minuteOfDay: hour * 60 + minute) }
         let office = RuleCondition.timeWindow(startMinute: 9 * 60, endMinute: 18 * 60)
