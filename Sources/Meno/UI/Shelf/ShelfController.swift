@@ -49,6 +49,10 @@ final class ShelfController: ObservableObject {
         let panel = self.panel ?? makePanel()
         isVisible = true
         layout()
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 30_000_000)
+            self?.layout()
+        }
         panel.alphaValue = 0
         panel.orderFrontRegardless()
         NSAnimationContext.runAnimationGroup { context in

@@ -50,7 +50,7 @@ final class QuickOpenController: ObservableObject {
         let panel = self.panel ?? makePanel()
         isVisible = true
         presentation += 1
-        layout()
+        layoutSoon()
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
         NSAnimationContext.runAnimationGroup { context in
@@ -96,7 +96,7 @@ final class QuickOpenController: ObservableObject {
             results = scored.sorted { $0.score > $1.score }.map(\.item)
         }
         selection = results.isEmpty ? 0 : min(selection, results.count - 1)
-        layout()
+        layoutSoon()
     }
 
     func moveSelection(by delta: Int) {
@@ -173,6 +173,16 @@ final class QuickOpenController: ObservableObject {
             }
             .store(in: &subscriptions)
         return panel
+    }
+
+    /// Sizes the panel now and again once SwiftUI has applied pending
+    /// changes, since `fittingSize` reflects the last rendered state.
+    private func layoutSoon() {
+        layout()
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 30_000_000)
+            self?.layout()
+        }
     }
 
     private func layout() {

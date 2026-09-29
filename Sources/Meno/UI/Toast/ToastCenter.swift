@@ -21,14 +21,18 @@ final class ToastCenter: ObservableObject {
 
     private var panel: FloatingPanel?
     private var hostingView: NSHostingView<ToastView>?
+    private var hiding = false
     private var dismissTask: Task<Void, Never>?
 
     /// Where toasts appear; set by the app model.
     var screenProvider: () -> NSScreen? = { NSScreen.main }
 
     func show(_ message: String, symbol: String = "info.circle.fill", actions: [Action] = [], duration: TimeInterval? = nil) {
-        current = Toast(message: message, symbol: symbol, actions: actions)
+        let toast = Toast(message: message, symbol: symbol, actions: actions)
+        current = toast
+        hiding = false
         let panel = self.panel ?? makePanel()
+        hostingView?.rootView = ToastView(toast: toast, center: self)
         panel.ignoresMouseEvents = actions.isEmpty
         layout()
         if !panel.isVisible {
@@ -50,16 +54,16 @@ final class ToastCenter: ObservableObject {
 
     func dismiss() {
         dismissTask?.cancel()
-        guard let panel else { return }
+        guard let panel, current != nil else { return }
+        hiding = true
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.2
             panel.animator().alphaValue = 0
         }, completionHandler: {
             MainActor.assumeIsolated {
-                if panel.alphaValue == 0 {
-                    panel.orderOut(nil)
-                    self.current = nil
-                }
+                guard self.hiding else { return }
+                panel.orderOut(nil)
+                self.current = nil
             }
         })
     }
@@ -71,7 +75,7 @@ final class ToastCenter: ObservableObject {
 
     private func makePanel() -> FloatingPanel {
         let panel = FloatingPanel(level: .statusBar)
-        let view = NSHostingView(rootView: ToastView(center: self))
+        let view = NSHostingView(rootView: ToastView(toast: nil, center: self))
         panel.contentView = view
         self.panel = panel
         hostingView = view
@@ -92,10 +96,11 @@ final class ToastCenter: ObservableObject {
 }
 
 struct ToastView: View {
-    @ObservedObject var center: ToastCenter
+    let toast: ToastCenter.Toast?
+    let center: ToastCenter
 
     var body: some View {
-        if let toast = center.current {
+        if let toast {
             HStack(spacing: 10) {
                 Image(systemName: toast.symbol)
                     .font(.system(size: 15, weight: .semibold))

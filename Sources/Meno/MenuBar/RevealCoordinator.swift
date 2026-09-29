@@ -37,6 +37,7 @@ final class RevealCoordinator: ObservableObject {
     private var zenLifted = false
     private var layoutSessions = 0
     private var visibilityBeforeLayout: SectionVisibility = .collapsed
+    private var visibilityBeforeActivation: SectionVisibility?
     private var revealedByHover = false
 
     private var rehideTask: Task<Void, Never>?
@@ -223,6 +224,9 @@ final class RevealCoordinator: ObservableObject {
     /// Shows the section of an item that is about to be opened, and keeps it
     /// shown until the item's menu closes.
     func revealForActivation(of section: ItemSection) {
+        if visibilityBeforeActivation == nil {
+            visibilityBeforeActivation = visibility
+        }
         hold()
         zenLifted = model.isZenActive
         if section == .visible {
@@ -254,7 +258,11 @@ final class RevealCoordinator: ObservableObject {
                 self.apply()
             }
             self.release()
-            self.scheduleRehide(after: 0.8)
+            guard self.holds == 0 else { return }
+            // A reveal that only served to open the item always folds back.
+            let restore = self.visibilityBeforeActivation
+            self.visibilityBeforeActivation = nil
+            self.scheduleRehide(after: 0.8, force: restore == .collapsed)
         }
     }
 
@@ -285,24 +293,26 @@ final class RevealCoordinator: ObservableObject {
 
     // MARK: - Automatic rehide
 
-    func scheduleRehide(after delay: TimeInterval? = nil) {
+    /// Collapses after a delay unless the pointer is in the menu bar or a
+    /// menu is open. `force` collapses even when automatic hiding is off.
+    func scheduleRehide(after delay: TimeInterval? = nil, force: Bool = false) {
         rehideTask?.cancel()
-        guard visibility != .collapsed, holds == 0, model.settings.reveal.autoRehide || delay != nil else { return }
+        guard visibility != .collapsed, holds == 0 else { return }
+        guard force || revealedByHover || model.settings.reveal.autoRehide else { return }
         let seconds = max(delay ?? model.settings.reveal.rehideDelay, 0.2)
         rehideTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             guard !Task.isCancelled else { return }
-            self?.rehideIfIdle()
+            self?.rehideIfIdle(force: force)
         }
     }
 
-    private func rehideIfIdle() {
+    private func rehideIfIdle(force: Bool) {
         guard visibility != .collapsed, holds == 0 else { return }
         if pointerIsInMenuBar || WindowCapture.anyMenuOpen() {
-            scheduleRehide(after: 1.5)
+            scheduleRehide(after: 1.5, force: force)
             return
         }
-        guard model.settings.reveal.autoRehide || revealedByHover else { return }
         collapse(trigger: .timer)
     }
 
