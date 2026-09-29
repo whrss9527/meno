@@ -121,6 +121,7 @@
 "Export Settings…" = "导出设置…";
 "Eye" = "眼睛";
 "Fill" = "填充";
+"Fill in Dark Mode" = "深色模式下的填充";
 "Find and open any item from the keyboard, pinyin included." = "用键盘查找并打开任意项目，支持拼音。";
 "Finder" = "访达";
 "Floating" = "悬浮";
@@ -263,6 +264,7 @@
 "Optional. Shows the real artwork of hidden items instead of app icons (macOS 14 to 26). Meno only captures menu bar items, never your screen." = "可选。显示隐藏项目的真实图标，而不是 App 图标（macOS 14 至 26）。Meno 只截取菜单栏项目，绝不会截取你的屏幕。";
 "Optional. Shows the real icons of hidden items on macOS 14 to 26." = "可选。在 macOS 14 至 26 上显示隐藏项目的真实图标。";
 "Or drag it onto a section, or onto another item. A line shows on which side it will land." = "也可以直接拖：拖到某个分区，或拖到另一个项目上，竖线标出它会落在哪一边。";
+"Other colors in Dark Mode" = "深色模式使用其他颜色";
 "Permissions" = "权限";
 "Please leave the mouse alone for a moment." = "请暂时不要移动鼠标。";
 "Pointer" = "指针";

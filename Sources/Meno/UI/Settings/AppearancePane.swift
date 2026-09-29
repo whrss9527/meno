@@ -153,6 +153,19 @@ struct AppearancePane: View {
                         EnumPicker(selection: $model.settings.tint.fill, title: \.title, width: 160, segmented: true)
                     }
                 }
+                ToggleRow("Other colors in Dark Mode", isOn: $model.settings.tint.usesDarkColors)
+                if model.settings.tint.usesDarkColors {
+                    SettingRow("Fill in Dark Mode") {
+                        HStack(spacing: 8) {
+                            ColorPicker("", selection: $model.settings.tint.darkColor.colorBinding, supportsOpacity: true)
+                                .labelsHidden()
+                            if model.settings.tint.fill == .gradient {
+                                ColorPicker("", selection: $model.settings.tint.darkSecondaryColor.colorBinding, supportsOpacity: true)
+                                    .labelsHidden()
+                            }
+                        }
+                    }
+                }
                 SettingRow("Shape") {
                     EnumPicker(selection: $model.settings.tint.shape, title: \.title, width: 240, segmented: true)
                 }

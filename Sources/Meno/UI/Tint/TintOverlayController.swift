@@ -110,6 +110,8 @@ struct TintView: View {
     let shadowRoom: CGFloat
     let islands: Islands?
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         VStack(spacing: 0) {
             ZStack {
@@ -168,12 +170,13 @@ struct TintView: View {
     }
 
     private var fillStyle: AnyShapeStyle {
+        let colors = tint.colors(dark: colorScheme == .dark)
         switch tint.fill {
         case .solid:
-            return AnyShapeStyle(tint.color.color)
+            return AnyShapeStyle(colors.primary.color)
         case .gradient:
             return AnyShapeStyle(LinearGradient(
-                colors: [tint.color.color, tint.secondaryColor.color],
+                colors: [colors.primary.color, colors.secondary.color],
                 startPoint: .leading,
                 endPoint: .trailing
             ))

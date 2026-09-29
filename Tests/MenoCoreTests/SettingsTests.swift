@@ -129,3 +129,18 @@ final class KeyComboTests: XCTestCase {
         XCTAssertTrue(bindings.conflicts(with: []).isEmpty)
     }
 }
+
+final class TintTests: XCTestCase {
+    func testDarkModeColors() throws {
+        var tint = MenuBarTint()
+        XCTAssertEqual(tint.colors(dark: true).primary, tint.color)
+        tint.usesDarkColors = true
+        XCTAssertEqual(tint.colors(dark: true).primary, tint.darkColor)
+        XCTAssertEqual(tint.colors(dark: true).secondary, tint.darkSecondaryColor)
+        XCTAssertEqual(tint.colors(dark: false).primary, tint.color)
+
+        // Files from before the option keep their look.
+        let decoded = try MenoSettings.decode(from: Data(#"{"tint": {"enabled": true}}"#.utf8))
+        XCTAssertFalse(decoded.tint.usesDarkColors)
+    }
+}

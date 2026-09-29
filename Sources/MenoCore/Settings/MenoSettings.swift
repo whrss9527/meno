@@ -245,6 +245,10 @@ public struct MenuBarTint: Codable, Equatable, Sendable {
     public var fill: TintFill = .gradient
     public var color = RGBAColor(red: 0.36, green: 0.47, blue: 1.0, alpha: 0.32)
     public var secondaryColor = RGBAColor(red: 0.80, green: 0.36, blue: 0.96, alpha: 0.32)
+    /// Use other colors while the Mac is in Dark Mode.
+    public var usesDarkColors = false
+    public var darkColor = RGBAColor(red: 0.16, green: 0.22, blue: 0.62, alpha: 0.45)
+    public var darkSecondaryColor = RGBAColor(red: 0.45, green: 0.16, blue: 0.62, alpha: 0.45)
     public var shape: TintShape = .full
     public var border = false
     public var borderColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.35)
@@ -252,6 +256,13 @@ public struct MenuBarTint: Codable, Equatable, Sendable {
     public var shadow = false
 
     public init() {}
+}
+
+extension MenuBarTint {
+    /// The fill colors for the current appearance.
+    public func colors(dark: Bool) -> (primary: RGBAColor, secondary: RGBAColor) {
+        dark && usesDarkColors ? (darkColor, darkSecondaryColor) : (color, secondaryColor)
+    }
 }
 
 public enum TintFill: String, Codable, CaseIterable, Sendable {
