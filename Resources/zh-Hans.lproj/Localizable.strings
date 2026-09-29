@@ -172,6 +172,7 @@
 "Items left of this divider are hidden" = "此分隔符左侧的项目会被隐藏";
 "Items left of this divider go to the Stash" = "此分隔符左侧的项目会放入暗格";
 "Items on the left do not fit into the menu bar" = "左侧是菜单栏里放不下的项目";
+"Items to the right of the Meno icon stay visible." = "Meno 图标右侧的项目会保持显示。";
 "keep %@ visible" = "让 %@ 保持显示";
 "Keep an item visible" = "让某个项目保持显示";
 "Keep Visible" = "保持显示";
@@ -404,11 +405,9 @@
 "Tint" = "着色";
 "Tint the menu bar" = "为菜单栏着色";
 "to" = "至";
-"Turn Off Zen" = "关闭禅模式";
 "Turn On" = "开启";
 "Turn on Zen" = "开启禅模式";
 "turn on Zen" = "开启禅模式";
-"Turn On Zen" = "开启禅模式";
 "Turn them on to see which items you use and get suggestions." = "开启后即可查看你常用的项目并获得建议。";
 "Turn Zen Off" = "关闭禅模式";
 "Turn Zen On" = "开启禅模式";

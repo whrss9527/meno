@@ -75,7 +75,11 @@ struct GeneralPane: View {
             }
 
             SettingsCard("Zen", symbol: "leaf", footnote: "Zen clears the menu bar for screenshots, recordings and presentations. Rules can turn it on for you, for example while Keynote is in front.") {
-                ToggleRow("Also hide the items in the Visible section", isOn: $model.settings.zen.hidesVisibleItems)
+                ToggleRow(
+                    "Also hide the items in the Visible section",
+                    subtitle: "Items to the right of the Meno icon stay visible.",
+                    isOn: $model.settings.zen.hidesVisibleItems
+                )
                 ToggleRow("Ignore hover, scrolling and clicks while Zen is on", isOn: $model.settings.zen.blocksReveal)
                 HStack {
                     Spacer()

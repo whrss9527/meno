@@ -155,7 +155,7 @@ final class QuickOpenController: ObservableObject {
             }
         }
         commands += [
-            QuickCommand(id: "zen", title: model.isZenActive ? String(localized: "Turn Off Zen") : String(localized: "Turn On Zen"), symbol: "leaf", keywords: ["Zen"]) {
+            QuickCommand(id: "zen", title: model.isZenActive ? String(localized: "Turn Zen Off") : String(localized: "Turn Zen On"), symbol: "leaf", keywords: ["Zen"]) {
                 model.setZen(!model.isZenActive)
             },
             QuickCommand(id: "show", title: String(localized: "Show Hidden Items"), symbol: "eye") {
