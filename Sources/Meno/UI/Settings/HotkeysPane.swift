@@ -30,7 +30,7 @@ struct HotkeysPane: View {
                         ShortcutRecorder(combo: Binding(
                             get: { model.settings.hotkeys[action] },
                             set: { model.settings.hotkeys[action] = $0 }
-                        ))
+                        ), purpose: action.title)
                     }
                 }
                 if !conflicts.isEmpty {

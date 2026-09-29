@@ -90,7 +90,7 @@ struct LayoutChip: View {
         .overlay {
             ChipMouseArea(
                 key: item.key,
-                label: "\(item.displayName), \(item.section.title)",
+                label: accessibilityLabel,
                 toolTip: item.isMovable ? (item.bundleID ?? item.appName) : String(localized: "macOS keeps this item in place"),
                 makeMenu: makeMenu,
                 makeDragImage: { ChipMouseView.dragImage(icon: image, name: item.displayName) },
@@ -103,6 +103,16 @@ struct LayoutChip: View {
                 }
             )
         }
+    }
+
+    /// The item's name and section, and when it goes back if it is shown for
+    /// a while.
+    private var accessibilityLabel: String {
+        var label = "\(item.displayName), \(item.section.title)"
+        if let temporaryUntil {
+            label += ", " + String(localized: "Goes back at \(temporaryUntil.formatted(date: .omitted, time: .shortened))")
+        }
+        return label
     }
 
     /// Moves to the other sections, and one step left or right. macOS keeps

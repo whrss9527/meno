@@ -70,6 +70,23 @@ public struct SceneLayout: Codable, Hashable, Sendable {
 
     public var itemCount: Int { visible.count + hidden.count + stash.count }
 
+    /// The layout with an item moved to another section, where a move into
+    /// that section puts it: the left end of the visible items, the right
+    /// end of the hidden and stashed ones. Unknown items are left out.
+    public func moving(_ key: MenuItemKey, to target: ItemSection) -> SceneLayout {
+        guard section(of: key) != nil else { return self }
+        var result = self
+        for section in ItemSection.allCases {
+            result[section].removeAll { $0 == key }
+        }
+        if target == .visible {
+            result.visible.insert(key, at: 0)
+        } else {
+            result[target].append(key)
+        }
+        return result
+    }
+
     /// All keys in left-to-right order: stash, hidden, then visible.
     public var leftToRight: [MenuItemKey] { stash + hidden + visible }
 }

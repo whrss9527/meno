@@ -48,4 +48,14 @@ extension Array where Element == TemporaryPlacement {
     public var nextDue: Date? {
         map(\.until).min()
     }
+
+    /// How long to wait before checking again: until the next placement is
+    /// due, and at most a minute while any is due but still waiting (for
+    /// example for its app). `nil` without placements.
+    public func delayUntilNextCheck(at date: Date, maximum: TimeInterval = 60) -> TimeInterval? {
+        guard !isEmpty else { return nil }
+        let upcoming = map(\.until).filter { $0 > date }.min()
+        let delay = upcoming.map { $0.timeIntervalSince(date) } ?? maximum
+        return Swift.min(Swift.max(delay, 1), maximum)
+    }
 }

@@ -37,7 +37,7 @@ struct GroupRow: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 220)
                 Spacer()
-                ShortcutRecorder(combo: Binding(get: { group.hotkey }, set: { combo in update { $0.hotkey = combo } }))
+                ShortcutRecorder(combo: Binding(get: { group.hotkey }, set: { combo in update { $0.hotkey = combo } }), purpose: group.name)
                     .help(Text("A shortcut that shows the group"))
                 Button(role: .destructive, action: onDelete) {
                     Image(systemName: "trash")

@@ -44,15 +44,16 @@ final class ItemMover: ObservableObject {
 
     /// One drag and how to tell that it is done.
     private enum Move {
-        /// Into a section, across the divider that bounds it.
-        case section(MenuItemKey, ItemSection)
+        /// Into a section, across the divider that bounds it; with `from`,
+        /// only while the item is still in that section.
+        case section(MenuItemKey, ItemSection, from: ItemSection?)
         /// Right next to another token. Only tokens in `counted` may lie in
         /// between; with `nil`, every token counts.
         case step(MoveStep, counted: Set<LayoutToken>?)
 
         var key: MenuItemKey {
             switch self {
-            case .section(let key, _): return key
+            case .section(let key, _, _): return key
             case .step(let step, _): return step.item
             }
         }
@@ -81,9 +82,10 @@ final class ItemMover: ObservableObject {
     }
 
     /// Moves an item into a section. Automatic moves (from rules and for new
-    /// items) wait until the mouse and keyboard are idle.
-    func move(_ key: MenuItemKey, to section: ItemSection, automatic: Bool = false) async throws {
-        try await perform(.moves([.section(key, section)]), automatic: automatic)
+    /// items) wait until the mouse and keyboard are idle. With `onlyFrom`,
+    /// an item that left that section meanwhile stays where it is.
+    func move(_ key: MenuItemKey, to section: ItemSection, automatic: Bool = false, onlyFrom: ItemSection? = nil) async throws {
+        try await perform(.moves([.section(key, section, from: onlyFrom)]), automatic: automatic)
     }
 
     /// Moves an item right next to another one.
@@ -135,6 +137,11 @@ final class ItemMover: ObservableObject {
             if isUndo, !undoStack.isEmpty {
                 undoStack.removeLast()
             }
+            if automatic {
+                keepUndoInStep(with: request)
+            }
+            // Items that were placed now are no longer shown for a while.
+            model.temporary.forget(Self.keys(of: request))
         } catch {
             finish(before: before, moved: moved, automatic: automatic, isUndo: isUndo)
             throw error
@@ -153,6 +160,27 @@ final class ItemMover: ObservableObject {
         }
         model.reveal.endLayoutSession()
         model.inventory.scheduleRefresh(after: 0.5)
+    }
+
+    /// Keeps the undo snapshots in step with moves the person did not
+    /// make, so undoing one of their changes does not undo those as well.
+    private func keepUndoInStep(with request: Request) {
+        switch request {
+        case .moves(let moves):
+            for case .section(let key, let section, _) in moves {
+                undoStack = undoStack.map { $0.moving(key, to: section) }
+            }
+        case .layout:
+            // A whole new arrangement makes the snapshots meaningless.
+            undoStack.removeAll()
+        }
+    }
+
+    private static func keys(of request: Request) -> [MenuItemKey] {
+        switch request {
+        case .moves(let moves): return moves.map(\.key)
+        case .layout(let layout): return layout.leftToRight
+        }
     }
 
     private func plannedMoves(for request: Request) throws -> [Move] {
@@ -201,7 +229,10 @@ final class ItemMover: ObservableObject {
     /// Where the item still has to be dropped, or `nil` when the move is done.
     private func remainingPlacement(for move: Move, item: MenuBarItem) -> Placement? {
         switch move {
-        case .section(_, let section):
+        case .section(_, let section, let from):
+            if let from, item.section != from {
+                return nil
+            }
             return LayoutPlanner.placement(moving: item.section, to: section, includesStash: model.settings.general.stashEnabled)
         case .step(let step, let counted):
             let done = LayoutPlanner.isSatisfied(step, in: model.inventory.layoutTokens(), counting: counted)

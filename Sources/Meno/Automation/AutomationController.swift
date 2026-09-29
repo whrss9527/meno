@@ -244,7 +244,8 @@ final class AutomationController: ObservableObject {
                 // right after its app launched.
                 guard let self, !Task.isCancelled, let item = await self.waitForItem(key) else { return }
                 if snapshot.section == nil {
-                    snapshot.section = item.section
+                    // An item shown for a while belongs where it goes back to.
+                    snapshot.section = self.model.temporary.returnSection(of: key) ?? item.section
                 }
                 do {
                     try await self.model.mover.move(key, to: target, automatic: true)

@@ -9,6 +9,8 @@ import SwiftUI
 /// a time, and recording stops when Meno is no longer the active app.
 struct ShortcutRecorder: View {
     @Binding var combo: KeyCombo?
+    /// What the shortcut is for, so VoiceOver can say it.
+    var purpose: String?
     @EnvironmentObject private var model: AppModel
 
     @State private var id = UUID()
@@ -27,7 +29,9 @@ struct ShortcutRecorder: View {
                     .foregroundStyle(labelColor)
             }
             .menoGlassButtonStyle(prominent: isRecording)
-            .help(isRefused ? Text("macOS did not accept this shortcut. Another app may already use it.") : Text(verbatim: ""))
+            .help(helpText)
+            .accessibilityLabel(purpose.map { Text("Shortcut for \($0)") } ?? Text("Shortcut"))
+            .accessibilityValue(Text(verbatim: label))
             if combo != nil, !isRecording {
                 Button {
                     combo = nil
@@ -65,8 +69,20 @@ struct ShortcutRecorder: View {
 
     private var labelColor: Color {
         if problem != nil { return .red }
-        if isRefused { return .orange }
+        if isRefused || isUsedTwice { return .orange }
         return .primary
+    }
+
+    private var helpText: Text {
+        if isRefused { return Text("macOS did not accept this shortcut. Another app may already use it.") }
+        if isUsedTwice { return Text("This shortcut is used more than once in Meno. Only one of its uses works.") }
+        return Text(verbatim: "")
+    }
+
+    /// Whether another of Meno's shortcuts is the same.
+    private var isUsedTwice: Bool {
+        guard let combo, !isRecording else { return false }
+        return model.settings.hotkeyConflicts.contains(combo)
     }
 
     /// Whether macOS refused the recorded shortcut.

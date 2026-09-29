@@ -156,7 +156,7 @@
 "General" = "通用";
 "Glass" = "玻璃";
 "Global shortcuts" = "全局快捷键";
-"Goes back at %@" = "%@ 放回原处";
+"Goes back at %@" = "将于 %@ 放回原处";
 "Good to know" = "小贴士";
 "Gradient" = "渐变";
 "Gradient end color" = "渐变终点颜色";
@@ -248,6 +248,7 @@
 "Meno adds a few small dividers to your menu bar. Everything left of a divider belongs to that section." = "Meno 会在菜单栏中添加几个小小的分隔符。分隔符左侧的一切都属于对应的分区。";
 "Meno asks GitHub whether there is a newer release. Nothing about you or your Mac is sent." = "Meno 会向 GitHub 查询是否有新版本，不会发送任何关于你或这台 Mac 的信息。";
 "Meno could not find where to drop the item." = "Meno 找不到放置项目的位置。";
+"Meno could not put %@ back. %@" = "Meno 无法把 %@ 放回原处。%@";
 "Meno did not rearrange the menu bar because the mouse and keyboard were in use the whole time." = "鼠标和键盘一直在使用，Meno 没有调整菜单栏。";
 "Meno does not know the link %@." = "Meno 无法识别链接 %@。";
 "Meno icon" = "Meno 图标";
@@ -406,6 +407,8 @@
 "Shape" = "形状";
 "Shelf" = "托盘";
 "Shell command" = "Shell 命令";
+"Shortcut" = "快捷键";
+"Shortcut for %@" = "“%@”的快捷键";
 "Shortcuts work in every app. Press Delete while recording to remove one, or Escape to cancel." = "快捷键在任何 App 中都可用。录制时按 Delete 键移除，按 Esc 键取消。";
 "Show Everything" = "显示全部";
 "Show everything" = "显示全部";
@@ -474,6 +477,7 @@
 "There is no group named “%@”." = "没有名为“%@”的分组。";
 "There is no scene named “%@”." = "没有名为“%@”的场景。";
 "This Mac" = "这台 Mac";
+"This shortcut is used more than once in Meno. Only one of its uses works." = "这个快捷键在 Meno 中被多次使用，只有其中一处会生效。";
 "This week" = "本周";
 "Three sections" = "三个分区";
 "Time of day" = "时间段";

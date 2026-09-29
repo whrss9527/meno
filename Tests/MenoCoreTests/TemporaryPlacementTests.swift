@@ -32,6 +32,32 @@ final class TemporaryPlacementTests: XCTestCase {
         XCTAssertEqual(placements.first?.until, start.addingTimeInterval(3600))
     }
 
+    func testCheckingWaitsForTheNextOneOrAMinute() {
+        let now = Date(timeIntervalSinceReferenceDate: 0)
+        XCTAssertNil([TemporaryPlacement]().delayUntilNextCheck(at: now))
+        var placements: [TemporaryPlacement] = []
+        placements.show(dropbox, from: .hidden, until: now.addingTimeInterval(20))
+        XCTAssertEqual(placements.delayUntilNextCheck(at: now), 20)
+        // One that is due but waiting does not make the check run every second.
+        placements.show(timer, from: .hidden, until: now.addingTimeInterval(-300))
+        XCTAssertEqual(placements.delayUntilNextCheck(at: now), 20)
+        placements.removeAll { $0.itemKey == dropbox }
+        XCTAssertEqual(placements.delayUntilNextCheck(at: now), 60)
+        placements.show(dropbox, from: .hidden, until: now.addingTimeInterval(0.2))
+        XCTAssertEqual(placements.delayUntilNextCheck(at: now), 1)
+    }
+
+    func testMovingAnItemInAStoredLayout() {
+        let a = MenuItemKey(owner: "a", token: "solo")
+        let layout = SceneLayout(visible: [a], hidden: [dropbox], stash: [timer])
+        XCTAssertEqual(layout.moving(dropbox, to: .visible).visible, [dropbox, a])
+        XCTAssertEqual(layout.moving(a, to: .hidden).hidden, [dropbox, a])
+        XCTAssertEqual(layout.moving(a, to: .stash).stash, [timer, a])
+        XCTAssertEqual(layout.moving(a, to: .hidden).visible, [])
+        let unknown = MenuItemKey(owner: "gone", token: "solo")
+        XCTAssertEqual(layout.moving(unknown, to: .visible), layout)
+    }
+
     func testPlacementsSurviveSaving() throws {
         var settings = MenoSettings()
         settings.temporaryPlacements = [TemporaryPlacement(itemKey: dropbox, returnSection: .stash, until: Date(timeIntervalSince1970: 1_800_000_000))]

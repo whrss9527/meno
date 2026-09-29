@@ -165,7 +165,7 @@ private struct SceneCard: View {
                 Image(systemName: "keyboard")
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
-                ShortcutRecorder(combo: $hotkey)
+                ShortcutRecorder(combo: $hotkey, purpose: scene.name)
                     .help(Text("A shortcut that applies this scene from anywhere"))
                 Spacer(minLength: 0)
             }
