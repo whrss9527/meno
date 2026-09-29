@@ -152,6 +152,10 @@ private struct ShelfItemButton: View {
             }
         }
         .help(Text(verbatim: item.displayName))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: item.displayName))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { shelf.open(item, secondary: false) }
         .animation(.easeOut(duration: 0.12), value: isHovering)
     }
 }
