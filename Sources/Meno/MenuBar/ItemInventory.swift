@@ -31,6 +31,8 @@ final class ItemInventory: ObservableObject {
     private var cachedSections: [MenuItemKey: ItemSection] = [:]
     private var cachedPositions: [MenuItemKey: CGFloat] = [:]
     private var knownKeys: Set<String>?
+    /// Items whose section the last scan could tell from their position.
+    private var reliablySectioned: Set<MenuItemKey> = []
     /// Items that were missing from the last scan but kept.
     private var missingOnce: Set<MenuItemKey> = []
     private var refreshTask: Task<Void, Never>?
@@ -137,7 +139,17 @@ final class ItemInventory: ObservableObject {
         model.statusBar.refreshAppearance()
         model.statusBar.refreshGroupTooltips()
         detectNewArrivals()
+        model.keeper.scanned(keeperObservations())
         model.images.refresh(for: items, captureAllowed: model.permissions.screenRecording)
+    }
+
+    /// The movable items, for keeping them in their sections. Where an item
+    /// kept from an earlier scan is now is not known.
+    private func keeperObservations() -> [SectionKeeper.Observation] {
+        items.filter { $0.kind != .marker && $0.isMovable }.map { item in
+            let known = reliablySectioned.contains(item.key) && !missingOnce.contains(item.key)
+            return SectionKeeper.Observation(key: item.key, section: known ? item.section : nil, process: item.pid)
+        }
     }
 
     /// Whether item positions reflect the menu bar right now. While the
@@ -175,6 +187,7 @@ final class ItemInventory: ObservableObject {
         let customNames = model.settings.itemNames
         let menoFrames = model.statusBar.ownFrames
         var result: [MenuBarItem] = []
+        var reliablySectioned: Set<MenuItemKey> = []
 
         var skipped = SkippedElements()
         var named = raw.filter { entry in
@@ -226,6 +239,7 @@ final class ItemInventory: ObservableObject {
                     section = SectionResolver.section(of: HorizontalSpan(minX: Double(frame.minX), maxX: Double(frame.maxX)), dividers: dividers)
                     cachedSections[key] = section
                     cachedPositions[key] = frame.minX
+                    reliablySectioned.insert(key)
                 } else {
                     // Without dividers to compare with (they may be hidden
                     // while items are shown), the last known section holds,
@@ -262,6 +276,7 @@ final class ItemInventory: ObservableObject {
         }
 
         self.skipped = skipped
+        self.reliablySectioned = reliablySectioned
 
         var markerSections: [UUID: ItemSection] = [:]
         if let dividers {

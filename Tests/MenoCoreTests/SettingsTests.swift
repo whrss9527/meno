@@ -15,6 +15,8 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.reveal.rehideDelay, RevealSettings().rehideDelay)
         XCTAssertFalse(settings.general.stashEnabled)
         XCTAssertEqual(settings.general.revealStyle, .automatic)
+        // Settings from before keeping sections existed keep them.
+        XCTAssertTrue(settings.general.keepsSections)
         XCTAssertEqual(settings.appearance, AppearanceSettings())
     }
 

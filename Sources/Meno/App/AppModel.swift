@@ -48,6 +48,7 @@ final class AppModel: ObservableObject {
     lazy var markers = MarkerController(model: self)
     lazy var spacing = SpacingController(model: self)
     lazy var temporary = TemporaryPlacements(model: self)
+    lazy var keeper = LayoutKeeper(model: self)
     lazy var tint = TintOverlayController(model: self)
     lazy var settingsWindow = SettingsWindowController(model: self)
     lazy var onboarding = OnboardingController(model: self)

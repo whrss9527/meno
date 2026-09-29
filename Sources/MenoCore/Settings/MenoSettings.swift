@@ -81,6 +81,9 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
     public var appMenuHiding: AppMenuHiding = .whenNeeded
     /// What to do when an item Meno has never seen appears.
     public var newItemPolicy: NewItemPolicy = .notify
+    /// Puts items back in their section when their app or macOS puts them
+    /// elsewhere, for example after the app restarted.
+    public var keepsSections = true
     /// How Meno pushes hidden items out of the menu bar.
     public var hidingEngine: HidingEngine = .automatic
     /// Records how often items are used (stored locally only).

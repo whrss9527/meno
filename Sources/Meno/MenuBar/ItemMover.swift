@@ -88,6 +88,12 @@ final class ItemMover: ObservableObject {
         try await perform(.moves([.section(key, section, from: onlyFrom)]), automatic: automatic)
     }
 
+    /// Moves items into sections, one after the other. With `from`, an item
+    /// that left that section meanwhile stays where it is.
+    func move(_ targets: [(key: MenuItemKey, section: ItemSection, from: ItemSection?)]) async throws {
+        try await perform(.moves(targets.map { .section($0.key, $0.section, from: $0.from) }), automatic: false)
+    }
+
     /// Moves an item right next to another one.
     func move(_ key: MenuItemKey, placement: Placement) async throws {
         try await perform(.moves([.step(MoveStep(item: key, placement: placement), counted: nil)]), automatic: false)

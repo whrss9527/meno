@@ -86,6 +86,11 @@ struct GeneralPane: View {
                 SettingRow("When a new item appears") {
                     EnumPicker(selection: $model.settings.general.newItemPolicy, title: \.title)
                 }
+                ToggleRow(
+                    "Keep items where you put them",
+                    subtitle: "When an app or macOS puts an item in another section, for example after the app restarted, Meno moves it back.",
+                    isOn: $model.settings.general.keepsSections
+                )
             }
 
             SettingsCard("Zen", symbol: "leaf", footnote: "Zen clears the menu bar for screenshots, recordings and presentations. Rules can turn it on for you, for example while Keynote is in front.") {

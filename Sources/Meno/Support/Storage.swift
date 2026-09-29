@@ -69,6 +69,19 @@ final class Storage {
         }
     }
 
+    // MARK: Sections
+
+    func loadSectionMemory() -> [String: SectionKeeper.Remembered] {
+        guard let data = try? Data(contentsOf: url(for: "sections.json")) else { return [:] }
+        return (try? TolerantJSON.makeDecoder().decode([String: SectionKeeper.Remembered].self, from: data)) ?? [:]
+    }
+
+    func saveSectionMemory(_ memory: [String: SectionKeeper.Remembered]) {
+        write(name: "sections.json", delay: 2) {
+            try TolerantJSON.makeEncoder().encode(memory)
+        }
+    }
+
     // MARK: Helpers
 
     /// Writes all pending files right away (used on quit).

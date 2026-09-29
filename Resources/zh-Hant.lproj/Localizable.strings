@@ -9,6 +9,7 @@
 "%@ is not visible, so it cannot be dragged. Make room in the menu bar and try again." = "%@ 目前不可見，無法拖移。請在選單列騰出空間後再試。";
 "%@ is running" = "%@ 正在執行";
 "%@ sits behind the camera housing, where it cannot be dragged. Move other visible items to Hidden to make room, then try again." = "%@ 位於瀏海後面，無法拖移。請先把其他常顯項目移到「隱藏」騰出空間，再試一次。";
+"%lld items are no longer where you left them." = "有 %lld 個項目不在你原本放的位置了。";
 "%lld items · %lld tucked away" = "共 %lld 項 · %lld 項已收起";
 "A calm menu bar, made with glass." = "一個安靜的選單列，由玻璃打造。";
 "A camera is in use" = "相機正在使用";
@@ -226,6 +227,7 @@
 "Items to the right of the Meno icon stay visible." = "Meno 圖示右側的項目會保持顯示。";
 "keep %@ visible" = "讓 %@ 保持顯示";
 "Keep an item visible" = "讓某個項目保持顯示";
+"Keep items where you put them" = "讓項目留在你放的位置";
 "Keep Visible" = "保持顯示";
 "Key for hovering" = "停留時需按住的鍵";
 "Keyboard shortcuts that work in every app." = "在任何 App 中都可用的鍵盤快速鍵。";
@@ -346,6 +348,7 @@
 "Put Back Now" = "立即放回";
 "Put it in the Stash" = "放入暗格";
 "Put items that belong together into a group with an icon of its own, from an item's menu in Settings › Layout." = "在「設定 › 佈局」的項目選單裡，可以把相關的項目放進一個擁有獨立圖示的群組。";
+"Put Them Back" = "放回原處";
 "Puts the items back where they were before the last change. Undo again to go further back." = "把項目放回上一次更改之前的位置。再次還原可以繼續往前退。";
 "Quick Open" = "快速開啟";
 "Quick Open…" = "快速開啟…";
@@ -538,6 +541,7 @@
 "When %@: %@." = "當%@時，%@。";
 "When a new item appears" = "出現新項目時";
 "When all of these are true" = "當以下條件全部滿足時";
+"When an app or macOS puts an item in another section, for example after the app restarted, Meno moves it back." = "當 App 或 macOS 把項目放到了別的區段（例如 App 重新啟動後），Meno 會把它移回來。";
 "When any of these is true" = "當以下任一條件滿足時";
 "When items need the room" = "項目需要空間時";
 "When the pointer leaves the menu bar" = "指標離開選單列時";
