@@ -38,6 +38,11 @@ struct HotkeysPane: View {
                         .font(.system(size: 12))
                         .foregroundStyle(.orange)
                 }
+                if !model.refusedHotkeys.isEmpty {
+                    Label("macOS did not accept the shortcuts shown in orange. Another app may already use them.", systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.orange)
+                }
             }
 
             SettingsCard("Item shortcuts", symbol: "keyboard", footnote: "Open a specific menu bar item from anywhere, even while it is hidden.") {
@@ -53,7 +58,14 @@ struct HotkeysPane: View {
                         EnumPicker(selection: $binding.click, title: \.title, width: 150)
                         ShortcutRecorder(combo: Binding(
                             get: { binding.combo },
-                            set: { if let combo = $0 { binding.combo = combo } }
+                            set: { combo in
+                                if let combo {
+                                    binding.combo = combo
+                                } else {
+                                    let id = binding.id
+                                    model.settings.itemHotkeys.removeAll { $0.id == id }
+                                }
+                            }
                         ))
                         Button {
                             model.settings.itemHotkeys.removeAll { $0.id == binding.id }
@@ -62,6 +74,7 @@ struct HotkeysPane: View {
                         }
                         .buttonStyle(.plain)
                         .foregroundStyle(.secondary)
+                        .accessibilityLabel(Text("Remove"))
                     }
                 }
                 Divider().opacity(0.4)

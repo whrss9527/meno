@@ -43,6 +43,15 @@ final class ToastCenter: ObservableObject {
             context.duration = 0.18
             panel.animator().alphaValue = 1
         }
+        // VoiceOver reads the notice; the panel never takes focus.
+        NSAccessibility.post(
+            element: NSApp as Any,
+            notification: .announcementRequested,
+            userInfo: [
+                .announcement: message,
+                .priority: NSAccessibilityPriorityLevel.high.rawValue,
+            ]
+        )
         dismissTask?.cancel()
         let seconds = duration ?? (actions.isEmpty ? 2.6 : 8)
         dismissTask = Task { [weak self] in

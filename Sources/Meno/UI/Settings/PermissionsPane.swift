@@ -45,7 +45,7 @@ struct PermissionsPane: View {
                 )
             }
             SettingsCard("Privacy", symbol: "lock.shield") {
-                Text("Meno works entirely on your Mac. It has no network features, no analytics and no accounts. Usage statistics and settings are stored in ~/Library/Application Support/Meno.")
+                Text("Meno works on your Mac, with no analytics and no accounts. It only goes online to ask GitHub for the latest release, when you check for updates or once a day if you turned that on. Usage statistics and settings are stored in ~/Library/Application Support/Meno.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

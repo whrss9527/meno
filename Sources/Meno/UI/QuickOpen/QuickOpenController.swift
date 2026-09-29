@@ -46,7 +46,8 @@ final class QuickOpenController: ObservableObject {
     unowned let model: AppModel
 
     @Published var query = "" {
-        didSet { recompute() }
+        // A new search starts at its best match.
+        didSet { recompute(keepingSelection: false) }
     }
     @Published private(set) var results: [QuickOpenResult] = []
     @Published var selection = 0
@@ -55,6 +56,7 @@ final class QuickOpenController: ObservableObject {
     @Published private(set) var presentation = 0
 
     private var panel: FloatingPanel?
+    private var shownAt = Date.distantPast
     private var hostingView: NSHostingView<QuickOpenView>?
     private var subscriptions: Set<AnyCancellable> = []
     private lazy var keyMonitor = LocalEventMonitor(mask: [.keyDown]) { [weak self] event in
@@ -83,9 +85,10 @@ final class QuickOpenController: ObservableObject {
         model.shelf.hide()
         query = ""
         selection = 0
-        recompute()
+        recompute(keepingSelection: false)
         let panel = self.panel ?? makePanel()
         isVisible = true
+        shownAt = Date()
         presentation += 1
         layoutSoon()
         panel.alphaValue = 0
@@ -111,7 +114,11 @@ final class QuickOpenController: ObservableObject {
 
     // MARK: - Results
 
-    func recompute() {
+    /// Finds the results again. With `keepingSelection`, the selected row
+    /// stays selected where it moved to, for example when the menu bar
+    /// changes while the palette is open.
+    func recompute(keepingSelection: Bool = true) {
+        let selectedID = keepingSelection && results.indices.contains(selection) ? results[selection].id : nil
         let items = model.inventory.items.filter { $0.kind != .marker }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let usage = model.usage
@@ -137,7 +144,11 @@ final class QuickOpenController: ObservableObject {
             }
             results = scored.sorted { $0.score > $1.score }.map(\.result)
         }
-        selection = results.isEmpty ? 0 : min(selection, results.count - 1)
+        if let selectedID, let index = results.firstIndex(where: { $0.id == selectedID }) {
+            selection = index
+        } else {
+            selection = keepingSelection && !results.isEmpty ? min(selection, results.count - 1) : 0
+        }
         layoutSoon()
     }
 
@@ -221,7 +232,11 @@ final class QuickOpenController: ObservableObject {
             return
         }
         hide()
-        if item.section != .visible {
+        if item.section != .visible || model.isZenActive {
+            // Zen keeps every section folded.
+            if model.isZenActive {
+                model.setZen(false)
+            }
             model.reveal.reveal(all: item.section == .stash, trigger: .menu)
         }
     }
@@ -229,6 +244,10 @@ final class QuickOpenController: ObservableObject {
     /// Handles navigation keys. Returns `true` when the key was used.
     private func handleKey(_ event: NSEvent) -> Bool {
         guard isVisible, let panel, panel.isKeyWindow else { return false }
+        // While an input method composes text, its keys are its own.
+        if let editor = panel.firstResponder as? NSTextView, editor.hasMarkedText() {
+            return false
+        }
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         switch event.keyCode {
         case 0x35: // escape
@@ -272,6 +291,16 @@ final class QuickOpenController: ObservableObject {
                 MainActor.assumeIsolated {
                     guard let self, self.isVisible else { return }
                     self.recompute()
+                }
+            }
+            .store(in: &subscriptions)
+        // The palette goes away when another app or window takes the
+        // keyboard, for example after ⌘-Tab.
+        NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification, object: panel)
+            .sink { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self, self.isVisible, Date().timeIntervalSince(self.shownAt) > 0.3 else { return }
+                    self.hide()
                 }
             }
             .store(in: &subscriptions)

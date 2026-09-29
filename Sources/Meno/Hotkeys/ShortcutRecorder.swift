@@ -5,14 +5,16 @@ import SwiftUI
 /// Records a global keyboard shortcut.
 ///
 /// While recording, Meno's own shortcuts are unregistered so that pressing
-/// an existing shortcut can be recorded again.
+/// an existing shortcut can be recorded again. Only one recorder records at
+/// a time, and recording stops when Meno is no longer the active app.
 struct ShortcutRecorder: View {
     @Binding var combo: KeyCombo?
     @EnvironmentObject private var model: AppModel
 
+    @State private var id = UUID()
     @State private var isRecording = false
     @State private var monitor: LocalEventMonitor?
-    @State private var rejected = false
+    @State private var problem: KeyCombo.Problem?
 
     var body: some View {
         HStack(spacing: 6) {
@@ -22,9 +24,10 @@ struct ShortcutRecorder: View {
                 Text(verbatim: label)
                     .font(.system(size: 12, weight: .medium, design: .rounded))
                     .frame(minWidth: 120)
-                    .foregroundStyle(rejected ? Color.red : Color.primary)
+                    .foregroundStyle(labelColor)
             }
             .menoGlassButtonStyle(prominent: isRecording)
+            .help(isRefused ? Text("macOS did not accept this shortcut. Another app may already use it.") : Text(verbatim: ""))
             if combo != nil, !isRecording {
                 Button {
                     combo = nil
@@ -34,20 +37,48 @@ struct ShortcutRecorder: View {
                 }
                 .buttonStyle(.plain)
                 .help(Text("Remove shortcut"))
+                .accessibilityLabel(Text("Remove shortcut"))
             }
         }
         .onDisappear(perform: stop)
+        .onChange(of: model.activeShortcutRecorder) {
+            if isRecording, model.activeShortcutRecorder != id {
+                stop()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+            stop()
+        }
     }
 
     private var label: String {
-        if isRecording { return String(localized: "Type a shortcut…") }
+        if isRecording {
+            switch problem {
+            case .needsModifier: return String(localized: "Add ⌘, ⌥ or ⌃")
+            case .needsCommandOrControl: return String(localized: "Add ⌘ or ⌃")
+            case nil: return String(localized: "Type a shortcut…")
+            }
+        }
         if let combo { return KeyboardLayout.displayString(for: combo) }
         return String(localized: "Record Shortcut")
     }
 
+    private var labelColor: Color {
+        if problem != nil { return .red }
+        if isRefused { return .orange }
+        return .primary
+    }
+
+    /// Whether macOS refused the recorded shortcut.
+    private var isRefused: Bool {
+        guard let combo, !isRecording else { return false }
+        return model.refusedHotkeys.contains(combo)
+    }
+
     private func start() {
+        model.activeShortcutRecorder = id
         isRecording = true
-        rejected = false
+        problem = nil
         TextEditingShortcuts.isSuspended = true
         model.hotkeys.unregisterAll()
         let monitor = LocalEventMonitor(mask: [.keyDown]) { event in
@@ -63,6 +94,10 @@ struct ShortcutRecorder: View {
         monitor = nil
         guard isRecording else { return }
         isRecording = false
+        problem = nil
+        // Another recorder that started meanwhile keeps the shortcuts off.
+        guard model.activeShortcutRecorder == id else { return }
+        model.activeShortcutRecorder = nil
         TextEditingShortcuts.isSuspended = false
         model.registerHotkeys()
     }
@@ -83,12 +118,11 @@ struct ShortcutRecorder: View {
             }
         }
         let candidate = KeyCombo(keyCode: UInt32(event.keyCode), modifiers: modifiers)
-        guard candidate.isValidGlobalShortcut else {
-            rejected = true
+        if let problem = candidate.problem(osMajorVersion: AppInfo.osMajorVersion) {
+            self.problem = problem
             NSSound.beep()
             return
         }
-        rejected = false
         combo = candidate
         stop()
     }

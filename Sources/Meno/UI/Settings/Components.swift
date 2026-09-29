@@ -81,6 +81,19 @@ struct SettingsCard<Content: View>: View {
     }
 }
 
+private struct SettingTitleKey: EnvironmentKey {
+    static let defaultValue: LocalizedStringKey? = nil
+}
+
+extension EnvironmentValues {
+    /// The title of the setting row a control is in, which names the control
+    /// for VoiceOver.
+    var settingTitle: LocalizedStringKey? {
+        get { self[SettingTitleKey.self] }
+        set { self[SettingTitleKey.self] = newValue }
+    }
+}
+
 /// A label on the left, a control on the right.
 struct SettingRow<Control: View>: View {
     let title: LocalizedStringKey
@@ -107,6 +120,7 @@ struct SettingRow<Control: View>: View {
             }
             Spacer(minLength: 12)
             control()
+                .environment(\.settingTitle, title)
         }
     }
 }
@@ -124,7 +138,7 @@ struct ToggleRow: View {
 
     var body: some View {
         SettingRow(title, subtitle: subtitle) {
-            Toggle("", isOn: $isOn)
+            Toggle(title, isOn: $isOn)
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.small)
@@ -150,9 +164,13 @@ struct SliderRow: View {
     var body: some View {
         SettingRow(title) {
             HStack(spacing: 10) {
-                Slider(value: $value, in: range, step: step)
-                    .frame(width: 180)
-                    .controlSize(.small)
+                Slider(value: $value, in: range, step: step) {
+                    Text(title)
+                }
+                .labelsHidden()
+                .frame(width: 180)
+                .controlSize(.small)
+                .accessibilityValue(Text(verbatim: format(value)))
                 Text(verbatim: format(value))
                     .font(.system(size: 12))
                     .monospacedDigit()
@@ -169,6 +187,7 @@ struct EnumPicker<Value: Hashable & CaseIterable>: View where Value.AllCases: Ra
     let title: (Value) -> String
     var width: CGFloat = 230
     var segmented = false
+    @Environment(\.settingTitle) private var settingTitle
 
     var body: some View {
         if segmented {
@@ -179,9 +198,13 @@ struct EnumPicker<Value: Hashable & CaseIterable>: View where Value.AllCases: Ra
     }
 
     private var picker: some View {
-        Picker("", selection: $selection) {
+        Picker(selection: $selection) {
             ForEach(Array(Value.allCases), id: \.self) { value in
                 Text(verbatim: title(value)).tag(value)
+            }
+        } label: {
+            if let settingTitle {
+                Text(settingTitle)
             }
         }
         .labelsHidden()
@@ -365,9 +388,10 @@ struct DisplayPicker: View {
 struct ItemPicker: View {
     @Binding var selection: MenuItemKey
     let items: [MenuBarItem]
+    @Environment(\.settingTitle) private var settingTitle
 
     var body: some View {
-        Picker("", selection: $selection) {
+        Picker(settingTitle ?? "Item", selection: $selection) {
             if !items.contains(where: { $0.key == selection }) {
                 Text(verbatim: selection == .placeholder ? String(localized: "Choose Item") : selection.owner)
                     .tag(selection)

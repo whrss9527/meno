@@ -176,6 +176,8 @@ private struct QuickOpenRow: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(0.22) : Color.clear)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -219,6 +221,8 @@ private struct QuickCommandRow: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(0.22) : Color.clear)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

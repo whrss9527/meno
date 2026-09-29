@@ -320,4 +320,10 @@ public struct RuleEvaluator: Sendable {
     public mutating func reset() {
         activeRuleIDs = []
     }
+
+    /// Forgets that a rule is active, so the next update activates it again
+    /// if it still matches (for example after its action was edited).
+    public mutating func forget(_ id: UUID) {
+        activeRuleIDs.remove(id)
+    }
 }

@@ -45,10 +45,26 @@ public struct KeyCombo: Hashable, Codable, Sendable {
         self.modifiers = modifiers
     }
 
-    /// Global shortcuts need a modifier other than Shift, unless the key is a
-    /// function key.
-    public var isValidGlobalShortcut: Bool {
-        !modifiers.subtracting(.shift).isEmpty || KeyCodeNames.isFunctionKey(keyCode)
+    /// Why a shortcut cannot work system-wide.
+    public enum Problem: Hashable, Sendable {
+        /// It needs a modifier other than Shift (unless it is a function key).
+        case needsModifier
+        /// From macOS 15 on, macOS refuses ⌥ or ⌥⇧ alone, so that shortcuts
+        /// cannot catch the characters typed with Option.
+        case needsCommandOrControl
+    }
+
+    /// What keeps the shortcut from working system-wide on a macOS version,
+    /// or `nil` if nothing does.
+    public func problem(osMajorVersion: Int) -> Problem? {
+        let significant = modifiers.subtracting(.shift)
+        if significant.isEmpty {
+            return KeyCodeNames.isFunctionKey(keyCode) ? nil : .needsModifier
+        }
+        if osMajorVersion >= 15, significant == .option {
+            return .needsCommandOrControl
+        }
+        return nil
     }
 
     /// For example "⌃⌥M". Pass `keyName` to use a layout-aware key name.

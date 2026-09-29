@@ -16,7 +16,7 @@ LITERAL = r'"((?:[^"\\\n]|\\.)*)"'
 CALLS = [
     "String(localized:", "Text(", "Button(", "Toggle(", "Label(", "TextField(", "Menu(",
     "SettingsCard(", "SettingRow(", "ToggleRow(", "SliderRow(", "Link(", ".alert(",
-    ".confirmationDialog(", "Picker(",
+    ".confirmationDialog(", "Picker(", "ColorPicker(",
 ]
 # Labelled arguments that take a LocalizedStringKey.
 LABELS = ["title", "message", "subtitle", "footnote", "label", "explanation", "detail", "text", "actionTitle", "help"]
@@ -84,6 +84,11 @@ def extract():
         for m in re.finditer(r"(?:Text|Button)\([^()\n]*\?\s*" + LITERAL + r"\s*:\s*" + LITERAL, source):
             keys.setdefault(to_key(m.group(1)), path.relative_to(ROOT))
             keys.setdefault(to_key(m.group(2)), path.relative_to(ROOT))
+        # Optional keys, as in subtitle: flag ? "A" : nil and Picker(title ?? "A").
+        for m in re.finditer(r"subtitle:[^\n]*\?\s*" + LITERAL + r"\s*:\s*nil", source):
+            keys.setdefault(to_key(m.group(1)), path.relative_to(ROOT))
+        for m in re.finditer(r"Picker\([^\n]*\?\?\s*" + LITERAL, source):
+            keys.setdefault(to_key(m.group(1)), path.relative_to(ROOT))
     for key in EXTRA:
         keys.setdefault(key, "extra")
     def has_words(key):

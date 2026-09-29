@@ -48,6 +48,19 @@ final class RuleTests: XCTestCase {
         XCTAssertFalse(RuleCondition.displayConnected(name: "").isSatisfied(by: RuleContext(displayNames: [""])))
     }
 
+    func testForgottenRuleActivatesAgain() {
+        let rule = AutomationRule(name: "Battery", conditions: [.onBattery], action: .zen)
+        var evaluator = RuleEvaluator()
+        let battery = RuleContext(isOnBattery: true)
+        XCTAssertEqual(evaluator.update(rules: [rule], context: battery), [.activated(rule)])
+        XCTAssertEqual(evaluator.update(rules: [rule], context: battery), [])
+        var edited = rule
+        edited.action = .collapse
+        evaluator.forget(rule.id)
+        XCTAssertEqual(evaluator.update(rules: [edited], context: battery), [.activated(edited)])
+        XCTAssertEqual(evaluator.activeRuleIDs, [rule.id])
+    }
+
     func testCommandCondition() {
         let vpn = RuleCondition.commandSucceeds(command: "scutil --nc list | grep -q Connected")
         XCTAssertFalse(vpn.isSatisfied(by: RuleContext()))

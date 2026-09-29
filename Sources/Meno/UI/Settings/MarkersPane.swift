@@ -82,7 +82,7 @@ private struct MarkerRow: View {
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 30, height: 30)
                 .background { Circle().fill(Color.accentColor.opacity(0.14)) }
-            Picker("", selection: $marker.kind) {
+            Picker("Kind", selection: $marker.kind) {
                 ForEach(MarkerKind.allCases, id: \.self) { kind in
                     Text(verbatim: kind.title).tag(kind)
                 }
@@ -91,8 +91,12 @@ private struct MarkerRow: View {
             .frame(width: 110)
             switch marker.kind {
             case .space:
-                Slider(value: $marker.width, in: 4...80, step: 2)
-                    .frame(width: 180)
+                Slider(value: $marker.width, in: 4...80, step: 2) {
+                    Text("Width")
+                }
+                .labelsHidden()
+                .frame(width: 180)
+                .accessibilityValue(Text(verbatim: "\(Int(marker.width)) pt"))
                 Text(verbatim: "\(Int(marker.width)) pt")
                     .font(.system(size: 12))
                     .monospacedDigit()

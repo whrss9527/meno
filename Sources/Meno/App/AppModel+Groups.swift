@@ -17,6 +17,8 @@ extension AppModel {
     /// Puts an item in a group. A visible item also leaves the menu bar for
     /// the Stash (or Hidden without a Stash), since the group's icon shows it.
     func addItem(_ key: MenuItemKey, toGroup id: UUID) {
+        // A marker only marks a place in the menu bar.
+        if inventory.item(for: key)?.kind == .marker { return }
         settings.groups.add(key, to: id)
         let target: ItemSection = settings.general.stashEnabled ? .stash : .hidden
         if let item = inventory.item(for: key), item.section == .visible, item.isMovable {

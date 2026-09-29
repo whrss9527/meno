@@ -136,6 +136,11 @@ struct LayoutChip: View {
         result.append(MoveCommand(title: String(localized: "Move Right"), symbol: "arrow.right", isEnabled: right?.isMovable == true) {
             if let right { place(item.key, .rightOf(right.layoutToken)) }
         })
+        // A marker only has a place; it cannot be opened, change or join a
+        // group.
+        if item.kind == .marker {
+            return result
+        }
         if item.section != .visible {
             result.append(MoveCommand(
                 title: String(localized: "Show When It Changes"),

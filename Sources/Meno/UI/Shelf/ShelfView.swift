@@ -10,8 +10,10 @@ struct ShelfView: View {
     private var settings: ShelfSettings { model.settings.shelf }
 
     var body: some View {
+        // Wraps into more rows instead of running off the screen.
+        let row = WrappingRow(maxWidth: shelf.maxContentWidth, spacing: 8, lineSpacing: 6)
         GlassGroup(spacing: 10) {
-            HStack(spacing: 8) {
+            row {
                 if let groupID = shelf.groupID {
                     groupContent(groupID)
                 } else {
@@ -35,7 +37,7 @@ struct ShelfView: View {
     @ViewBuilder
     private func groupContent(_ id: UUID) -> some View {
         let group = model.settings.groups.first { $0.id == id }
-        let items = (group?.items ?? []).compactMap { inventory.item(for: $0) }
+        let items = (group?.items ?? []).compactMap { inventory.item(for: $0) }.filter { $0.kind != .marker }
         if items.isEmpty {
             HStack(spacing: 8) {
                 Image(systemName: group?.symbol ?? "square.grid.2x2")
@@ -55,8 +57,8 @@ struct ShelfView: View {
     @ViewBuilder
     private var sectionContent: some View {
         let crowded = shelf.crowdedItems
-        let hidden = inventory.items(in: .hidden)
-        let stash = shelf.includesStash && model.settings.general.stashEnabled ? inventory.items(in: .stash) : []
+        let hidden = shelf.openableItems(in: .hidden)
+        let stash = shelf.includesStash && model.settings.general.stashEnabled ? shelf.openableItems(in: .stash) : []
         if crowded.isEmpty && hidden.isEmpty && stash.isEmpty {
             emptyState
         } else {
@@ -219,5 +221,62 @@ private struct ShelfToolButton: View {
         .buttonStyle(.plain)
         .onHover { isHovering = $0 }
         .help(Text(help))
+    }
+}
+
+/// Lays views out left to right in rows no wider than `maxWidth`, like
+/// words in a paragraph.
+private struct WrappingRow: Layout {
+    var maxWidth: CGFloat
+    var spacing: CGFloat
+    var lineSpacing: CGFloat
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = arrange(subviews)
+        let width = rows.map(\.width).max() ?? 0
+        let height = rows.reduce(0) { $0 + $1.height } + lineSpacing * CGFloat(max(rows.count - 1, 0))
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in arrange(subviews) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(
+                    at: CGPoint(x: x, y: y + (row.height - size.height) / 2),
+                    proposal: ProposedViewSize(size)
+                )
+                x += size.width + spacing
+            }
+            y += row.height + lineSpacing
+        }
+    }
+
+    private func arrange(_ subviews: Subviews) -> [Row] {
+        var rows: [Row] = []
+        var row = Row()
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let needed = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+            if !row.indices.isEmpty, needed > maxWidth {
+                rows.append(row)
+                row = Row()
+            }
+            row.width = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+            row.height = max(row.height, size.height)
+            row.indices.append(index)
+        }
+        if !row.indices.isEmpty {
+            rows.append(row)
+        }
+        return rows
     }
 }

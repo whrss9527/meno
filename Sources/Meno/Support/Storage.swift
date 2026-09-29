@@ -7,6 +7,8 @@ final class Storage {
     let directory: URL
 
     private var pendingWrites: [String: Task<Void, Never>] = [:]
+    /// What the pending writes would write, so they can be done at once.
+    private var pendingEncoders: [String: () throws -> Data] = [:]
 
     init() {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
@@ -73,19 +75,27 @@ final class Storage {
     func flush(settings: MenoSettings, usage: UsageLog) {
         for task in pendingWrites.values { task.cancel() }
         pendingWrites.removeAll()
+        let others = pendingEncoders.filter { $0.key != "settings.json" && $0.key != "usage.json" }
+        pendingEncoders.removeAll()
+        for (name, encode) in others {
+            writeNow(name: name, encode: encode)
+        }
         writeNow(name: "settings.json") { try settings.encoded() }
         writeNow(name: "usage.json") { try TolerantJSON.makeEncoder().encode(usage) }
     }
 
     private func write(name: String, delay: TimeInterval, encode: @escaping () throws -> Data) {
         pendingWrites[name]?.cancel()
+        pendingEncoders[name] = encode
         pendingWrites[name] = Task { [weak self] in
             if delay > 0 {
                 try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
             guard !Task.isCancelled, let self else { return }
-            self.writeNow(name: name, encode: encode)
             self.pendingWrites[name] = nil
+            if let encode = self.pendingEncoders.removeValue(forKey: name) {
+                self.writeNow(name: name, encode: encode)
+            }
         }
     }
 

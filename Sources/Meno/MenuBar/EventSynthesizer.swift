@@ -17,6 +17,10 @@ enum EventSynthesizer {
             return false
         }
         let original = CGEvent(source: nil)?.location
+        // Keys still held from a shortcut would turn this into a ⌘-drag
+        // or an ⌥-click.
+        down.flags = []
+        up.flags = []
         down.setIntegerValueField(.mouseEventClickState, value: 1)
         up.setIntegerValueField(.mouseEventClickState, value: 1)
         down.post(tap: .cghidEventTap)

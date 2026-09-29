@@ -121,6 +121,7 @@ private struct SidebarButton: View {
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         // The selection already shows where you are; a focus ring on another
         // row looked like a second selection. ⌘1–⌘9 switch panes instead.
         .focusEffectDisabled()

@@ -48,13 +48,18 @@ struct InsightsPane: View {
 
     // MARK: Tiles
 
+    /// Menu bar items in a section, without markers.
+    private func count(in section: ItemSection) -> Int {
+        inventory.items(in: section).filter { $0.kind != .marker }.count
+    }
+
     private var tiles: some View {
         let today = model.usage.dailyReveals(lastDays: 1).first?.count ?? 0
         let week = model.usage.dailyReveals(lastDays: 7).reduce(0) { $0 + $1.count }
         return HStack(spacing: 12) {
-            StatTile(value: inventory.items(in: .visible).count, label: "Visible", symbol: ItemSection.visible.symbol, color: ItemSection.visible.color)
-            StatTile(value: inventory.items(in: .hidden).count, label: "Hidden", symbol: ItemSection.hidden.symbol, color: ItemSection.hidden.color)
-            StatTile(value: inventory.items(in: .stash).count, label: "Stash", symbol: ItemSection.stash.symbol, color: ItemSection.stash.color)
+            StatTile(value: count(in: .visible), label: "Visible", symbol: ItemSection.visible.symbol, color: ItemSection.visible.color)
+            StatTile(value: count(in: .hidden), label: "Hidden", symbol: ItemSection.hidden.symbol, color: ItemSection.hidden.color)
+            StatTile(value: count(in: .stash), label: "Stash", symbol: ItemSection.stash.symbol, color: ItemSection.stash.color)
             StatTile(value: today, label: "Reveals today", symbol: "eye", color: .blue)
             StatTile(value: week, label: "This week", symbol: "calendar", color: .teal)
         }
@@ -144,7 +149,8 @@ struct InsightsPane: View {
     // MARK: Suggestions
 
     private var suggestions: some View {
-        let list = model.usage.suggestions(sections: inventory.sections, movable: inventory.movableKeys)
+        let markers = Set(inventory.items.filter { $0.kind == .marker }.map(\.key))
+        let list = model.usage.suggestions(sections: inventory.sections, movable: inventory.movableKeys.subtracting(markers))
         return SettingsCard("Suggestions", symbol: "lightbulb", footnote: "Based on how often you open items while they are hidden, and on items you have not used for three weeks.") {
             if list.isEmpty {
                 Text("Nothing to suggest right now. Your menu bar looks well arranged.")

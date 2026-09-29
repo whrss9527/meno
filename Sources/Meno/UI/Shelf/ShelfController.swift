@@ -18,6 +18,9 @@ final class ShelfController: ObservableObject {
     /// The item picked with the arrow keys, when the Shelf was opened with
     /// a hotkey.
     @Published private(set) var keyboardSelection: MenuItemKey?
+    /// How wide a row of items may be before the Shelf wraps it, so the
+    /// Shelf always fits on its screen.
+    @Published private(set) var maxContentWidth: CGFloat = 1200
 
     private var panel: FloatingPanel?
     private var hideTask: Task<Void, Never>?
@@ -38,11 +41,16 @@ final class ShelfController: ObservableObject {
     var shownItems: [MenuBarItem] {
         if let groupID {
             let group = model.settings.groups.first { $0.id == groupID }
-            return (group?.items ?? []).compactMap { model.inventory.item(for: $0) }
+            return (group?.items ?? []).compactMap { model.inventory.item(for: $0) }.filter { $0.kind != .marker }
         }
-        let hidden = crowdedItems + model.inventory.items(in: .hidden)
+        let hidden = crowdedItems + openableItems(in: .hidden)
         guard includesStash, model.settings.general.stashEnabled else { return hidden }
-        return hidden + model.inventory.items(in: .stash)
+        return hidden + openableItems(in: .stash)
+    }
+
+    /// The items of a section that can be opened, which leaves out markers.
+    func openableItems(in section: ItemSection) -> [MenuBarItem] {
+        model.inventory.items(in: section).filter { $0.kind != .marker }
     }
 
     /// Visible items that macOS could not fit into the menu bar. They sit
@@ -95,6 +103,12 @@ final class ShelfController: ObservableObject {
         hideTask = nil
         model.quickOpen.hide()
         includesStash = includeStash
+        if let screen = model.statusBar.screen ?? NSScreen.main {
+            // The panel keeps 8 pt from the screen edges; the view adds
+            // 24 pt of padding on each side.
+            let width = max(screen.visibleFrame.width - 64, 200)
+            if width != maxContentWidth { maxContentWidth = width }
+        }
         let panel = self.panel ?? makePanel()
         // Opened from the keyboard, the Shelf takes the arrow keys.
         let usesKeyboard = takesKeyboard

@@ -10,6 +10,8 @@ final class UpdateChecker {
     private static let latestReleaseURL = URL(string: "https://api.github.com/repos/whrss9527/meno/releases/latest")!
     /// The newest version announced by the daily check, so it is announced once.
     private static let announcedKey = "AnnouncedUpdateVersion"
+    /// When GitHub was last asked. Time asleep counts, unlike a timer's.
+    private static let lastCheckKey = "LastUpdateCheck"
 
     private var loop: Task<Void, Never>?
     private var isChecking = false
@@ -29,8 +31,11 @@ final class UpdateChecker {
         loop = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 60_000_000_000)
             while !Task.isCancelled {
-                await self?.check(userInitiated: false)
-                try? await Task.sleep(nanoseconds: 24 * 60 * 60 * 1_000_000_000)
+                let last = UserDefaults.standard.object(forKey: Self.lastCheckKey) as? Date ?? .distantPast
+                if Date().timeIntervalSince(last) >= 24 * 60 * 60 {
+                    await self?.check(userInitiated: false)
+                }
+                try? await Task.sleep(nanoseconds: 60 * 60 * 1_000_000_000)
             }
         }
     }
@@ -42,6 +47,7 @@ final class UpdateChecker {
         defer { isChecking = false }
         do {
             let release = try await Self.latestRelease()
+            UserDefaults.standard.set(Date(), forKey: Self.lastCheckKey)
             guard let latest = AppVersion(release.tagName), let current = AppVersion(AppInfo.version) else {
                 throw URLError(.cannotParseResponse)
             }

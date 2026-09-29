@@ -3,6 +3,9 @@ import AppKit
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var model: AppModel?
+    /// Links that arrived before Meno finished launching, for example the
+    /// one that launched it.
+    private var waitingURLs: [URL] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // An empty main menu keeps the menu bar clear whenever Meno is active.
@@ -10,6 +13,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let model = AppModel()
         self.model = model
         model.start()
+        let urls = waitingURLs
+        waitingURLs = []
+        for url in urls {
+            model.handle(url)
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -17,8 +25,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
+        guard let model else {
+            waitingURLs += urls
+            return
+        }
         for url in urls {
-            model?.handle(url)
+            model.handle(url)
         }
     }
 

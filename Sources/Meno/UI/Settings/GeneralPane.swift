@@ -1,3 +1,4 @@
+import AppKit
 import MenoCore
 import SwiftUI
 
@@ -20,8 +21,13 @@ struct GeneralPane: View {
             SettingsCard("Startup", symbol: "power") {
                 ToggleRow(
                     "Launch Meno at login",
-                    isOn: Binding(get: { model.launchAtLogin }, set: { model.setLaunchAtLogin($0) })
+                    subtitle: model.launchAtLoginNeedsApproval ? "Waiting for your approval in System Settings › General › Login Items." : nil,
+                    isOn: Binding(get: { model.launchAtLogin || model.launchAtLoginNeedsApproval }, set: { model.setLaunchAtLogin($0) })
                 )
+                .onAppear { model.refreshLaunchAtLogin() }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                    model.refreshLaunchAtLogin()
+                }
                 ToggleRow(
                     "Check for updates once a day",
                     subtitle: "Meno asks GitHub whether there is a newer release. Nothing about you or your Mac is sent.",

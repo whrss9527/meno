@@ -14,6 +14,15 @@ final class SpacingController: ObservableObject {
 
     static let spacingKey = "NSStatusItemSpacing"
     static let paddingKey = "NSStatusItemSelectionPadding"
+    /// Parts of macOS that launchd starts again right away when they quit.
+    /// Others may be busy, for example recording the screen, so they are
+    /// left alone and pick up the spacing when they restart.
+    private static let restartingAgents: Set<String> = [
+        "com.apple.controlcenter",
+        "com.apple.systemuiserver",
+        "com.apple.TextInputMenuAgent",
+        "com.apple.Spotlight",
+    ]
 
     init(model: AppModel) {
         self.model = model
@@ -47,15 +56,27 @@ final class SpacingController: ObservableObject {
         )
     }
 
-    /// Apps (other than Meno) that currently show menu bar items.
+    /// Apps (other than Meno) that show menu bar items and can be
+    /// relaunched to pick up the spacing.
     var affectedApps: [NSRunningApplication] {
         let pids = Set(model.inventory.items.filter { $0.kind != .marker }.map(\.pid))
         return pids.compactMap { NSRunningApplication(processIdentifier: $0) }
-            .filter { $0.processIdentifier != AppInfo.ownPID }
+            .filter { $0.processIdentifier != AppInfo.ownPID && Self.canRelaunch($0) }
             .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
     }
 
+    private static func isRestartingAgent(_ app: NSRunningApplication) -> Bool {
+        restartingAgents.contains(app.bundleIdentifier ?? "")
+    }
+
+    private static func canRelaunch(_ app: NSRunningApplication) -> Bool {
+        if isRestartingAgent(app) { return true }
+        if app.bundleIdentifier?.hasPrefix("com.apple.") == true, app.activationPolicy != .regular { return false }
+        return app.bundleURL != nil
+    }
+
     func apply(_ spacing: IconSpacing, relaunchApps: Bool) async {
+        guard !isApplying else { return }
         isApplying = true
         defer { isApplying = false }
         Self.write(spacing.spacing, for: Self.spacingKey)
@@ -77,8 +98,8 @@ final class SpacingController: ObservableObject {
     }
 
     private func relaunch(_ app: NSRunningApplication) async {
-        if app.bundleIdentifier?.hasPrefix("com.apple.") == true {
-            // System agents such as Control Center are restarted by launchd.
+        if Self.isRestartingAgent(app) {
+            // launchd starts these again.
             _ = kill(app.processIdentifier, SIGTERM)
             return
         }

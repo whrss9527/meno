@@ -149,10 +149,17 @@ final class KeyComboTests: XCTestCase {
     }
 
     func testGlobalShortcutValidity() {
-        XCTAssertTrue(KeyCombo(keyCode: 0x00, modifiers: .command).isValidGlobalShortcut)
-        XCTAssertFalse(KeyCombo(keyCode: 0x00, modifiers: []).isValidGlobalShortcut)
-        XCTAssertFalse(KeyCombo(keyCode: 0x00, modifiers: .shift).isValidGlobalShortcut)
-        XCTAssertTrue(KeyCombo(keyCode: 0x7A, modifiers: []).isValidGlobalShortcut)
+        XCTAssertNil(KeyCombo(keyCode: 0x00, modifiers: .command).problem(osMajorVersion: 26))
+        XCTAssertEqual(KeyCombo(keyCode: 0x00, modifiers: []).problem(osMajorVersion: 26), .needsModifier)
+        XCTAssertEqual(KeyCombo(keyCode: 0x00, modifiers: .shift).problem(osMajorVersion: 26), .needsModifier)
+        XCTAssertNil(KeyCombo(keyCode: 0x7A, modifiers: []).problem(osMajorVersion: 26))
+        // ⌥ or ⌥⇧ alone works up to macOS 14 only.
+        let optionSpace = KeyCombo(keyCode: 0x31, modifiers: .option)
+        XCTAssertNil(optionSpace.problem(osMajorVersion: 14))
+        XCTAssertEqual(optionSpace.problem(osMajorVersion: 15), .needsCommandOrControl)
+        XCTAssertEqual(KeyCombo(keyCode: 0x31, modifiers: [.option, .shift]).problem(osMajorVersion: 26), .needsCommandOrControl)
+        XCTAssertNil(KeyCombo(keyCode: 0x31, modifiers: [.option, .control]).problem(osMajorVersion: 26))
+        XCTAssertNil(KeyCombo(keyCode: 0x31, modifiers: [.option, .command]).problem(osMajorVersion: 27))
     }
 
     func testConflicts() {

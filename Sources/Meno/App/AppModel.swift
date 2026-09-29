@@ -14,9 +14,17 @@ final class AppModel: ObservableObject {
     @Published private(set) var isZenActive = false
     @Published private(set) var activeSceneID: UUID?
     @Published private(set) var launchAtLogin: Bool
+    /// Meno is registered to launch at login but waits for approval in
+    /// System Settings.
+    @Published private(set) var launchAtLoginNeedsApproval = false
     /// An item picked elsewhere (for example in the layout editor) to get a
     /// shortcut in the Hotkeys pane.
     @Published var hotkeyDraftItem: MenuItemKey?
+    /// Shortcuts macOS did not accept, for example because another app
+    /// already uses them.
+    @Published private(set) var refusedHotkeys: Set<KeyCombo> = []
+    /// The shortcut recorder that is recording, if any.
+    @Published var activeShortcutRecorder: UUID?
 
     let storage: Storage
     let permissions: PermissionCenter
@@ -56,6 +64,7 @@ final class AppModel: ObservableObject {
         hotkeys = HotkeyCenter()
         toasts = ToastCenter()
         launchAtLogin = LaunchAtLogin.isEnabled
+        launchAtLoginNeedsApproval = LaunchAtLogin.requiresApproval
     }
 
     // MARK: - Lifecycle
@@ -77,7 +86,6 @@ final class AppModel: ObservableObject {
         hotkeys.install()
         registerHotkeys()
         reveal.start()
-        automation.start()
         changes.settingsChanged()
         updates.settingsChanged()
         tint.update()
@@ -86,6 +94,9 @@ final class AppModel: ObservableObject {
         startPeriodicRefresh()
         Task {
             await inventory.refresh()
+            // Rules start once the menu bar is known, so that what they
+            // change can be undone.
+            automation.start()
         }
         if !settings.onboardingCompleted {
             onboarding.show()
@@ -224,11 +235,20 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Reads the login item state again, which can also change in System
+    /// Settings.
+    func refreshLaunchAtLogin() {
+        let enabled = LaunchAtLogin.isEnabled
+        let needsApproval = LaunchAtLogin.requiresApproval
+        if enabled != launchAtLogin { launchAtLogin = enabled }
+        if needsApproval != launchAtLoginNeedsApproval { launchAtLoginNeedsApproval = needsApproval }
+    }
+
     func setLaunchAtLogin(_ enabled: Bool) {
         if let error = LaunchAtLogin.set(enabled) {
             toasts.show(String(localized: "Could not change the login item: \(error)"), symbol: "exclamationmark.triangle.fill")
         }
-        launchAtLogin = LaunchAtLogin.isEnabled
+        refreshLaunchAtLogin()
         if enabled, LaunchAtLogin.requiresApproval {
             toasts.show(String(localized: "Approve Meno in System Settings › General › Login Items."), symbol: "person.badge.key.fill")
             LaunchAtLogin.openSystemSettings()
@@ -290,25 +310,38 @@ final class AppModel: ObservableObject {
 
     func registerHotkeys() {
         hotkeys.unregisterAll()
+        var refused: Set<KeyCombo> = []
+        func register(_ combo: KeyCombo, _ action: @escaping () -> Void) {
+            if !hotkeys.register(combo, action: action) {
+                refused.insert(combo)
+            }
+        }
         for action in HotkeyAction.allCases {
             guard let combo = settings.hotkeys[action] else { continue }
-            hotkeys.register(combo) { [weak self] in
+            register(combo) { [weak self] in
                 self?.perform(action)
             }
         }
         for binding in settings.itemHotkeys {
             let key = binding.itemKey
             let click = binding.click
-            hotkeys.register(binding.combo) { [weak self] in
+            register(binding.combo) { [weak self] in
                 self?.openItem(withKey: key, click: click, source: .hotkey)
             }
         }
         for group in settings.groups {
             guard let combo = group.hotkey else { continue }
             let id = group.id
-            hotkeys.register(combo) { [weak self] in
+            register(combo) { [weak self] in
                 self?.shelf.toggle(group: id, trigger: .hotkey, takesKeyboard: true)
             }
+        }
+        // A shortcut used twice fails the second time; that is reported as
+        // a conflict instead.
+        let conflicts = settings.hotkeys.conflicts(with: settings.itemHotkeys, groupHotkeys: settings.groups.compactMap(\.hotkey))
+        refused.subtract(conflicts)
+        if refused != refusedHotkeys {
+            refusedHotkeys = refused
         }
     }
 
@@ -486,6 +519,8 @@ final class AppModel: ObservableObject {
                 toasts.show(String(localized: "Scene “\(scene.name)” applied."), symbol: scene.symbol)
             }
             return true
+        } catch is CancellationError {
+            return false
         } catch {
             toasts.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
             return false

@@ -96,7 +96,7 @@ struct AppearancePane: View {
             }
             SettingRow("Tint") {
                 HStack(spacing: 8) {
-                    Toggle("", isOn: Binding(
+                    Toggle("Tint", isOn: Binding(
                         get: { model.settings.shelf.tint != nil },
                         set: { model.settings.shelf.tint = $0 ? RGBAColor(red: 0.36, green: 0.47, blue: 1, alpha: 0.5) : nil }
                     ))
@@ -104,7 +104,7 @@ struct AppearancePane: View {
                     .toggleStyle(.switch)
                     .controlSize(.small)
                     if model.settings.shelf.tint != nil {
-                        ColorPicker("", selection: Binding(
+                        ColorPicker("Tint color", selection: Binding(
                             get: { model.settings.shelf.tint?.color ?? .blue },
                             set: { model.settings.shelf.tint = RGBAColor(nsColor: NSColor($0)) }
                         ), supportsOpacity: true)
@@ -144,10 +144,10 @@ struct AppearancePane: View {
             if model.settings.tint.enabled {
                 SettingRow("Fill") {
                     HStack(spacing: 8) {
-                        ColorPicker("", selection: $model.settings.tint.color.colorBinding, supportsOpacity: true)
+                        ColorPicker("Fill", selection: $model.settings.tint.color.colorBinding, supportsOpacity: true)
                             .labelsHidden()
                         if model.settings.tint.fill == .gradient {
-                            ColorPicker("", selection: $model.settings.tint.secondaryColor.colorBinding, supportsOpacity: true)
+                            ColorPicker("Gradient end color", selection: $model.settings.tint.secondaryColor.colorBinding, supportsOpacity: true)
                                 .labelsHidden()
                         }
                         EnumPicker(selection: $model.settings.tint.fill, title: \.title, width: 160, segmented: true)
@@ -157,10 +157,10 @@ struct AppearancePane: View {
                 if model.settings.tint.usesDarkColors {
                     SettingRow("Fill in Dark Mode") {
                         HStack(spacing: 8) {
-                            ColorPicker("", selection: $model.settings.tint.darkColor.colorBinding, supportsOpacity: true)
+                            ColorPicker("Fill in Dark Mode", selection: $model.settings.tint.darkColor.colorBinding, supportsOpacity: true)
                                 .labelsHidden()
                             if model.settings.tint.fill == .gradient {
-                                ColorPicker("", selection: $model.settings.tint.darkSecondaryColor.colorBinding, supportsOpacity: true)
+                                ColorPicker("Gradient end color in Dark Mode", selection: $model.settings.tint.darkSecondaryColor.colorBinding, supportsOpacity: true)
                                     .labelsHidden()
                             }
                         }
@@ -172,7 +172,7 @@ struct AppearancePane: View {
                 ToggleRow("Border", isOn: $model.settings.tint.border)
                 if model.settings.tint.border {
                     SettingRow("Border color") {
-                        ColorPicker("", selection: $model.settings.tint.borderColor.colorBinding, supportsOpacity: true)
+                        ColorPicker("Border color", selection: $model.settings.tint.borderColor.colorBinding, supportsOpacity: true)
                             .labelsHidden()
                     }
                     SliderRow("Border width", value: $model.settings.tint.borderWidth, in: 0.5...3, step: 0.5) { value in
@@ -212,6 +212,7 @@ struct AppearancePane: View {
                     Task { await spacing.apply(draftSpacing, relaunchApps: false) }
                 }
                 .menoGlassButtonStyle()
+                .disabled(spacing.isApplying)
                 Button("Apply & Relaunch Apps…") {
                     confirmingRelaunch = true
                 }

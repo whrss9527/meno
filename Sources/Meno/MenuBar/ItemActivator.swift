@@ -41,17 +41,15 @@ final class ItemActivator {
     }
 
     private func press(_ item: MenuBarItem, element: AXUIElement, click: ClickKind) async -> Bool {
-        if click == .secondary {
-            if await AX.perform(AX.Action.showMenu, on: element) { return true }
-            if item.isOnScreen {
-                return EventSynthesizer.click(at: CGPoint(x: item.frame.midX, y: item.frame.midY), secondary: true)
-            }
-            return false
+        let action = click == .secondary ? AX.Action.showMenu : AX.Action.press
+        if await AX.perform(action, on: element) { return true }
+        // A click needs where the item is now; items may have shifted since
+        // the last scan.
+        var target = item
+        if let frame = await MenuBarScanner.frame(of: element) {
+            target.frame = frame
         }
-        if await AX.perform(AX.Action.press, on: element) { return true }
-        if item.isOnScreen {
-            return EventSynthesizer.click(at: CGPoint(x: item.frame.midX, y: item.frame.midY), secondary: false)
-        }
-        return false
+        guard target.isOnScreen else { return false }
+        return EventSynthesizer.click(at: CGPoint(x: target.frame.midX, y: target.frame.midY), secondary: click == .secondary)
     }
 }

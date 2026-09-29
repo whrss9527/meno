@@ -108,7 +108,9 @@ private struct RuleCard: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 8)
-            Toggle("", isOn: $rule.isEnabled)
+            Toggle(isOn: $rule.isEnabled) {
+                Text(verbatim: rule.name)
+            }
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.small)
@@ -118,6 +120,7 @@ private struct RuleCard: View {
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
+            .accessibilityLabel(Text("More"))
             .menuStyle(.borderlessButton)
             .fixedSize()
         }

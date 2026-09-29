@@ -37,6 +37,8 @@
 "Add Marker" = "添加标记";
 "Add Rule" = "添加规则";
 "Add Shortcut…" = "添加快捷键…";
+"Add ⌘ or ⌃" = "需加 ⌘ 或 ⌃";
+"Add ⌘, ⌥ or ⌃" = "需加 ⌘、⌥ 或 ⌃";
 "Advanced" = "高级";
 "After" = "延迟";
 "After an update, System Settings can still list an earlier build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "更新之后，系统设置里可能还留着旧版本 Meno 的记录，它对新版本不生效。先清除这条记录，再在系统提示时打开 Meno 的开关。";
@@ -146,6 +148,8 @@
 "Global shortcuts" = "全局快捷键";
 "Good to know" = "小贴士";
 "Gradient" = "渐变";
+"Gradient end color" = "渐变终点颜色";
+"Gradient end color in Dark Mode" = "深色模式下的渐变终点颜色";
 "Grant access again after the update" = "更新后需要重新授权";
 "Grant Accessibility Access…" = "授予辅助功能权限…";
 "Grant Access…" = "授予权限…";
@@ -188,6 +192,7 @@
 "In the Shelf" = "在托盘中";
 "Include the Stash" = "包含暗格";
 "Insights" = "洞察";
+"Item" = "项目";
 "Item changed" = "项目变化";
 "Item shortcuts" = "项目快捷键";
 "Items left of this divider are hidden" = "此分隔符左侧的项目会被隐藏";
@@ -199,6 +204,7 @@
 "Keep an item visible" = "让某个项目保持显示";
 "Keep Visible" = "保持显示";
 "Keyboard shortcuts that work in every app." = "在任何 App 中都可用的键盘快捷键。";
+"Kind" = "类型";
 "Label" = "标签";
 "Launch" = "启动";
 "Launch Meno at login" = "登录时打开 Meno";
@@ -213,6 +219,8 @@
 "macOS applies Screen Recording access after Meno restarts." = "macOS 会在 Meno 重新打开后应用屏幕录制权限。";
 "macOS applies the spacing when an app starts, so apps with menu bar items are quit and reopened. Save your work in them first." = "macOS 只在 App 启动时读取间距设置，因此带有菜单栏项目的 App 会被退出并重新打开。请先存储这些 App 中的工作。";
 "macOS asks you to approve these. Meno works locally and sends nothing about you anywhere." = "macOS 会请你批准以下权限。Meno 在本地运行，不会把关于你的任何信息发送出去。";
+"macOS did not accept the shortcuts shown in orange. Another app may already use them." = "macOS 没有接受以橙色显示的快捷键，可能已被其他 App 占用。";
+"macOS did not accept this shortcut. Another app may already use it." = "macOS 没有接受这个快捷键，可能已被其他 App 占用。";
 "macOS does not allow %@ to be moved." = "macOS 不允许移动 %@。";
 "macOS keeps this item in place" = "macOS 固定了这个项目的位置";
 "Makes room by hiding the menus of the frontmost app while items are shown." = "显示项目时暂时隐藏前台 App 的菜单，腾出空间。";
@@ -236,11 +244,12 @@
 "Meno Settings" = "Meno 设置";
 "Meno shows this name in the Shelf, Quick Open, hotkeys and rules. The menu bar itself does not change." = "Meno 会在托盘、快速打开、快捷键和规则中使用这个名字，菜单栏本身不会改变。";
 "Meno was updated to %@." = "Meno 已更新到 %@。";
-"Meno works entirely on your Mac. It has no network features, no analytics and no accounts. Usage statistics and settings are stored in ~/Library/Application Support/Meno." = "Meno 完全在你的 Mac 上运行：没有联网功能，没有数据分析，也没有账户。使用统计和设置保存在 ~/Library/Application Support/Meno 中。";
+"Meno works on your Mac, with no analytics and no accounts. It only goes online to ask GitHub for the latest release, when you check for updates or once a day if you turned that on. Usage statistics and settings are stored in ~/Library/Application Support/Meno." = "Meno 在你的 Mac 上运行，没有数据分析，也没有账户。它只在你检查更新时，或在你开启每日检查后每天一次，向 GitHub 询问最新版本。使用统计和设置保存在 ~/Library/Application Support/Meno 中。";
 "Meno — click to show or hide items, ⌥-click to include the Stash, right-click for more" = "Meno — 点按显示或隐藏项目，按住 ⌥ 点按包含暗格，右键点按查看更多";
 "Menu" = "菜单";
 "Menu bar tint" = "菜单栏着色";
 "Menu bar, calmed" = "让菜单栏安静下来";
+"More" = "更多";
 "Most used in the last 30 days" = "最近 30 天最常用";
 "Move Left" = "向左移一格";
 "Move Right" = "向右移一格";
@@ -315,6 +324,7 @@
 "Relaunch Meno" = "重新打开 Meno";
 "Relaunch Meno later to use Screen Recording." = "稍后重新打开 Meno 即可使用屏幕录制权限。";
 "Relaunch to finish" = "重新打开以完成设置";
+"Remove" = "移除";
 "Remove Condition" = "移除条件";
 "Remove from Group" = "移出分组";
 "Remove from “%@”" = "从“%@”中移除";
@@ -444,6 +454,7 @@
 "Time of day" = "时间段";
 "Timer" = "计时器";
 "Tint" = "着色";
+"Tint color" = "着色颜色";
 "Tint the menu bar" = "为菜单栏着色";
 "to" = "至";
 "Turn On" = "开启";
@@ -469,6 +480,7 @@
 "Use the Stash" = "使用暗格";
 "Version %@ (%@)" = "版本 %@（%@）";
 "Visible" = "常显";
+"Waiting for your approval in System Settings › General › Login Items." = "正在等待你在“系统设置 › 通用 › 登录项”中批准。";
 "Welcome to Meno" = "欢迎使用 Meno";
 "What Meno needs, and why." = "Meno 需要什么，以及为什么。";
 "What's New" = "新功能";
@@ -480,6 +492,7 @@
 "When you switch to another app or click elsewhere" = "切换到其他 App 或点按别处时";
 "While Meno moves an item it briefly takes over the pointer. It puts the pointer back when it is done." = "Meno 移动项目时会短暂接管指针，完成后会把指针放回原处。";
 "Wide divider" = "宽分隔符";
+"Width" = "宽度";
 "Without it, click, hover or scroll over an empty part of the menu bar, or use a hotkey. Right-click an empty part for Meno's menu, and open Meno again for Settings." = "隐藏后，可以点按、悬停或滚动菜单栏的空白处，或使用快捷键来显示项目。右键点按空白处可打开 Meno 的菜单，再次打开 Meno 即可进入设置。";
 "Work" = "工作";
 "You can also hold ⌘ and drag icons directly in the menu bar. Meno's dividers mark the sections: the single chevron starts the Hidden section, the double chevron the Stash." = "你也可以直接在菜单栏中按住 ⌘ 拖移图标。Meno 的分隔符标记了各个分区：单箭头是“隐藏”分区的起点，双箭头是“暗格”的起点。";
