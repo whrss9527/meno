@@ -116,6 +116,8 @@
 "Close after opening an item" = "打开项目后关闭托盘";
 "Commands run with zsh every 10 seconds while the rule is on. A command counts as true when it exits with status 0; one that takes longer than 5 seconds is stopped." = "规则开启时，命令每 10 秒用 zsh 运行一次。命令以状态 0 退出时条件成立；运行超过 5 秒的命令会被终止。";
 "Conditions" = "条件";
+"Connected now" = "当前已连接";
+"Connected to a network" = "连接到某个网络";
 "Connected to power" = "连接电源";
 "connected to power" = "连接电源";
 "Continue" = "继续";
@@ -268,6 +270,7 @@
 "Meno cannot replace itself in its folder." = "Meno 无法在所在的文件夹中替换自己。";
 "Meno could not find where to drop the item." = "Meno 找不到放置项目的位置。";
 "Meno could not put %@ back. %@" = "Meno 无法把 %@ 放回原处。%@";
+"Meno could not tell which network this is." = "Meno 无法识别当前所在的网络。";
 "Meno did not rearrange the menu bar because the mouse and keyboard were in use the whole time." = "鼠标和键盘一直在使用，Meno 没有调整菜单栏。";
 "Meno does not know the link %@." = "Meno 无法识别链接 %@。";
 "Meno icon" = "Meno 图标";
@@ -280,6 +283,7 @@
 "Meno quits and opens again." = "Meno 会退出并重新打开。";
 "Meno quits and opens again. macOS then asks you to allow Meno in Accessibility again." = "Meno 会退出并重新打开，之后 macOS 会请你在“辅助功能”中重新允许 Meno。";
 "Meno reads and moves menu bar items through Accessibility." = "Meno 通过辅助功能读取和移动菜单栏项目。";
+"Meno recognizes a network by its router, without needing Location Services." = "Meno 通过路由器识别网络，不需要定位服务。";
 "Meno Settings" = "Meno 设置";
 "Meno shows this name in the Shelf, Quick Open, hotkeys and rules. The menu bar itself does not change." = "Meno 会在托盘、快速打开、快捷键和规则中使用这个名字，菜单栏本身不会改变。";
 "Meno was updated to %@." = "Meno 已更新到 %@。";
@@ -300,6 +304,7 @@
 "Moving…" = "正在移动…";
 "My Layout" = "我的布局";
 "Name" = "名称";
+"Network name" = "网络名称";
 "Never" = "从不";
 "Never shown in the menu bar. Reach these items from the Shelf, Quick Open or with ⌥-click." = "从不显示在菜单栏中。可通过托盘、快速打开或按住 ⌥ 点按来访问。";
 "New Group" = "新建分组";
@@ -317,6 +322,7 @@
 "No Scenes Yet" = "还没有场景";
 "No scenes yet." = "还没有场景。";
 "Not available, using frosted glass" = "不可用，改用磨砂玻璃";
+"Not connected now" = "当前未连接";
 "Not used for %lld days." = "已有 %lld 天未使用。";
 "Nothing in this group yet. Add items from their menu in the layout editor." = "这个分组还是空的。可以在布局编辑器的项目菜单里加入项目。";
 "Nothing is hidden" = "没有隐藏的项目";
@@ -324,6 +330,7 @@
 "Nothing to suggest right now. Your menu bar looks well arranged." = "暂时没有建议，你的菜单栏看起来井井有条。";
 "offline" = "离线";
 "on battery" = "使用电池供电";
+"on the network “%@”" = "位于网络“%@”";
 "One divider grows past the screen edge and pushes hidden items out of view. Best on macOS 14 to 26." = "单个分隔符延伸到屏幕边缘之外，把隐藏项目推出视野。最适合 macOS 14 至 26。";
 "One shortcut clears the menu bar for recordings and talks." = "一个快捷键即可为录屏和演讲清空菜单栏。";
 "Open" = "打开";
@@ -539,6 +546,7 @@
 "Updated %@" = "更新于%@";
 "Updated “%@”." = "已更新“%@”。";
 "Usage statistics are off" = "使用统计已关闭";
+"Use Current Network" = "使用当前网络";
 "Use Its Own Icon" = "使用原本的图标";
 "Use Original Name" = "恢复原名";
 "Use System Default" = "使用系统默认值";

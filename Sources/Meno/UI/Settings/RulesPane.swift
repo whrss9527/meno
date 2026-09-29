@@ -190,6 +190,8 @@ enum RuleDescriber {
             return String(localized: "a camera is in use")
         case .commandSucceeds(let command):
             return String(localized: "“\(command)” succeeds")
+        case .network(let router, let name):
+            return String(localized: "on the network “\(name.isEmpty ? router : name)”")
         }
     }
 

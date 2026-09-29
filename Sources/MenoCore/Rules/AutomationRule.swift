@@ -20,6 +20,8 @@ public struct RuleContext: Equatable, Sendable {
     public var cameraInUse: Bool
     /// The shell commands of rule conditions whose last run succeeded.
     public var succeededCommands: Set<String>
+    /// Hardware addresses of the routers of the networks the Mac is on.
+    public var routers: Set<String>
 
     public init(
         frontmostBundleID: String? = nil,
@@ -33,7 +35,8 @@ public struct RuleContext: Equatable, Sendable {
         isOnline: Bool = true,
         microphoneInUse: Bool = false,
         cameraInUse: Bool = false,
-        succeededCommands: Set<String> = []
+        succeededCommands: Set<String> = [],
+        routers: Set<String> = []
     ) {
         self.frontmostBundleID = frontmostBundleID
         self.runningBundleIDs = runningBundleIDs
@@ -47,6 +50,7 @@ public struct RuleContext: Equatable, Sendable {
         self.microphoneInUse = microphoneInUse
         self.cameraInUse = cameraInUse
         self.succeededCommands = succeededCommands
+        self.routers = routers
     }
 }
 
@@ -71,6 +75,9 @@ public enum RuleCondition: Codable, Hashable, Sendable {
     /// A shell command of the user's exits with status 0. Meno runs it
     /// every few seconds while an enabled rule has this condition.
     case commandSucceeds(command: String)
+    /// The Mac is on the network whose router has this hardware address;
+    /// `name` is what the person calls it.
+    case network(router: String, name: String)
 
     public func isSatisfied(by context: RuleContext) -> Bool {
         switch self {
@@ -106,6 +113,8 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             return context.cameraInUse
         case .commandSucceeds(let command):
             return context.succeededCommands.contains(command)
+        case .network(let router, _):
+            return !router.isEmpty && context.routers.contains(router)
         }
     }
 
@@ -133,6 +142,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case .microphoneInUse: return .microphoneInUse
         case .cameraInUse: return .cameraInUse
         case .commandSucceeds: return .commandSucceeds
+        case .network: return .network
         }
     }
 
@@ -151,6 +161,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case microphoneInUse
         case cameraInUse
         case commandSucceeds
+        case network
 
         /// A reasonable starting value for a new condition of this kind.
         public var defaultCondition: RuleCondition {
@@ -169,6 +180,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             case .microphoneInUse: return .microphoneInUse
             case .cameraInUse: return .cameraInUse
             case .commandSucceeds: return .commandSucceeds(command: "")
+            case .network: return .network(router: "", name: "")
             }
         }
     }

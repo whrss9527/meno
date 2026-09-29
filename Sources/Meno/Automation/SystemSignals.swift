@@ -5,7 +5,7 @@ import MenoCore
 /// Collects the state that rules are evaluated against.
 enum SystemSignals {
     @MainActor
-    static func snapshot(isOnline: Bool, capture: CaptureActivity.State, succeededCommands: Set<String>) -> RuleContext {
+    static func snapshot(isOnline: Bool, capture: CaptureActivity.State, succeededCommands: Set<String>, routers: Set<String>) -> RuleContext {
         let workspace = NSWorkspace.shared
         let running = Set(workspace.runningApplications.compactMap(\.bundleIdentifier))
         let power = PowerSource.current()
@@ -23,7 +23,8 @@ enum SystemSignals {
             isOnline: isOnline,
             microphoneInUse: capture.microphone,
             cameraInUse: capture.camera,
-            succeededCommands: succeededCommands
+            succeededCommands: succeededCommands,
+            routers: routers
         )
     }
 }

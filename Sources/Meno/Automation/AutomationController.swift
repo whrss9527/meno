@@ -28,6 +28,9 @@ final class AutomationController: ObservableObject {
     }
     /// The commands of rule conditions that succeeded when they last ran.
     private(set) var succeededCommands: Set<String> = []
+    /// The routers of the networks the Mac is on, while a rule depends on them.
+    private(set) var routers: Set<String> = []
+    private var routerLookup = 0
     private lazy var commandChecks = CommandChecks { [weak self] succeeded in
         MainActor.assumeIsolated {
             guard let self else { return }
@@ -108,7 +111,10 @@ final class AutomationController: ObservableObject {
         monitor.pathUpdateHandler = { [weak self] path in
             let online = path.status == .satisfied
             Task { @MainActor [weak self] in
-                guard let self, self.isOnline != online else { return }
+                guard let self else { return }
+                // Another network may be behind the same connection state.
+                self.refreshRouters()
+                guard self.isOnline != online else { return }
                 self.isOnline = online
                 self.evaluate()
             }
@@ -120,6 +126,8 @@ final class AutomationController: ObservableObject {
         loopTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 30_000_000_000)
+                // A router can take a moment to be known after joining.
+                self?.refreshRouters()
                 self?.evaluate()
             }
         }
@@ -147,7 +155,25 @@ final class AutomationController: ObservableObject {
         }
         watchCaptureActivity()
         commandChecks.watch(model.settings.effectiveRules.commands)
+        refreshRouters()
         evaluate()
+    }
+
+    /// Looks up the routers of the networks the Mac is on, while an enabled
+    /// rule depends on them, and evaluates the rules when they changed.
+    private func refreshRouters() {
+        routerLookup += 1
+        let lookup = routerLookup
+        guard model.settings.effectiveRules.watchesNetworks else {
+            routers = []
+            return
+        }
+        Task { [weak self] in
+            let found = await NetworkRouters.current()
+            guard let self, lookup == self.routerLookup, found != self.routers else { return }
+            self.routers = found
+            self.evaluate()
+        }
     }
 
     /// Microphones and cameras are only watched while an enabled rule
@@ -163,7 +189,7 @@ final class AutomationController: ObservableObject {
 
     func evaluate() {
         guard isStarted else { return }
-        context = SystemSignals.snapshot(isOnline: isOnline, capture: capture, succeededCommands: succeededCommands)
+        context = SystemSignals.snapshot(isOnline: isOnline, capture: capture, succeededCommands: succeededCommands, routers: routers)
         let transitions = evaluator.update(rules: model.settings.effectiveRules, context: context)
         activeRuleIDs = evaluator.activeRuleIDs
         for transition in transitions {

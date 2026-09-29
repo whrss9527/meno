@@ -174,6 +174,8 @@ private struct ConditionEditor: View {
     @Binding var condition: RuleCondition
     @State private var isTesting = false
     @State private var testResult: Bool?
+    /// The routers of the networks the Mac is on, once looked up.
+    @State private var currentRouters: Set<String>?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -185,6 +187,11 @@ private struct ConditionEditor: View {
             .labelsHidden()
             .frame(width: 250)
             parameters
+        }
+        .task(id: condition.kind) {
+            // Whether the network of the condition is the current one.
+            guard condition.kind == .network, currentRouters == nil else { return }
+            currentRouters = await NetworkRouters.current()
         }
     }
 
@@ -239,6 +246,39 @@ private struct ConditionEditor: View {
                     .help(label)
                     .accessibilityLabel(label)
             }
+        case .network(let router, let name):
+            TextField(
+                String(localized: "Network name"),
+                text: Binding(get: { name }, set: { condition = .network(router: router, name: $0) })
+            )
+            .textFieldStyle(.roundedBorder)
+            .frame(width: 120)
+            Button {
+                useCurrentNetwork(name: name)
+            } label: {
+                if isTesting {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Text("Use Current Network")
+                }
+            }
+            .disabled(isTesting)
+            .help(Text("Meno recognizes a network by its router, without needing Location Services."))
+            if let currentRouters {
+                if router.isEmpty, currentRouters.isEmpty {
+                    Text("Meno could not tell which network this is.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.orange)
+                } else if !router.isEmpty {
+                    let connected = currentRouters.contains(router)
+                    let label = connected ? String(localized: "Connected now") : String(localized: "Not connected now")
+                    Image(systemName: connected ? "checkmark.circle.fill" : "circle.dashed")
+                        .foregroundStyle(connected ? Color.green : Color.secondary)
+                        .help(label)
+                        .accessibilityLabel(label)
+                }
+            }
         default:
             EmptyView()
         }
@@ -246,6 +286,18 @@ private struct ConditionEditor: View {
 }
 
 extension ConditionEditor {
+    /// Takes the network the Mac is on now.
+    private func useCurrentNetwork(name: String) {
+        isTesting = true
+        Task {
+            let routers = await NetworkRouters.current()
+            isTesting = false
+            currentRouters = routers
+            guard let router = routers.sorted().first else { return }
+            condition = .network(router: router, name: name)
+        }
+    }
+
     /// Runs the command once, off the main thread, and shows the result.
     private func test(_ command: String) {
         isTesting = true

@@ -252,6 +252,7 @@ extension RuleCondition.Kind {
         case .microphoneInUse: return String(localized: "A microphone is in use")
         case .cameraInUse: return String(localized: "A camera is in use")
         case .commandSucceeds: return String(localized: "A command succeeds")
+        case .network: return String(localized: "Connected to a network")
         }
     }
 
@@ -271,6 +272,7 @@ extension RuleCondition.Kind {
         case .microphoneInUse: return "mic"
         case .cameraInUse: return "video"
         case .commandSucceeds: return "terminal"
+        case .network: return "network"
         }
     }
 }
