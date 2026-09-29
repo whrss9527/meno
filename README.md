@@ -25,14 +25,15 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 
 ### Glass interface
 
-- **Shelf:** a Liquid Glass bar below the menu bar that shows hidden items. Useful next to the camera housing, where the menu bar runs out of space. With *Automatic* reveal, Meno picks the Shelf only when items would not fit.
+- **Shelf:** a Liquid Glass bar below the menu bar that shows hidden items. Useful next to the camera housing, where the menu bar runs out of space. With *Automatic* reveal, Meno picks the Shelf only when items would not fit. Visible items that macOS put behind the camera housing come first, so they can still be clicked.
 - **Quick Open:** a Spotlight-style palette (fuzzy search, pinyin and initials included) to open any menu bar item from the keyboard. ↩ opens, ⌘↩ opens the secondary menu, ⌥↩ reveals the item in place, ⌘1–⌘9 pick a result.
-- **Layout editor:** drag items between the Visible, Hidden and Stash lanes, or next to other items to reorder them. Meno performs the ⌘-drags for you.
+- **Layout editor:** drag items between the Visible, Hidden and Stash lanes, or next to other items to reorder them. Meno performs the ⌘-drags for you. Items can be renamed, which helps with items that macOS reports without a useful name.
+- **Show when it changes:** pick hidden items that Meno shows for a moment when their icon or text changes, for example when a sync fails.
 - Liquid Glass on macOS 26 and later; a frosted-glass look with a light rim on macOS 14 and 15.
 
 ### Make it yours
 
-- **Rules:** "When Keynote is in front, turn on Zen." Conditions include the frontmost or running app, battery and power, external displays, the time of day and being offline. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically.
+- **Rules:** "When a microphone is in use, turn on Zen." Conditions include the frontmost or running app, a microphone or camera in use, battery, power and Low Power Mode, external displays, the time of day and being offline. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically. Moves wait until you are not using the mouse and keyboard.
 - **Scenes:** save arrangements such as *Work*, *Home* or *Presenting* and switch between them from the menu or with a rule.
 - **Zen:** one shortcut clears every app icon, leaving only system status. Great for screenshots, recordings and talks.
 - **Item shortcuts:** open a specific item (Wi-Fi, a VPN, a timer…) from anywhere, even while it is hidden.
@@ -76,7 +77,9 @@ You can also open `Package.swift` in Xcode to edit and debug. When Meno runs out
 | Permission | Needed for |
 | --- | --- |
 | **Accessibility** (required) | Reading menu bar items, opening them from the Shelf, Quick Open and shortcuts, and arranging them with ⌘-drag. |
-| **Screen Recording** (optional) | Showing the real artwork of hidden items (macOS 14–26). Without it Meno shows app icons. Only menu bar items are captured. |
+| **Screen Recording** (optional) | Showing the real artwork of hidden items and noticing when their icons change (macOS 14–26). Without it Meno shows app icons. Only menu bar items are captured. |
+
+Rules about a microphone or camera in use only ask macOS whether a device is running, which needs no permission. Meno never records anything.
 
 Meno has no network features, analytics or accounts. Settings and statistics live in `~/Library/Application Support/Meno`.
 
