@@ -13,6 +13,7 @@
 "a deleted scene" = "已删除的场景";
 "A glass bar for items that do not fit next to the notch." = "为刘海旁放不下的图标准备的玻璃托盘。";
 "A little access" = "需要一点权限";
+"A meno:// link that applies this scene, for Shortcuts and launchers" = "应用这个场景的 meno:// 链接，可用于快捷指令和启动器";
 "A microphone is in use" = "麦克风正在使用";
 "a microphone is in use" = "麦克风正在使用";
 "A scene remembers the section and order of every movable item. Applying it moves items back with ⌘-drag. Items of apps that are not running are skipped." = "场景会记住每个可移动项目所在的分区和顺序。应用场景时会通过 ⌘ 拖移把项目放回原位，未运行的 App 会被跳过。";
@@ -90,8 +91,10 @@
 "Connected to power" = "连接电源";
 "connected to power" = "连接电源";
 "Continue" = "继续";
+"Copied %@" = "已拷贝 %@";
 "Copies the macOS version, permissions and the menu bar items Meno sees, to help find problems." = "复制 macOS 版本、权限状态和 Meno 读到的菜单栏项目，方便排查问题。";
 "Copy Diagnostic Report" = "复制诊断报告";
+"Copy Link" = "拷贝链接";
 "Could not change the login item: %@" = "无法更改登录项：%@";
 "Could not reset the entry. Remove Meno from the Accessibility list in System Settings, then add it again." = "没能清除这条记录。请在系统设置的“辅助功能”列表里删掉 Meno，再重新添加。";
 "Current" = "当前";
@@ -173,6 +176,7 @@
 "Let the menu bar adapt to what you are doing." = "让菜单栏随你手头的事情自动调整。";
 "Lets Meno read the items in the menu bar, open them from the Shelf, Quick Open and hotkeys, and arrange them with ⌘-drag." = "让 Meno 读取菜单栏中的项目，通过托盘、快速打开和快捷键打开它们，并用 ⌘ 拖移来整理。";
 "Line" = "竖线";
+"Link" = "链接";
 "Liquid Glass" = "液态玻璃";
 "Low Power Mode is on" = "低电量模式已开启";
 "macOS applies Screen Recording access after Meno restarts." = "macOS 会在 Meno 重新打开后应用屏幕录制权限。";
@@ -187,6 +191,7 @@
 "Meno adds a few small dividers to your menu bar. Everything left of a divider belongs to that section." = "Meno 会在菜单栏中添加几个小小的分隔符。分隔符左侧的一切都属于对应的分区。";
 "Meno could not find where to drop the item." = "Meno 找不到放置项目的位置。";
 "Meno did not rearrange the menu bar because the mouse and keyboard were in use the whole time." = "鼠标和键盘一直在使用，Meno 没有调整菜单栏。";
+"Meno does not know the link %@." = "Meno 无法识别链接 %@。";
 "Meno icon" = "Meno 图标";
 "Meno is running outside an app bundle, so macOS attributes permissions to the program that started it. Use “make run” for an app bundle." = "Meno 当前未以 App 包的形式运行，macOS 会把权限归到启动它的程序上。请使用“make run”构建 App 包。";
 "Meno keeps your menu bar calm. Hide the icons you rarely need, bring them back in a click, and keep everything reachable from the keyboard." = "Meno 让你的菜单栏保持安静。隐藏不常用的图标，一键唤回，并且一切都能用键盘直达。";
@@ -378,6 +383,7 @@
 "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing." = "当菜单栏放不下时（例如刘海附近），托盘能让项目依然触手可及。";
 "The tint sits behind the menu bar. It is most visible with a transparent menu bar, as on macOS 26 and later." = "着色位于菜单栏后方，在透明菜单栏（如 macOS 26 及更高版本）上最明显。";
 "Then" = "然后";
+"There is no scene named “%@”." = "没有名为“%@”的场景。";
 "This Mac" = "这台 Mac";
 "This week" = "本周";
 "Three sections" = "三个分区";
@@ -428,4 +434,5 @@
 "Zen is on. Click to leave Zen." = "禅模式已开启。点按以退出。";
 "Zen is on. Only system items remain." = "禅模式已开启，只保留系统项目。";
 "Zen while presenting with Keynote" = "用 Keynote 演示时开启禅模式";
+"“%@” is not in the menu bar right now." = "“%@”现在不在菜单栏中。";
 "⌥-click it to include the Stash." = "按住 ⌥ 点按它可同时显示暗格。";

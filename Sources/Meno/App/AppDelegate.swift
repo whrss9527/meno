@@ -16,6 +16,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model?.prepareForTermination()
     }
 
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            model?.handle(url)
+        }
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         // Launching Meno again (for example from Finder) opens Settings.
         model?.openSettings()

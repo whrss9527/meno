@@ -26,6 +26,8 @@ enum RevealTrigger: String {
     case zen
     /// A watched item changed.
     case change
+    /// A `meno://` link.
+    case link
 }
 
 /// Decides when hidden items are shown and hidden again.

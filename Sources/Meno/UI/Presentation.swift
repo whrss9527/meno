@@ -314,6 +314,7 @@ extension RevealTrigger {
         case .pointerExit: return String(localized: "Pointer")
         case .zen: return "Zen"
         case .change: return String(localized: "Item changed")
+        case .link: return String(localized: "Link")
         }
     }
 }

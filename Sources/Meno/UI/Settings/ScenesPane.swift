@@ -67,6 +67,7 @@ struct ScenesPane: View {
                                 renameText = scene.name
                                 renaming = scene
                             },
+                            onCopyLink: { model.copyLink(.scene(name: scene.name)) },
                             onDelete: { model.deleteScene(id: scene.id) }
                         )
                     }
@@ -102,6 +103,7 @@ private struct SceneCard: View {
     let onApply: () -> Void
     let onUpdate: () -> Void
     let onRename: () -> Void
+    let onCopyLink: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -124,6 +126,8 @@ private struct SceneCard: View {
                 Menu {
                     Button("Update from Current Layout", action: onUpdate)
                     Button("Rename…", action: onRename)
+                    Button("Copy Link", action: onCopyLink)
+                        .help(Text("A meno:// link that applies this scene, for Shortcuts and launchers"))
                     Divider()
                     Button("Delete", role: .destructive, action: onDelete)
                 } label: {

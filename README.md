@@ -37,6 +37,7 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 - **Scenes:** save arrangements such as *Work*, *Home* or *Presenting* and switch between them from the menu or with a rule.
 - **Zen:** one shortcut clears every app icon, leaving only system status. Great for screenshots, recordings and talks.
 - **Item shortcuts:** open a specific item (Wi-Fi, a VPN, a timer…) from anywhere, even while it is hidden.
+- **Links:** `meno://` links let Shortcuts, launchers and scripts show or hide items, switch Zen, apply a scene or open an item. Scenes and items offer *Copy Link*.
 - **Markers:** add spaces, thin lines, dots, SF Symbols or short text labels to the menu bar to group your items.
 - **Insights:** private, on-device statistics — how often you reveal, your most used items, and suggestions such as "you opened this 12 times this week while it was hidden — keep it visible?".
 - **New arrivals:** when an app adds a new icon, Meno can ask you, hide it or stash it.
@@ -82,6 +83,19 @@ You can also open `Package.swift` in Xcode to edit and debug. When Meno runs out
 Rules about a microphone or camera in use only ask macOS whether a device is running, which needs no permission. Meno never records anything.
 
 Meno has no network features, analytics or accounts. Settings and statistics live in `~/Library/Application Support/Meno`.
+
+## Links
+
+| Link | Does |
+| --- | --- |
+| `meno://show`, `meno://show/all` | Shows the hidden items, or everything including the Stash |
+| `meno://hide`, `meno://toggle` | Hides them again, or switches |
+| `meno://zen`, `meno://zen/on`, `meno://zen/off` | Switches Zen, turns it on or off |
+| `meno://scene/Work` | Applies the scene named *Work* |
+| `meno://open/Wi-Fi`, `meno://open/Wi-Fi?menu=secondary` | Opens a menu bar item by name |
+| `meno://quick-open`, `meno://shelf`, `meno://settings/rules` | Opens Quick Open, the Shelf or a Settings pane |
+
+For example, `open meno://zen/on` in Terminal, or an *Open URLs* action in Shortcuts. For names with spaces or other scripts, *Copy Link* gives a link that is already encoded.
 
 ## How it works
 

@@ -161,7 +161,8 @@ struct LayoutPane: View {
                                 isRenaming = true
                             },
                             showsOnChange: model.showsOnChange(item.key),
-                            setShowsOnChange: { model.setShowsOnChange(item.key, $0) }
+                            setShowsOnChange: { model.setShowsOnChange(item.key, $0) },
+                            copyLink: { model.copyLink(.open(name: item.key.rawValue, secondary: false)) }
                         )
                     }
                 }
@@ -248,6 +249,7 @@ private struct LayoutChip: View {
     /// Whether the item is shown for a moment when it changes.
     let showsOnChange: Bool
     let setShowsOnChange: (Bool) -> Void
+    let copyLink: () -> Void
 
     @State private var dropEdge: HorizontalEdge?
     @State private var isHovering = false
@@ -310,10 +312,12 @@ private struct LayoutChip: View {
         func renameCommand(startsGroup: Bool = true) -> MoveCommand {
             MoveCommand(title: String(localized: "Rename…"), symbol: "pencil", startsGroup: startsGroup, action: rename)
         }
+        let copyLinkCommand = MoveCommand(title: String(localized: "Copy Link"), symbol: "link", action: copyLink)
         guard item.isMovable else {
             return [
                 MoveCommand(title: String(localized: "macOS keeps this item in place"), symbol: "lock.fill", isEnabled: false) {},
                 renameCommand(),
+                copyLinkCommand,
             ]
         }
         var result = sections.filter { $0 != item.section }.map { section in
@@ -336,6 +340,7 @@ private struct LayoutChip: View {
         } else {
             result.append(renameCommand())
         }
+        result.append(copyLinkCommand)
         return result
     }
 
