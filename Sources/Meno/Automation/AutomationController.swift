@@ -30,8 +30,11 @@ final class AutomationController: ObservableObject {
     private(set) var succeededCommands: Set<String> = []
     /// The routers of the networks the Mac is on, while a rule depends on them.
     private(set) var routers: Set<String> = []
+    /// The interface each of those networks is on.
+    private var routerInterfaces: [String: String] = [:]
     /// When routers that no lookup found since were last there.
     private var routersMissingSince: [String: Date] = [:]
+    private var graceCheck: Task<Void, Never>?
     private var isLookingUpRouters = false
     private var looksUpRoutersAgain = false
     /// How long a router may be missing before its network counts as left:
@@ -172,7 +175,10 @@ final class AutomationController: ObservableObject {
     private func refreshRouters() {
         guard model.settings.effectiveRules.watchesNetworks else {
             routers = []
+            routerInterfaces = [:]
             routersMissingSince = [:]
+            graceCheck?.cancel()
+            graceCheck = nil
             return
         }
         guard !isLookingUpRouters else {
@@ -181,10 +187,10 @@ final class AutomationController: ObservableObject {
         }
         isLookingUpRouters = true
         Task { [weak self] in
-            let found = Set(await NetworkRouters.current().map(\.identifier))
+            let networks = await NetworkRouters.current()
             guard let self else { return }
             self.isLookingUpRouters = false
-            self.take(routers: found)
+            self.take(networks)
             if self.looksUpRoutersAgain {
                 self.looksUpRoutersAgain = false
                 self.refreshRouters()
@@ -192,26 +198,54 @@ final class AutomationController: ObservableObject {
         }
     }
 
-    private func take(routers found: Set<String>) {
+    private func take(_ networks: [NetworkRouters.Network]) {
         // Rules may have stopped depending on networks meanwhile.
         guard model.settings.effectiveRules.watchesNetworks else { return }
         let now = Date()
+        let found = Set(networks.map(\.identifier))
+        let answering = Set(networks.map(\.interface))
         var next = found
-        for router in found {
-            routersMissingSince[router] = nil
+        var interfaces: [String: String] = [:]
+        for network in networks {
+            interfaces[network.identifier] = network.interface
+            routersMissingSince[network.identifier] = nil
         }
         for router in routers where !found.contains(router) {
+            // An interface on another network now has left this one at
+            // once, so that the rules for both do not overlap. Only one
+            // without a network may be reconnecting.
+            guard let interface = routerInterfaces[router], !answering.contains(interface) else {
+                routersMissingSince[router] = nil
+                continue
+            }
             let since = routersMissingSince[router] ?? now
             if now.timeIntervalSince(since) < Self.routerGrace {
                 routersMissingSince[router] = since
+                interfaces[router] = interface
                 next.insert(router)
             } else {
                 routersMissingSince[router] = nil
             }
         }
+        routerInterfaces = interfaces
+        scheduleGraceCheck()
         guard next != routers else { return }
         routers = next
         evaluate()
+    }
+
+    /// Looks again once a missing network's grace is over, rather than at
+    /// the next periodic check.
+    private func scheduleGraceCheck() {
+        graceCheck?.cancel()
+        graceCheck = nil
+        guard let oldest = routersMissingSince.values.min() else { return }
+        let delay = max(oldest.addingTimeInterval(Self.routerGrace).timeIntervalSinceNow, 0) + 1
+        graceCheck = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.refreshRouters()
+        }
     }
 
     /// Microphones and cameras are only watched while an enabled rule

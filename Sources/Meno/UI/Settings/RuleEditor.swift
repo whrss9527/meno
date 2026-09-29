@@ -183,6 +183,14 @@ private struct ConditionEditor: View {
     @State private var isLookingUp = false
     /// The last lookup found no network.
     @State private var lookupFailed = false
+    /// What the last lookup found, applied through the row's binding as it
+    /// is then: rows move when others are removed meanwhile.
+    @State private var found: FoundNetwork?
+
+    private struct FoundNetwork: Equatable {
+        let token = UUID()
+        let identifier: String
+    }
 
     var body: some View {
         HStack(spacing: 8) {
@@ -208,14 +216,16 @@ private struct ConditionEditor: View {
             guard lookup != nil else { return }
             isLookingUp = true
             let networks = await NetworkRouters.current()
-            // A row that was removed meanwhile is gone, and one that is no
-            // longer about a network keeps what it is.
+            // A row that was removed meanwhile is gone.
             guard !Task.isCancelled else { return }
             isLookingUp = false
             currentRouters = Set(networks.map(\.identifier))
             lookupFailed = networks.isEmpty
-            guard let network = networks.first, case .network(_, let name) = condition else { return }
-            condition = .network(router: network.identifier, name: name)
+            found = networks.first.map { FoundNetwork(identifier: $0.identifier) }
+        }
+        .onChange(of: found) {
+            guard let found, case .network(_, let name) = condition else { return }
+            condition = .network(router: found.identifier, name: name)
         }
     }
 

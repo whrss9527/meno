@@ -65,7 +65,13 @@ enum NetworkRouters {
                 names.insert(name)
             }
         }
-        return names.sorted()
+        // By number, so that en5 comes before en10.
+        return names.sorted { order(of: $0) < order(of: $1) }
+    }
+
+    private static func order(of interface: String) -> (String, Int) {
+        let prefix = interface.prefix { !$0.isNumber }
+        return (String(prefix), Int(interface.dropFirst(prefix.count)) ?? 0)
     }
 
     /// Runs a tool and returns what it printed. Both tools answer at once

@@ -88,7 +88,13 @@ final class ChangeWatcher: ObservableObject {
         // While items are shown or rearranged they may be in use, so what
         // changes then is not news.
         let revealed = model.reveal.visibility != .collapsed || model.shelf.isVisible
-        let absorbing = (revealed && Date() >= showingChangesUntil) || model.mover.isMoving || model.isZenActive
+        if !revealed {
+            // Hidden again: a later reveal is the person's.
+            showingChangesUntil = .distantPast
+        }
+        // An open menu highlights its item, which is no change either.
+        let showingChanges = revealed && Date() < showingChangesUntil && !WindowCapture.anyMenuOpen()
+        let absorbing = (revealed && !showingChanges) || model.mover.isMoving || model.isZenActive
         let changed = tracker.update(samples, at: Date(), absorbing: absorbing)
             .compactMap { model.inventory.item(for: $0) }
         if !changed.isEmpty {
