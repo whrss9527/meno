@@ -15,6 +15,8 @@ final class ItemMover: ObservableObject {
         case didNotMove(String)
         case plan
         case personBusy
+        /// The caller called the move off right before it started.
+        case skipped
 
         var errorDescription: String? {
             switch self {
@@ -38,6 +40,8 @@ final class ItemMover: ObservableObject {
                 return String(localized: "The layout could not be planned.")
             case .personBusy:
                 return String(localized: "Meno did not rearrange the menu bar because the mouse and keyboard were in use the whole time.")
+            case .skipped:
+                return String(localized: "The move was called off.")
             }
         }
     }
@@ -84,14 +88,33 @@ final class ItemMover: ObservableObject {
     /// Moves an item into a section. Automatic moves (from rules and for new
     /// items) wait until the mouse and keyboard are idle. With `onlyFrom`,
     /// an item that left that section meanwhile stays where it is.
-    func move(_ key: MenuItemKey, to section: ItemSection, automatic: Bool = false, onlyFrom: ItemSection? = nil) async throws {
-        try await perform(.moves([.section(key, section, from: onlyFrom)]), automatic: automatic)
+    ///
+    /// A restoring move puts an item back where it was after its app or
+    /// macOS moved it, so the undo history and items shown for a while stay
+    /// as they are. `proceeds` is asked right before dragging starts; when
+    /// it says no, the move is called off with `MoveError.skipped`.
+    func move(
+        _ key: MenuItemKey,
+        to section: ItemSection,
+        automatic: Bool = false,
+        onlyFrom: ItemSection? = nil,
+        restoring: Bool = false,
+        proceeds: (() -> Bool)? = nil
+    ) async throws {
+        try await perform(
+            .moves([.section(key, section, from: onlyFrom)]),
+            automatic: automatic,
+            restoring: restoring,
+            proceeds: proceeds
+        )
     }
 
-    /// Moves items into sections, one after the other. With `from`, an item
-    /// that left that section meanwhile stays where it is.
-    func move(_ targets: [(key: MenuItemKey, section: ItemSection, from: ItemSection?)]) async throws {
-        try await perform(.moves(targets.map { .section($0.key, $0.section, from: $0.from) }), automatic: false)
+    /// Puts items back into sections, one after the other, once other moves
+    /// are done. With `from`, an item that left that section meanwhile stays
+    /// where it is. Like a restoring move, it leaves the undo history and
+    /// items shown for a while as they are.
+    func restore(_ targets: [(key: MenuItemKey, section: ItemSection, from: ItemSection?)]) async throws {
+        try await perform(.moves(targets.map { .section($0.key, $0.section, from: $0.from) }), automatic: false, restoring: true)
     }
 
     /// Moves an item right next to another one.
@@ -111,10 +134,21 @@ final class ItemMover: ObservableObject {
         try await perform(.layout(layout), automatic: false, isUndo: true)
     }
 
-    private func perform(_ request: Request, automatic: Bool, isUndo: Bool = false) async throws {
+    private func perform(
+        _ request: Request,
+        automatic: Bool,
+        isUndo: Bool = false,
+        restoring: Bool = false,
+        proceeds: (() -> Bool)? = nil
+    ) async throws {
         guard model.permissions.accessibility else { throw MoveError.noPermission }
         if automatic {
             try await waitForIdleInput(duringMove: false)
+        } else if restoring {
+            try await waitForOtherMoves()
+        }
+        if let proceeds, !proceeds() {
+            throw MoveError.skipped
         }
         guard !isMoving else { throw MoveError.busy }
         isMoving = true
@@ -125,6 +159,8 @@ final class ItemMover: ObservableObject {
         }
         var before: SceneLayout?
         var moved = false
+        /// Items that are where this request puts them.
+        var placed: [MenuItemKey] = []
         do {
             try await Task.sleep(nanoseconds: 450_000_000)
             await model.inventory.refresh()
@@ -138,26 +174,41 @@ final class ItemMover: ObservableObject {
                 if try await execute(move) {
                     moved = true
                 }
+                placed.append(move.key)
             }
             progress = (moves.count, moves.count)
             if isUndo, !undoStack.isEmpty {
                 undoStack.removeLast()
             }
-            if automatic {
+            if automatic, !restoring {
                 keepUndoInStep(with: request)
             }
-            // Items that were placed now are no longer shown for a while.
-            model.temporary.forget(Self.keys(of: request))
+            if !restoring {
+                // Items that were placed now are no longer shown for a while.
+                model.temporary.forget(Self.keys(of: request))
+            }
         } catch {
-            finish(before: before, moved: moved, automatic: automatic, isUndo: isUndo)
+            model.keeper.menoPlaced(placed)
+            finish(before: before, moved: moved, automatic: automatic || restoring, isUndo: isUndo)
             throw error
         }
-        finish(before: before, moved: moved, automatic: automatic, isUndo: isUndo)
+        model.keeper.menoPlaced(placed)
+        finish(before: before, moved: moved, automatic: automatic || restoring, isUndo: isUndo)
+    }
+
+    /// Waits for the moves under way to finish, for up to half a minute.
+    private func waitForOtherMoves() async throws {
+        let deadline = Date().addingTimeInterval(30)
+        while isMoving {
+            guard Date() < deadline else { throw MoveError.busy }
+            try await Task.sleep(nanoseconds: 300_000_000)
+        }
     }
 
     private func finish(before: SceneLayout?, moved: Bool, automatic: Bool, isUndo: Bool) {
-        // Rules undo their own changes, so only changes made by the person
-        // can be undone here, including the part of one that failed midway.
+        // Rules undo their own changes and items that are put back were
+        // already there, so only changes made by the person can be undone
+        // here, including the part of one that failed midway.
         if moved, !automatic, !isUndo, let before {
             undoStack.append(before)
             if undoStack.count > Self.undoLimit {

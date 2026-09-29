@@ -129,9 +129,15 @@ final class TemporaryPlacements {
         Task { [weak self] in
             guard let self else { return }
             do {
-                // The move ends the placement once the item is back.
-                try await self.model.mover.move(key, to: placement.returnSection, automatic: true, onlyFrom: .visible)
+                // The move ends the placement once the item is back. Zen,
+                // which may come on while the move waits for an idle
+                // moment, keeps the menu bar still until it is off.
+                try await self.model.mover.move(key, to: placement.returnSection, automatic: true, onlyFrom: .visible) { [weak self] in
+                    self?.model.isZenActive == false
+                }
                 self.forget([key])
+            } catch ItemMover.MoveError.skipped {
+                // Tried again at the next check.
             } catch {
                 Log.move.error("Putting back \(key.rawValue, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
                 let count = (self.failures[key]?.count ?? 0) + 1

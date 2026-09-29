@@ -120,6 +120,7 @@ private struct UpdateCard: View {
                                 Task { await updates.install() }
                             }
                             .menoGlassButtonStyle(prominent: true)
+                            .disabled(updates.phase != .idle)
                         } else {
                             Button("Download") {
                                 NSWorkspace.shared.open(release.htmlURL)
@@ -135,6 +136,9 @@ private struct UpdateCard: View {
     private var note: Text {
         if let blocker = UpdateInstaller.blocker {
             return Text(verbatim: blocker.localizedDescription)
+        }
+        guard updates.canInstall else {
+            return Text(verbatim: UpdateInstaller.Failure.noArchive.localizedDescription)
         }
         if CodeSigning.isAdHoc {
             return Text("Meno quits and opens again. macOS then asks you to allow Meno in Accessibility again.")

@@ -28,6 +28,8 @@ final class AppModel: ObservableObject {
     /// Whether nobody can see the menu bar: the displays sleep or another
     /// user's session is in front. Background scans pause meanwhile.
     private(set) var isAway = false
+    /// When Meno started.
+    let startedAt = Date()
 
     let storage: Storage
     let permissions: PermissionCenter
@@ -105,15 +107,18 @@ final class AppModel: ObservableObject {
             temporary.schedule()
         }
         let updated = recordLaunchedVersion()
+        UpdateInstaller.removeLeftovers()
         if !settings.onboardingCompleted {
             onboarding.show()
         } else if !permissions.accessibility {
             // Most often right after an update, when macOS no longer counts
             // the entry of the previous build.
             openSettings(.permissions)
-            // An ad hoc signed build gets an entry of its own, so the old one
-            // is replaced right away and macOS asks again.
-            if updated, CodeSigning.isAdHoc, permissions.needsAccessibilityAgain {
+            // A build signed differently than the previous one (every ad hoc
+            // signed build, or the first one with a certificate) gets an
+            // entry of its own, so the old one is replaced right away and
+            // macOS asks again.
+            if updated, permissions.needsAccessibilityAgain {
                 resetAccessibility()
             }
         }
@@ -645,7 +650,9 @@ final class AppModel: ObservableObject {
     }
 
     func makeStatusMenu() -> NSMenu {
-        StatusMenuBuilder(model: self).build()
+        // Permissions are checked only every few seconds once granted.
+        permissions.refresh()
+        return StatusMenuBuilder(model: self).build()
     }
 
     /// Replaces Meno's Accessibility entry with one for this build.

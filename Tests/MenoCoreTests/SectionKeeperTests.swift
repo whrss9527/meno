@@ -57,14 +57,14 @@ final class SectionKeeperTests: XCTestCase {
     }
 
     func testAnItemThatShowsUpInAnAppThatWasThereCountsWhereItIs() {
-        // A key can change with an item's text; the item was not moved.
-        let syncing = MenuItemKey(owner: "com.example.sync", token: "ax:syncing")
-        let idle = MenuItemKey(owner: "com.example.sync", token: "ax:up to date")
-        var keeper = SectionKeeper(memory: [syncing.rawValue: .init(section: .visible, seen: now)])
-        _ = keeper.observe([seen(idle, .hidden, process: 42), seen(vpn, .visible)], at: now, includesStash: true)
+        // An app that was running all along adds an item: that was on purpose.
+        let timer = MenuItemKey(owner: "com.example.tools", token: "id:timer")
+        let clock = MenuItemKey(owner: "com.example.tools", token: "id:clock")
+        var keeper = SectionKeeper(memory: [timer.rawValue: .init(section: .visible, seen: now)])
+        _ = keeper.observe([seen(clock, .hidden, process: 42), seen(vpn, .visible)], at: now, includesStash: true)
         let later = now.addingTimeInterval(SectionKeeper.appearanceWindow + 60)
-        XCTAssertEqual(keeper.observe([seen(syncing, .hidden, process: 42), seen(vpn, .visible)], at: later, includesStash: true), [])
-        XCTAssertEqual(keeper.memory[syncing.rawValue]?.section, .hidden)
+        XCTAssertEqual(keeper.observe([seen(clock, .hidden, process: 42), seen(timer, .hidden, process: 42)], at: later, includesStash: true), [])
+        XCTAssertEqual(keeper.memory[timer.rawValue]?.section, .hidden)
     }
 
     func testItemsOfAnAppThatJustAppearedStillCount() {
@@ -94,15 +94,42 @@ final class SectionKeeperTests: XCTestCase {
         XCTAssertEqual(keeper.memory[dropbox.rawValue]?.section, .visible)
     }
 
-    func testPositionalKeysAreLeftAlone() {
+    func testOnlySteadyKeysAreKept() {
         var keeper = SectionKeeper()
         let first = MenuItemKey(owner: "com.example.multi", token: "idx:0")
-        let twin = MenuItemKey(owner: "com.example.multi", token: "ax:status~2")
-        _ = keeper.observe([seen(first, .hidden), seen(twin, .hidden)], at: now, includesStash: true)
+        let text = MenuItemKey(owner: "com.example.multi", token: "ax:status")
+        let twin = MenuItemKey(owner: "com.example.multi", token: "id:status~2")
+        let identified = MenuItemKey(owner: "com.example.multi", token: "id:status")
+        _ = keeper.observe([seen(first, .hidden), seen(text, .hidden), seen(twin, .hidden)], at: now, includesStash: true)
         XCTAssertTrue(keeper.memory.isEmpty)
-        XCTAssertTrue(first.isPositional)
-        XCTAssertTrue(twin.isPositional)
-        XCTAssertFalse(dropbox.isPositional)
+        XCTAssertFalse(first.isSteady)
+        XCTAssertFalse(text.isSteady)
+        XCTAssertFalse(twin.isSteady)
+        XCTAssertTrue(identified.isSteady)
+        XCTAssertTrue(dropbox.isSteady)
+    }
+
+    func testMovesMenoMadeCountAsWhereItemsBelong() {
+        var keeper = SectionKeeper(memory: [dropbox.rawValue: .init(section: .visible, seen: now)])
+        // A rule hid Dropbox before the first scan was taken in.
+        keeper.record(dropbox, in: .hidden, process: 100, at: now, includesStash: true)
+        XCTAssertEqual(keeper.memory[dropbox.rawValue]?.section, .hidden)
+        XCTAssertEqual(keeper.observe([seen(dropbox, .hidden)], at: now, includesStash: true), [])
+        // Text keys are not recorded either.
+        let text = MenuItemKey(owner: "com.example.multi", token: "ax:status")
+        keeper.record(text, in: .hidden, process: 5, at: now, includesStash: true)
+        XCTAssertNil(keeper.memory[text.rawValue])
+    }
+
+    func testAnItemWhosePlaceIsNotKnownYetStillCameWithItsApp() {
+        // With the stepped engine, hidden items have no known place until
+        // they are shown, which may be long after their app started.
+        var keeper = SectionKeeper(memory: [dropbox.rawValue: .init(section: .hidden, seen: now)])
+        _ = keeper.observe([seen(vpn, .visible, process: 1)], at: now, includesStash: true)
+        _ = keeper.observe([seen(vpn, .visible, process: 1), seen(dropbox, nil, process: 9)], at: now, includesStash: true)
+        let later = now.addingTimeInterval(SectionKeeper.appearanceWindow * 10)
+        let misplaced = keeper.observe([seen(vpn, .visible, process: 1), seen(dropbox, .stash, process: 9)], at: later, includesStash: true)
+        XCTAssertEqual(misplaced, [SectionKeeper.Misplacement(key: dropbox, found: .stash, belongs: .hidden)])
     }
 
     func testAnUnknownPositionKeepsTheItemAsItWas() {

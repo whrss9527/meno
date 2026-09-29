@@ -500,6 +500,7 @@
 "The Meno icon is hidden and no other way to show items is on. Turn one on below, or show the icon again." = "Meno 图标已隐藏，也没有开启其他显示项目的方式。请在下方开启一种，或重新显示图标。";
 "The Meno icon, the Shelf and the look of the menu bar." = "Meno 图标、托盘以及菜单栏的外观。";
 "The menu bar adapts to apps, displays, power and time." = "菜单栏会随 App、显示器、电源和时间自动调整。";
+"The move was called off." = "移动已取消。";
 "The release has no app to install." = "这个版本没有可以安装的 App。";
 "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing." = "当菜单栏放不下时（例如刘海附近），托盘能让项目依然触手可及。";
 "The tint sits behind the menu bar. It is most visible with a transparent menu bar, as on macOS 26 and later." = "着色位于菜单栏后方，在透明菜单栏（如 macOS 26 及更高版本）上最明显。";
@@ -509,6 +510,8 @@
 "This copy of Meno does not run from an app bundle." = "当前的 Meno 不是以 App 包的形式运行的。";
 "This Mac" = "这台 Mac";
 "This shortcut is used more than once in Meno. Only one of its uses works." = "这个快捷键在 Meno 中被多次使用，只有其中一处会生效。";
+"This version does not run on this Mac's processor." = "这个版本不能在这台 Mac 的处理器上运行。";
+"This version needs macOS %@ or later." = "这个版本需要 macOS %@ 或更高版本。";
 "This week" = "本周";
 "Three sections" = "三个分区";
 "Time of day" = "时间段";

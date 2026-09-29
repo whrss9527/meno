@@ -13,14 +13,15 @@ final class LayoutKeeper {
     unowned let model: AppModel
 
     private var keeper: SectionKeeper
-    /// Items found elsewhere while Zen kept the menu bar still.
-    private var waiting: [SectionKeeper.Misplacement] = []
+    /// Items found elsewhere while Zen kept the menu bar still, by key.
+    private var waiting: [MenuItemKey: SectionKeeper.Misplacement] = [:]
 
     /// More items elsewhere at once than this are only offered to be put back.
     private static let automaticLimit = 3
     /// Items not seen for this long are forgotten.
     private static let memorySpan: TimeInterval = 180 * 24 * 60 * 60
-    /// How long after launch scans are not taken in.
+    /// How long after Meno started scans are not taken in, while its
+    /// dividers settle. Moves Meno makes meanwhile are still recorded.
     private static let settling: TimeInterval = 5
 
     init(model: AppModel) {
@@ -29,29 +30,34 @@ final class LayoutKeeper {
         keeper.forget(notSeenSince: Date().addingTimeInterval(-Self.memorySpan))
     }
 
+    /// Whether items may be put back right now.
+    private var mayPutBack: Bool {
+        model.settings.general.keepsSections && !model.isZenActive
+    }
+
     /// Takes in a scan of the menu bar.
     func scanned(_ observations: [SectionKeeper.Observation]) {
         let now = Date()
-        // Right after launch Meno's dividers may still be settling, and an
-        // item that seems to move then would count as moved on purpose.
-        if let launched = NSRunningApplication.current.launchDate, now.timeIntervalSince(launched) < Self.settling {
-            return
-        }
+        // An item that seems to move while the dividers settle would count
+        // as moved on purpose.
+        guard now.timeIntervalSince(model.startedAt) >= Self.settling else { return }
         defer { saveIfNeeded() }
         let misplaced = keeper.observe(observations, at: now, includesStash: model.settings.general.stashEnabled)
         guard model.settings.general.keepsSections else {
-            keeper.accept(misplaced + waiting, at: now)
-            waiting = []
+            keeper.accept(misplaced + Array(waiting.values), at: now)
+            waiting = [:]
             return
         }
-        waiting += misplaced
+        for misplacement in misplaced {
+            waiting[misplacement.key] = misplacement
+        }
         // Zen keeps the menu bar still; the items go back afterwards.
-        guard !waiting.isEmpty, !model.isZenActive else { return }
-        let due = waiting.filter { misplacement in
+        guard !waiting.isEmpty, mayPutBack else { return }
+        let due = waiting.values.filter { misplacement in
             // Only items that are still where they were found.
             model.inventory.item(for: misplacement.key)?.section == misplacement.found
         }
-        waiting = []
+        waiting = [:]
         guard !due.isEmpty else { return }
         if due.count > Self.automaticLimit {
             keeper.accept(due, at: now)
@@ -63,19 +69,38 @@ final class LayoutKeeper {
         }
     }
 
+    /// Takes in where Meno just placed items, for example for a rule or a
+    /// scene: that is where they belong now.
+    func menoPlaced(_ keys: [MenuItemKey]) {
+        let now = Date()
+        let includesStash = model.settings.general.stashEnabled
+        for key in keys {
+            guard let item = model.inventory.item(for: key), model.inventory.knowsSection(of: key) else { continue }
+            keeper.record(key, in: item.section, process: item.pid, at: now, includesStash: includesStash)
+        }
+        saveIfNeeded()
+    }
+
     private func putBack(_ misplacement: SectionKeeper.Misplacement) {
         let key = misplacement.key
-        keeper.didPutBack(key)
-        // Moving an item ends it being shown for a while, but this move only
-        // undoes what its app did.
-        let placement = model.settings.temporaryPlacements.placement(of: key)
         Task {
             do {
-                try await model.mover.move(key, to: misplacement.belongs, automatic: true, onlyFrom: misplacement.found)
+                // Asked again right before dragging: waiting for an idle
+                // moment can take a while, and Zen may have come on.
+                try await model.mover.move(
+                    key,
+                    to: misplacement.belongs,
+                    automatic: true,
+                    onlyFrom: misplacement.found,
+                    restoring: true
+                ) { [weak self] in
+                    self?.mayPutBack ?? false
+                }
+                keeper.didPutBack(key)
                 Log.move.info("Put \(key.rawValue, privacy: .public) back in \(misplacement.belongs.rawValue, privacy: .public)")
-                if let placement, model.settings.temporaryPlacements.placement(of: key) == nil {
-                    model.settings.temporaryPlacements.show(key, from: placement.returnSection, until: placement.until)
-                    model.temporary.schedule()
+            } catch ItemMover.MoveError.skipped {
+                if model.settings.general.keepsSections {
+                    waiting[key] = misplacement
                 }
             } catch {
                 Log.move.error("Putting \(key.rawValue, privacy: .public) back failed: \(error.localizedDescription, privacy: .public)")
@@ -95,12 +120,12 @@ final class LayoutKeeper {
     }
 
     private func putBackAll(_ misplaced: [SectionKeeper.Misplacement]) {
-        for misplacement in misplaced {
-            keeper.didPutBack(misplacement.key)
-        }
         Task {
             do {
-                try await model.mover.move(misplaced.map { (key: $0.key, section: $0.belongs, from: Optional($0.found)) })
+                try await model.mover.restore(misplaced.map { (key: $0.key, section: $0.belongs, from: Optional($0.found)) })
+                for misplacement in misplaced {
+                    keeper.didPutBack(misplacement.key)
+                }
             } catch {
                 model.toasts.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
             }

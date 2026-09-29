@@ -5,15 +5,16 @@ import Foundation
 ///
 /// An item that stays in the menu bar from one scan to the next and changes
 /// section was moved on purpose, by the person or by Meno, and its new
-/// section is remembered. An item that appears with its app (the app
-/// launched or restarted, or Meno just started) in another section than it
-/// was left in was put there by its app or by macOS, so it belongs back.
+/// section is remembered; so is every move Meno reports. An item that
+/// appears with its app (the app launched or restarted, or Meno just
+/// started) in another section than it was left in was put there by its
+/// app or by macOS, so it belongs back.
 ///
-/// Only items of apps that appeared a moment ago go back. An item that
-/// shows up in an app that was there all along may be an item whose key
-/// changed with its text, so where it is counts. Items whose keys depend on
-/// their position among an app's items are left alone: after a change they
-/// could name another item.
+/// Only items of apps that appeared a moment before the item did go back:
+/// an item that shows up in an app that was there all along was most likely
+/// added on purpose, so where it is counts. Only items with steady keys are
+/// kept, an app's only item or one with an accessibility identifier; keys
+/// taken from an item's text or its position may name another item later.
 public struct SectionKeeper: Sendable {
     public struct Observation: Equatable, Sendable {
         public var key: MenuItemKey
@@ -58,7 +59,8 @@ public struct SectionKeeper: Sendable {
 
     /// How often an item is put back while Meno runs before its app wins.
     public static let putBackLimit = 3
-    /// How long after an app appeared its items still count as appearing.
+    /// How long after an app appeared its new items count as appearing
+    /// with it.
     public static let appearanceWindow: TimeInterval = 60
 
     /// Where the items were left, by key.
@@ -66,7 +68,16 @@ public struct SectionKeeper: Sendable {
     /// Whether `memory` changed since `markSaved()`.
     public private(set) var hasUnsavedChanges = false
 
-    private var previous: [MenuItemKey: (section: ItemSection, process: Int32)] = [:]
+    private struct Sighting {
+        /// Where the item was, `nil` while that is not known.
+        var section: ItemSection?
+        var process: Int32
+        /// Whether the item appeared with its app, for as long as its
+        /// section is not known yet.
+        var appearedWithApp: Bool
+    }
+
+    private var previous: [MenuItemKey: Sighting] = [:]
     /// When each process in the menu bar was first seen.
     private var processes: [Int32: Date] = [:]
     private var putBacks: [MenuItemKey: Int] = [:]
@@ -79,37 +90,41 @@ public struct SectionKeeper: Sendable {
     /// section than they were left in. Without the Stash, its items count
     /// as hidden.
     public mutating func observe(_ observations: [Observation], at date: Date, includesStash: Bool) -> [Misplacement] {
-        var current: [MenuItemKey: (section: ItemSection, process: Int32)] = [:]
-        var misplaced: [Misplacement] = []
         var present: [Int32: Date] = [:]
         for observation in observations {
             present[observation.process] = processes[observation.process] ?? date
         }
         processes = present
-        for observation in observations where !observation.key.isPositional {
+        var current: [MenuItemKey: Sighting] = [:]
+        var misplaced: [Misplacement] = []
+        for observation in observations where observation.key.isSteady {
             let key = observation.key
             let before = previous[key].flatMap { $0.process == observation.process ? $0 : nil }
             guard let found = observation.section.map({ Self.effective($0, includesStash: includesStash) }) else {
-                // Unknown for now: the item stays as it was while its
-                // process does, and counts as new once it is known again.
-                if let before { current[key] = before }
+                // Not known for now: the item stays as it was, and one that
+                // just appeared keeps whether it came with its app.
+                current[key] = before ?? Sighting(
+                    section: nil,
+                    process: observation.process,
+                    appearedWithApp: appearedWithApp(observation.process, at: date)
+                )
                 continue
             }
-            current[key] = (found, observation.process)
-            let remembered = memory[key.rawValue]
-            if let before {
+            current[key] = Sighting(section: found, process: observation.process, appearedWithApp: false)
+            if let before, let section = before.section {
                 // Moved while in the menu bar: on purpose.
-                if before.section != found {
+                if section != found {
                     remember(found, for: key, at: date)
                 } else {
                     touch(key, at: date)
                 }
                 continue
             }
-            let appeared = present[observation.process].map { date.timeIntervalSince($0) <= Self.appearanceWindow } ?? true
+            let withApp = before?.appearedWithApp ?? appearedWithApp(observation.process, at: date)
+            let remembered = memory[key.rawValue]
             if let remembered,
                Self.effective(remembered.section, includesStash: includesStash) != found,
-               appeared,
+               withApp,
                putBacks[key, default: 0] < Self.putBackLimit {
                 misplaced.append(Misplacement(key: key, found: found, belongs: remembered.section))
                 touch(key, at: date)
@@ -121,6 +136,21 @@ public struct SectionKeeper: Sendable {
         }
         previous = current
         return misplaced
+    }
+
+    /// Takes in that Meno just put an item in a section, for example with a
+    /// rule or a scene: that is where it belongs now.
+    public mutating func record(_ key: MenuItemKey, in section: ItemSection, process: Int32, at date: Date, includesStash: Bool) {
+        guard key.isSteady else { return }
+        remember(section, for: key, at: date)
+        previous[key] = Sighting(
+            section: Self.effective(section, includesStash: includesStash),
+            process: process,
+            appearedWithApp: false
+        )
+        if processes[process] == nil {
+            processes[process] = date
+        }
     }
 
     /// Counts that an item was put back, so that one whose app keeps moving
@@ -145,6 +175,10 @@ public struct SectionKeeper: Sendable {
 
     public mutating func markSaved() {
         hasUnsavedChanges = false
+    }
+
+    private func appearedWithApp(_ process: Int32, at date: Date) -> Bool {
+        processes[process].map { date.timeIntervalSince($0) <= Self.appearanceWindow } ?? true
     }
 
     private mutating func remember(_ section: ItemSection, for key: MenuItemKey, at date: Date) {
@@ -173,9 +207,11 @@ public struct SectionKeeper: Sendable {
 }
 
 extension MenuItemKey {
-    /// Whether the key depends on the item's position among its app's
-    /// items, so that after a change it may name another item.
-    public var isPositional: Bool {
-        token.hasPrefix("idx:") || token.contains("~")
+    /// Whether the key names the same item for as long as its app shows it:
+    /// the app's only item, or one with an accessibility identifier. Keys
+    /// taken from an item's text or its position among its app's items may
+    /// name another item after a change.
+    public var isSteady: Bool {
+        (token == "solo" || token.hasPrefix("id:")) && !token.contains("~")
     }
 }

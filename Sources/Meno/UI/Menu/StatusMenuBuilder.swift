@@ -83,9 +83,11 @@ struct StatusMenuBuilder {
             return busy
         case .idle, .checking:
             if updates.canInstall {
-                return item(String(localized: "Install Meno \(version) and Relaunch"), symbol: "arrow.down.circle.fill") {
+                let install = item(String(localized: "Install Meno \(version) and Relaunch"), symbol: "arrow.down.circle.fill") {
                     Task { await model.updates.install() }
                 }
+                install.isEnabled = updates.phase == .idle
+                return install
             }
             return item(String(localized: "Download Meno \(version)…"), symbol: "arrow.down.circle.fill") {
                 NSWorkspace.shared.open(release.htmlURL)

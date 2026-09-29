@@ -112,22 +112,32 @@ final class UpdateChecker: ObservableObject {
         )
     }
 
-    /// Downloads the available release, puts it in place of this copy and
+    /// Downloads the latest release, puts it in place of this copy and
     /// opens it. On failure the release page is offered instead.
     func install() async {
-        guard phase == .idle, let release = available, let version = release.version else { return }
+        guard phase == .idle, var release = available, var version = release.version else { return }
         phase = .downloading
         model.toasts.show(
             String(localized: "Downloading Meno \(version.description)…"),
             symbol: "arrow.down.circle",
             duration: 60
         )
+        var prepared: UpdateInstaller.Prepared?
         do {
-            let prepared = try await UpdateInstaller.prepare(release, repository: Self.repository)
+            // What the check found may be a day old: files of a release can
+            // be replaced, and a newer one may be out.
+            let latest = try await Self.latestRelease()
+            if let latestVersion = latest.version, let current = AppVersion(AppInfo.version), current < latestVersion {
+                release = latest
+                version = latestVersion
+                available = latest
+            }
+            let ready = try await UpdateInstaller.prepare(release, repository: Self.repository)
+            prepared = ready
             phase = .installing
-            try UpdateInstaller.replace(with: prepared)
+            let previous = try UpdateInstaller.replace(with: ready)
             Log.app.info("Installed Meno \(version.description, privacy: .public), relaunching")
-            if !Relauncher.relaunch(removing: prepared.folder) {
+            if !Relauncher.relaunch(previous: previous) {
                 phase = .idle
                 available = nil
                 model.toasts.show(
@@ -137,12 +147,15 @@ final class UpdateChecker: ObservableObject {
                 )
             }
         } catch {
+            if let prepared {
+                UpdateInstaller.discard(prepared)
+            }
             phase = .idle
             Log.app.error("Installing the update failed: \(error.localizedDescription, privacy: .public)")
             model.toasts.show(
                 String(localized: "Could not install the update. \(error.localizedDescription)"),
                 symbol: "exclamationmark.triangle.fill",
-                actions: [ToastCenter.Action(title: String(localized: "Download")) {
+                actions: [ToastCenter.Action(title: String(localized: "Download")) { [release] in
                     NSWorkspace.shared.open(release.htmlURL)
                 }],
                 duration: 12

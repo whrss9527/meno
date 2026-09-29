@@ -8,9 +8,10 @@ import Security
 ///
 /// The release's zip is downloaded from GitHub and checked before anything
 /// is replaced: its size and checksum when GitHub gives them, the bundle
-/// identifier and version, and a valid code signature, from the same
-/// certificate when this copy has one. The previous copy is moved aside and
-/// deleted once Meno quit.
+/// identifier and version, that it runs on this Mac, and a valid code
+/// signature, from the same certificate when this copy has one. The two
+/// copies then swap places. The previous copy is deleted by the new one
+/// once it started, and put back when the new one cannot be opened.
 enum UpdateInstaller {
     enum Failure: LocalizedError {
         case notBundled
@@ -22,6 +23,8 @@ enum UpdateInstaller {
         case unexpectedApp
         case invalidSignature
         case differentSigner
+        case needsNewerMacOS(String)
+        case otherProcessor
 
         var errorDescription: String? {
             switch self {
@@ -43,6 +46,10 @@ enum UpdateInstaller {
                 return String(localized: "The download's code signature is not valid.")
             case .differentSigner:
                 return String(localized: "The download is signed differently than this copy of Meno.")
+            case .needsNewerMacOS(let version):
+                return String(localized: "This version needs macOS \(version) or later.")
+            case .otherProcessor:
+                return String(localized: "This version does not run on this Mac's processor.")
             }
         }
     }
@@ -53,6 +60,9 @@ enum UpdateInstaller {
         /// Holds the download and, once replaced, the previous copy.
         let folder: URL
     }
+
+    /// Where the new copy finds what to delete once it started.
+    private static let leftoversKey = "UpdateLeftovers"
 
     /// Why Meno cannot replace itself where it runs, if it cannot.
     static var blocker: Failure? {
@@ -98,24 +108,57 @@ enum UpdateInstaller {
         }
     }
 
-    /// Moves this copy aside and the prepared one in its place.
-    static func replace(with prepared: Prepared) throws {
-        let fileManager = FileManager.default
+    /// Puts the prepared copy in place of this one and returns where this
+    /// one went. The new copy deletes it once it started.
+    static func replace(with prepared: Prepared) throws -> URL {
         let bundle = Bundle.main.bundleURL
-        let previous = prepared.folder.appendingPathComponent("Previous.app", isDirectory: true)
-        do {
+        let previous: URL
+        // Swapped in one step where the volume allows it, so that there is
+        // always a copy of Meno in its place.
+        if renamex_np(prepared.app.path, bundle.path, UInt32(RENAME_SWAP)) == 0 {
+            previous = prepared.app
+        } else {
+            let fileManager = FileManager.default
+            previous = prepared.folder.appendingPathComponent("Previous.app", isDirectory: true)
             try fileManager.moveItem(at: bundle, to: previous)
             do {
                 try fileManager.moveItem(at: prepared.app, to: bundle)
             } catch {
-                try? fileManager.moveItem(at: previous, to: bundle)
+                // Without this, the only copy would be deleted with the folder.
+                try fileManager.moveItem(at: previous, to: bundle)
                 throw error
             }
-        } catch {
-            try? fileManager.removeItem(at: prepared.folder)
-            throw error
         }
         LSRegisterURL(bundle as CFURL, true)
+        UserDefaults.standard.set(prepared.folder.path, forKey: leftoversKey)
+        return previous
+    }
+
+    /// Deletes the download of an update that was not installed, unless
+    /// the folder holds the only copy of Meno.
+    static func discard(_ prepared: Prepared) {
+        let bundle = Bundle.main.bundleURL
+        guard FileManager.default.fileExists(atPath: bundle.appendingPathComponent("Contents/Info.plist").path),
+              !bundle.path.hasPrefix(prepared.folder.path)
+        else {
+            Log.app.fault("Keeping \(prepared.folder.path, privacy: .public): Meno is not in its place")
+            return
+        }
+        try? FileManager.default.removeItem(at: prepared.folder)
+    }
+
+    /// Deletes what an update left behind, once the new copy started: the
+    /// download and the previous copy.
+    static func removeLeftovers() {
+        let defaults = UserDefaults.standard
+        guard let path = defaults.string(forKey: leftoversKey) else { return }
+        defaults.removeObject(forKey: leftoversKey)
+        let folder = URL(fileURLWithPath: path, isDirectory: true)
+        // Only a folder made for an update, never one Meno runs from.
+        guard FileManager.default.fileExists(atPath: folder.appendingPathComponent("Meno.zip").path),
+              !Bundle.main.bundlePath.hasPrefix(folder.path)
+        else { return }
+        try? FileManager.default.removeItem(at: folder)
     }
 
     private static func download(_ asset: UpdateRelease.Asset, to destination: URL) async throws {
@@ -160,6 +203,16 @@ enum UpdateInstaller {
               AppVersion(text) == version
         else { throw Failure.unexpectedApp }
 
+        // It has to run here, or the swap would leave a copy that cannot open.
+        if let minimum = info["LSMinimumSystemVersion"] as? String,
+           let required = AppVersion(minimum),
+           let running = AppVersion(AppInfo.osVersionString),
+           running < required {
+            throw Failure.needsNewerMacOS(minimum)
+        }
+        let architectures = Bundle(url: app)?.executableArchitectures?.map(\.intValue) ?? []
+        guard architectures.contains(hostArchitecture) else { throw Failure.otherProcessor }
+
         var code: SecStaticCode?
         guard SecStaticCodeCreateWithPath(app as CFURL, [], &code) == errSecSuccess, let code else {
             throw Failure.invalidSignature
@@ -177,6 +230,15 @@ enum UpdateInstaller {
         guard CodeSigning.identifier(of: code) == AppInfo.bundleIdentifier else {
             throw Failure.unexpectedApp
         }
+    }
+
+    /// The architecture this copy runs as.
+    private static var hostArchitecture: Int {
+        #if arch(arm64)
+        return NSBundleExecutableArchitectureARM64
+        #else
+        return NSBundleExecutableArchitectureX86_64
+        #endif
     }
 
     /// Downloads made by Meno are not quarantined, but an archive that was

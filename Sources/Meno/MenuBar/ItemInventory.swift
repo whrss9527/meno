@@ -143,12 +143,17 @@ final class ItemInventory: ObservableObject {
         model.images.refresh(for: items, captureAllowed: model.permissions.screenRecording)
     }
 
+    /// Whether the last scan could tell the item's section from its
+    /// position, rather than going by an earlier scan.
+    func knowsSection(of key: MenuItemKey) -> Bool {
+        reliablySectioned.contains(key) && !missingOnce.contains(key)
+    }
+
     /// The movable items, for keeping them in their sections. Where an item
     /// kept from an earlier scan is now is not known.
     private func keeperObservations() -> [SectionKeeper.Observation] {
         items.filter { $0.kind != .marker && $0.isMovable }.map { item in
-            let known = reliablySectioned.contains(item.key) && !missingOnce.contains(item.key)
-            return SectionKeeper.Observation(key: item.key, section: known ? item.section : nil, process: item.pid)
+            SectionKeeper.Observation(key: item.key, section: knowsSection(of: item.key) ? item.section : nil, process: item.pid)
         }
     }
 
