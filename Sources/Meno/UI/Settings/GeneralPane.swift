@@ -58,6 +58,9 @@ struct GeneralPane: View {
                     subtitle: "Swipe down to show, swipe up to hide.",
                     isOn: $model.settings.reveal.onScroll
                 )
+                if !model.settings.revealOnChange.isEmpty {
+                    SliderRow("Show changed items for", value: $model.settings.reveal.changeDuration, in: 3...30, step: 1, format: Formatters.seconds)
+                }
                 Divider().opacity(0.4)
                 SettingRow("Show hidden items", subtitle: "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing.") {
                     EnumPicker(selection: $model.settings.general.revealStyle, title: \.title)

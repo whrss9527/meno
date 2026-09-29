@@ -176,6 +176,9 @@ public struct RevealSettings: Codable, Equatable, Sendable {
     public var rehideOnFocusChange = true
     /// Collapse when the pointer leaves the menu bar.
     public var rehideOnMouseExit = false
+    /// How long an item picked for Show When It Changes is shown after it
+    /// changed, in seconds.
+    public var changeDuration: Double = 6
 
     public init() {}
 }

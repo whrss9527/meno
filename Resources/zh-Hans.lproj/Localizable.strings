@@ -441,6 +441,7 @@
 "Shortcut" = "快捷键";
 "Shortcut for %@" = "“%@”的快捷键";
 "Shortcuts work in every app. Press Delete while recording to remove one, or Escape to cancel." = "快捷键在任何 App 中都可用。录制时按 Delete 键移除，按 Esc 键取消。";
+"Show changed items for" = "变化的项目显示时长";
 "Show Everything" = "显示全部";
 "Show everything" = "显示全部";
 "show everything" = "显示全部";

@@ -11,7 +11,9 @@ final class ChangeWatcher: ObservableObject {
     unowned let model: AppModel
 
     /// How long a changed item stays shown.
-    static let showDuration: TimeInterval = 6
+    private var showDuration: TimeInterval {
+        min(max(model.settings.reveal.changeDuration, 2), 60)
+    }
 
     /// Items that changed since the person last saw them. The Meno icon
     /// and the Shelf mark them until they are opened or shown.
@@ -97,11 +99,11 @@ final class ChangeWatcher: ObservableObject {
         model.reveal.requestReveal(all: items.contains { $0.section == .stash }, trigger: .change)
         // A whole section is shown, so the notice says which items changed.
         let names = ListFormatter.localizedString(byJoining: items.map(\.displayName))
-        model.toasts.show(String(localized: "\(names) changed."), symbol: "bell.fill", duration: Self.showDuration)
+        model.toasts.show(String(localized: "\(names) changed."), symbol: "bell.fill", duration: showDuration)
         if model.shelf.isVisible {
-            model.shelf.hide(after: Self.showDuration)
+            model.shelf.hide(after: showDuration)
         } else {
-            model.reveal.scheduleRehide(after: Self.showDuration, force: true)
+            model.reveal.scheduleRehide(after: showDuration, force: true)
         }
         model.statusBar.refreshAppearance()
     }

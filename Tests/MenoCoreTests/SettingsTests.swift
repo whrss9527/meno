@@ -17,6 +17,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.general.revealStyle, .automatic)
         // Settings from before keeping sections existed keep them.
         XCTAssertTrue(settings.general.keepsSections)
+        XCTAssertEqual(settings.reveal.changeDuration, 6)
         XCTAssertEqual(settings.appearance, AppearanceSettings())
     }
 
