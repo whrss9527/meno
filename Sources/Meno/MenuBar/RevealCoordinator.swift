@@ -24,6 +24,8 @@ enum RevealTrigger: String {
     case focus
     case pointerExit
     case zen
+    /// A watched item changed.
+    case change
 }
 
 /// Decides when hidden items are shown and hidden again.

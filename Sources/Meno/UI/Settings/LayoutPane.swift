@@ -54,6 +54,7 @@ struct LayoutPane: View {
                 tip("hand.draw", "Or drag it onto a section, or onto another item. A line shows on which side it will land.")
                 tip("command", "You can also hold ⌘ and drag icons directly in the menu bar. Meno's dividers mark the sections: the single chevron starts the Hidden section, the double chevron the Stash.")
                 tip("cursorarrow.motionlines", "While Meno moves an item it briefly takes over the pointer. It puts the pointer back when it is done.")
+                tip("bell", "Choose Show When It Changes for a hidden item, and Meno shows it for a moment when its icon or text changes, for example when a sync fails. Icons are compared when Screen Recording is allowed.")
             }
         }
         .overlay {
@@ -158,7 +159,9 @@ struct LayoutPane: View {
                                 newName = item.displayName
                                 renamingKey = item.key
                                 isRenaming = true
-                            }
+                            },
+                            showsOnChange: model.showsOnChange(item.key),
+                            setShowsOnChange: { model.setShowsOnChange(item.key, $0) }
                         )
                     }
                 }
@@ -242,6 +245,9 @@ private struct LayoutChip: View {
     let moveToSection: (ItemSection) -> Void
     let place: (MenuItemKey, Placement) -> Void
     let rename: () -> Void
+    /// Whether the item is shown for a moment when it changes.
+    let showsOnChange: Bool
+    let setShowsOnChange: (Bool) -> Void
 
     @State private var dropEdge: HorizontalEdge?
     @State private var isHovering = false
@@ -255,6 +261,12 @@ private struct LayoutChip: View {
             Text(verbatim: item.displayName)
                 .font(.system(size: 12, weight: .medium))
                 .lineLimit(1)
+            if showsOnChange && item.section != .visible {
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+                    .help(Text("Shown for a moment when it changes"))
+            }
             Image(systemName: item.isMovable ? "chevron.down" : "lock.fill")
                 .font(.system(size: item.isMovable ? 8 : 9, weight: item.isMovable ? .bold : .regular))
                 .foregroundStyle(.secondary)
@@ -295,11 +307,13 @@ private struct LayoutChip: View {
     /// Moves to the other sections, and one step left or right. macOS keeps
     /// fixed items at the right end, so they are never passed.
     private var commands: [MoveCommand] {
-        let renameCommand = MoveCommand(title: String(localized: "Rename…"), symbol: "pencil", startsGroup: true, action: rename)
+        func renameCommand(startsGroup: Bool = true) -> MoveCommand {
+            MoveCommand(title: String(localized: "Rename…"), symbol: "pencil", startsGroup: startsGroup, action: rename)
+        }
         guard item.isMovable else {
             return [
                 MoveCommand(title: String(localized: "macOS keeps this item in place"), symbol: "lock.fill", isEnabled: false) {},
-                renameCommand,
+                renameCommand(),
             ]
         }
         var result = sections.filter { $0 != item.section }.map { section in
@@ -311,7 +325,17 @@ private struct LayoutChip: View {
         result.append(MoveCommand(title: String(localized: "Move Right"), symbol: "arrow.right", isEnabled: right?.isMovable == true) {
             if let right { place(item.key, .rightOf(right.layoutToken)) }
         })
-        result.append(renameCommand)
+        if item.section != .visible {
+            result.append(MoveCommand(
+                title: String(localized: "Show When It Changes"),
+                symbol: "bell",
+                isChecked: showsOnChange,
+                startsGroup: true
+            ) { setShowsOnChange(!showsOnChange) })
+            result.append(renameCommand(startsGroup: false))
+        } else {
+            result.append(renameCommand())
+        }
         return result
     }
 
@@ -329,6 +353,7 @@ private struct LayoutChip: View {
             entry.representedObject = handler
             entry.image = NSImage(systemSymbolName: command.symbol, accessibilityDescription: nil)
             entry.isEnabled = command.isEnabled
+            entry.state = command.isChecked ? .on : .off
             menu.addItem(entry)
         }
         return menu
@@ -340,6 +365,7 @@ private struct MoveCommand: Identifiable {
     let title: String
     let symbol: String
     var isEnabled = true
+    var isChecked = false
     /// Whether a separator comes before this entry.
     var startsGroup = false
     let action: () -> Void

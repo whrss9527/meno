@@ -313,6 +313,7 @@ extension RevealTrigger {
         case .focus: return String(localized: "App switch")
         case .pointerExit: return String(localized: "Pointer")
         case .zen: return "Zen"
+        case .change: return String(localized: "Item changed")
         }
     }
 }

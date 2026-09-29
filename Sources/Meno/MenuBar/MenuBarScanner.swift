@@ -67,6 +67,23 @@ enum MenuBarScanner {
         }
     }
 
+    /// Reads the description, title and help text of each element.
+    static func texts(of elements: [AXUIElement]) async -> [[String?]] {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                let texts = elements.map { element -> [String?] in
+                    AX.setTimeout(element, seconds: 0.3)
+                    return [
+                        AX.string(element, AX.Attribute.description),
+                        AX.string(element, AX.Attribute.title),
+                        AX.string(element, AX.Attribute.help),
+                    ]
+                }
+                continuation.resume(returning: texts)
+            }
+        }
+    }
+
     /// Reads the current frame of a single element.
     static func frame(of element: AXUIElement) async -> CGRect? {
         await withCheckedContinuation { continuation in

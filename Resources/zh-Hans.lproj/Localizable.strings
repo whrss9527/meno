@@ -74,6 +74,7 @@
 "Choose App" = "选取 App";
 "Choose Item" = "选取项目";
 "Choose Scene" = "选取场景";
+"Choose Show When It Changes for a hidden item, and Meno shows it for a moment when its icon or text changes, for example when a sync fails. Icons are compared when Screen Recording is allowed." = "给隐藏的项目选择“变化时显示”，它的图标或文字变化时（比如同步失败），Meno 会把它显示一会儿。允许屏幕录制时还会比较图标。";
 "Choose which items stay in the menu bar and which ones Meno tucks away." = "选择哪些项目留在菜单栏里，哪些交给 Meno 收起来。";
 "Circle" = "圆形";
 "Clear" = "透明";
@@ -153,6 +154,7 @@
 "In the Shelf" = "在托盘中";
 "Include the Stash" = "包含暗格";
 "Insights" = "洞察";
+"Item changed" = "项目变化";
 "Item shortcuts" = "项目快捷键";
 "Items left of this divider are hidden" = "此分隔符左侧的项目会被隐藏";
 "Items left of this divider go to the Stash" = "此分隔符左侧的项目会放入暗格";
@@ -331,6 +333,8 @@
 "Show or hide the Shelf" = "显示或隐藏托盘";
 "Show the battery when it runs low" = "电量低时显示电池";
 "Show the dividers while items are revealed" = "展开时显示分隔符";
+"Show When It Changes" = "变化时显示";
+"Shown for a moment when it changes" = "变化时会显示一会儿";
 "Shown when you click the Meno icon, hover, scroll or use a hotkey." = "点按 Meno 图标、悬停、滚动或使用快捷键时显示。";
 "Solid" = "纯色";
 "Some shortcuts are used more than once. Only one of them will work." = "有快捷键被重复使用，只有其中一个会生效。";

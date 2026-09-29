@@ -15,6 +15,7 @@ final class ShelfController: ObservableObject {
     @Published var hoveredKey: MenuItemKey?
 
     private var panel: FloatingPanel?
+    private var hideTask: Task<Void, Never>?
     private var hostingView: NSHostingView<ShelfView>?
     private var subscriptions: Set<AnyCancellable> = []
     private lazy var outsideClickMonitor = GlobalEventMonitor(mask: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
@@ -62,6 +63,8 @@ final class ShelfController: ObservableObject {
     }
 
     func show(includeStash: Bool, trigger: RevealTrigger) {
+        hideTask?.cancel()
+        hideTask = nil
         includesStash = includeStash || model.settings.shelf.includesStash
         let panel = self.panel ?? makePanel()
         isVisible = true
@@ -85,7 +88,25 @@ final class ShelfController: ObservableObject {
         }
     }
 
+    /// Hides the Shelf after a while, unless the pointer is on it then.
+    func hide(after seconds: TimeInterval) {
+        hideTask?.cancel()
+        hideTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            while let self, self.isVisible, !Task.isCancelled {
+                if let panel = self.panel, panel.frame.contains(NSEvent.mouseLocation) {
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    continue
+                }
+                self.hide()
+                return
+            }
+        }
+    }
+
     func hide() {
+        hideTask?.cancel()
+        hideTask = nil
         guard isVisible else { return }
         isVisible = false
         hoveredKey = nil

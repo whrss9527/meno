@@ -29,6 +29,7 @@ final class AppModel: ObservableObject {
     lazy var shelf = ShelfController(model: self)
     lazy var quickOpen = QuickOpenController(model: self)
     lazy var automation = AutomationController(model: self)
+    lazy var changes = ChangeWatcher(model: self)
     lazy var markers = MarkerController(model: self)
     lazy var spacing = SpacingController(model: self)
     lazy var tint = TintOverlayController(model: self)
@@ -70,6 +71,7 @@ final class AppModel: ObservableObject {
         registerHotkeys()
         reveal.start()
         automation.start()
+        changes.settingsChanged()
         tint.update()
         observeSystem()
         updateUsageMonitor()
@@ -175,6 +177,12 @@ final class AppModel: ObservableObject {
         }
         if old.general.usageTracking != new.general.usageTracking {
             updateUsageMonitor()
+        }
+        if old.itemNames != new.itemNames {
+            inventory.scheduleRefresh(after: 0)
+        }
+        if old.revealOnChange != new.revealOnChange {
+            changes.settingsChanged()
         }
     }
 
@@ -319,7 +327,21 @@ final class AppModel: ObservableObject {
     func rename(_ key: MenuItemKey, to name: String?) {
         let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         settings.itemNames[key.rawValue] = trimmed.isEmpty ? nil : trimmed
-        inventory.scheduleRefresh(after: 0)
+    }
+
+    /// Whether a hidden item is shown for a moment when it changes.
+    func showsOnChange(_ key: MenuItemKey) -> Bool {
+        settings.revealOnChange.contains(key.rawValue)
+    }
+
+    func setShowsOnChange(_ key: MenuItemKey, _ enabled: Bool) {
+        var keys = Set(settings.revealOnChange)
+        if enabled {
+            keys.insert(key.rawValue)
+        } else {
+            keys.remove(key.rawValue)
+        }
+        settings.revealOnChange = keys.sorted()
     }
 
     func handleNewArrival(_ item: MenuBarItem) {

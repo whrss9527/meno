@@ -89,7 +89,19 @@ enum WindowCapture {
 
     /// Whether a capture is a single-color glyph, as most menu bar items are.
     static func isMonochrome(_ image: CGImage) -> Bool {
-        let width = min(image.width, 64)
+        guard let (pixels, width, height) = rgba(of: image, maxWidth: 64) else { return false }
+        return GlyphAnalysis.isMonochrome(rgba: pixels, width: width, height: height)
+    }
+
+    /// A fingerprint of a capture, for noticing when an item changes.
+    static func signature(of image: CGImage) -> GlyphSignature? {
+        guard let (pixels, width, height) = rgba(of: image, maxWidth: 64) else { return nil }
+        return GlyphSignature(rgba: pixels, width: width, height: height)
+    }
+
+    /// The image as premultiplied RGBA pixels, scaled down to `maxWidth`.
+    private static func rgba(of image: CGImage, maxWidth: Int) -> (pixels: [UInt8], width: Int, height: Int)? {
+        let width = min(image.width, maxWidth)
         let height = max(1, Int((Double(image.height) * Double(width) / Double(max(image.width, 1))).rounded()))
         var pixels = [UInt8](repeating: 0, count: width * height * 4)
         let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
@@ -105,7 +117,7 @@ enum WindowCapture {
             context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
             return true
         }
-        return drawn && GlyphAnalysis.isMonochrome(rgba: pixels, width: width, height: height)
+        return drawn ? (pixels, width, height) : nil
     }
 
     static func capture(windowID: CGWindowID) -> CGImage? {
