@@ -117,10 +117,78 @@ final class LayoutPlannerTests: XCTestCase {
     }
 
     func testPlacementForSection() {
-        XCTAssertEqual(LayoutPlanner.placement(for: .visible, includesStash: true), .rightOf(LayoutPlanner.hiddenDivider))
-        XCTAssertEqual(LayoutPlanner.placement(for: .hidden, includesStash: true), .leftOf(LayoutPlanner.hiddenDivider))
-        XCTAssertEqual(LayoutPlanner.placement(for: .stash, includesStash: true), .leftOf(LayoutPlanner.stashDivider))
-        XCTAssertEqual(LayoutPlanner.placement(for: .stash, includesStash: false), .leftOf(LayoutPlanner.hiddenDivider))
+        let hidden = LayoutPlanner.hiddenDivider
+        let stash = LayoutPlanner.stashDivider
+        XCTAssertEqual(LayoutPlanner.placement(moving: .hidden, to: .visible, includesStash: true), .rightOf(hidden))
+        XCTAssertEqual(LayoutPlanner.placement(moving: .stash, to: .visible, includesStash: true), .rightOf(hidden))
+        XCTAssertEqual(LayoutPlanner.placement(moving: .visible, to: .hidden, includesStash: true), .leftOf(hidden))
+        // A Stash item is already left of the Hidden divider, so it has to
+        // cross the Stash divider instead.
+        XCTAssertEqual(LayoutPlanner.placement(moving: .stash, to: .hidden, includesStash: true), .rightOf(stash))
+        XCTAssertEqual(LayoutPlanner.placement(moving: .visible, to: .stash, includesStash: true), .leftOf(stash))
+        XCTAssertEqual(LayoutPlanner.placement(moving: .hidden, to: .stash, includesStash: true), .leftOf(stash))
+        XCTAssertEqual(LayoutPlanner.placement(moving: .visible, to: .stash, includesStash: false), .leftOf(hidden))
+    }
+
+    func testPlacementIsNilWhenAlreadyInSection() {
+        for section in ItemSection.allCases {
+            XCTAssertNil(LayoutPlanner.placement(moving: section, to: section, includesStash: true))
+        }
+        // Without a Stash, hidden items already are where Stash items go.
+        XCTAssertNil(LayoutPlanner.placement(moving: .hidden, to: .stash, includesStash: false))
+        XCTAssertEqual(LayoutPlanner.effectiveSection(.stash, includesStash: false), .hidden)
+        XCTAssertEqual(LayoutPlanner.effectiveSection(.stash, includesStash: true), .stash)
+    }
+
+    func testStepIsSatisfiedOnlyNextToItsReference() {
+        let order = [item("h1"), item("v2"), LayoutPlanner.hiddenDivider, item("v1"), item("h2")]
+        // h2 is right of h1, but far from it.
+        XCTAssertFalse(LayoutPlanner.isSatisfied(MoveStep(item: key("h2"), placement: .rightOf(item("h1"))), in: order))
+        XCTAssertTrue(LayoutPlanner.isSatisfied(MoveStep(item: key("v2"), placement: .rightOf(item("h1"))), in: order))
+        XCTAssertTrue(LayoutPlanner.isSatisfied(MoveStep(item: key("v2"), placement: .leftOf(LayoutPlanner.hiddenDivider)), in: order))
+        // Dropping an item on the leading edge of a distant item moves it.
+        let row = [item("x"), item("a"), item("b"), item("y")]
+        XCTAssertFalse(LayoutPlanner.isSatisfied(MoveStep(item: key("x"), placement: .leftOf(item("y"))), in: row))
+        XCTAssertTrue(LayoutPlanner.isSatisfied(MoveStep(item: key("b"), placement: .leftOf(item("y"))), in: row))
+        XCTAssertFalse(LayoutPlanner.isSatisfied(MoveStep(item: key("y"), placement: .leftOf(item("x"))), in: row))
+        XCTAssertFalse(LayoutPlanner.isSatisfied(MoveStep(item: key("zzz"), placement: .leftOf(item("x"))), in: row))
+    }
+
+    func testStepIgnoresTokensThatDoNotCount() {
+        let order = [item("h1"), item("new"), .anchor("meno.toggle"), item("h2")]
+        let step = MoveStep(item: key("h2"), placement: .rightOf(item("h1")))
+        XCTAssertFalse(LayoutPlanner.isSatisfied(step, in: order))
+        XCTAssertTrue(LayoutPlanner.isSatisfied(step, in: order, counting: [item("h1"), item("h2")]))
+        XCTAssertFalse(LayoutPlanner.isSatisfied(step, in: order, counting: [item("h1"), item("h2"), item("new")]))
+    }
+
+    /// Carrying out a plan the way the mover does, skipping the steps that
+    /// already hold, reaches the target even with tokens the target does not
+    /// know in between.
+    func testSkippingSatisfiedStepsStillReachesTarget() throws {
+        var generator = SeededGenerator(seed: 7)
+        for _ in 0..<300 {
+            let names = (0..<Int.random(in: 2...10, using: &generator)).map { "i\($0)" }
+            var current = (names + ["untracked1", "untracked2"]).map(item)
+            current.insert(.anchor("meno.toggle"), at: Int.random(in: 0...current.count, using: &generator))
+            current.shuffle(using: &generator)
+            current.insert(LayoutPlanner.stashDivider, at: Int.random(in: 0...current.count, using: &generator))
+            let stashIndex = current.firstIndex(of: LayoutPlanner.stashDivider)!
+            current.insert(LayoutPlanner.hiddenDivider, at: Int.random(in: (stashIndex + 1)...current.count, using: &generator))
+
+            var target = names.map(item).shuffled(using: &generator)
+            let cut1 = Int.random(in: 0...target.count, using: &generator)
+            target.insert(LayoutPlanner.stashDivider, at: cut1)
+            target.insert(LayoutPlanner.hiddenDivider, at: Int.random(in: (cut1 + 1)...target.count, using: &generator))
+
+            let steps = try LayoutPlanner.plan(current: current, target: target)
+            let counted = Set(target)
+            var order = current
+            for step in steps where !LayoutPlanner.isSatisfied(step, in: order, counting: counted) {
+                order = LayoutPlanner.apply([step], to: order)
+            }
+            XCTAssertEqual(order.filter(counted.contains), target)
+        }
     }
 
     func testSceneLayoutHelpers() {
@@ -139,6 +207,10 @@ final class CollapseMetricsTests: XCTestCase {
         XCTAssertEqual(CollapseMetrics.wideLength(screenWidths: [800]), 2_400)
         XCTAssertEqual(CollapseMetrics.wideLength(screenWidths: [6_016]), 10_000)
         XCTAssertEqual(CollapseMetrics.wideLength(screenWidths: []), 2_880)
+        // Two 1920 pt screens left of a 1512 pt one: twice the widest does
+        // not reach past both.
+        XCTAssertEqual(CollapseMetrics.wideLength(screenWidths: [1512, 1920, 1920], horizontalSpan: 5_352), 5_552)
+        XCTAssertEqual(CollapseMetrics.wideLength(screenWidths: [1512], horizontalSpan: 1_512), 3_024)
     }
 
     func testSteppedUnitStaysBelowHalfTheNarrowestScreen() {

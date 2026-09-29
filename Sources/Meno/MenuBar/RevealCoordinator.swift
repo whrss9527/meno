@@ -38,19 +38,30 @@ final class RevealCoordinator: ObservableObject {
     @Published private(set) var visibility: SectionVisibility = .collapsed
 
     private var holds = 0
-    private var zenLifted = false
+    /// Opened items and layout sessions in progress, which lift Zen.
+    private var zenLifts = 0
     private var layoutSessions = 0
     private var visibilityBeforeLayout: SectionVisibility = .collapsed
+    /// Items being opened, and what was shown before the first of them.
+    private var activations = 0
     private var visibilityBeforeActivation: SectionVisibility?
     private var revealedByHover = false
+    /// When more sections were last shown. Item positions from scans before
+    /// that are out of date.
+    private var revealedAt = Date.distantPast
+    /// Whether the pointer was in the menu bar since the items were shown,
+    /// so that it can leave it.
+    private var pointerVisitedSinceReveal = false
 
     private var rehideTask: Task<Void, Never>?
     private var hoverTask: Task<Void, Never>?
     private var pointerExitTask: Task<Void, Never>?
+    private var outsideClickTask: Task<Void, Never>?
 
     private var previousApp: NSRunningApplication?
     private var activatedForAppMenus = false
     @Published private(set) var appMenuFrame: CGRect?
+    private var appMenuRequest = 0
 
     private var scrollAccumulator: CGFloat = 0
     private var lastScroll = Date.distantPast
@@ -112,7 +123,7 @@ final class RevealCoordinator: ObservableObject {
     // MARK: - State
 
     var barState: BarState {
-        let zen = model.isZenActive && !zenLifted
+        let zen = model.isZenActive && zenLifts == 0
         return BarState(
             hiddenCollapsed: zen || visibility == .collapsed,
             stashCollapsed: zen || visibility != .revealedAll,
@@ -190,13 +201,21 @@ final class RevealCoordinator: ObservableObject {
 
     /// Reveals in the menu bar.
     func reveal(all: Bool, trigger: RevealTrigger) {
+        outsideClickTask?.cancel()
+        outsideClickTask = nil
         let wasCollapsed = visibility == .collapsed
         let target: SectionVisibility = all || visibility == .revealedAll ? .revealedAll : .revealed
         guard target != visibility || trigger == .activation else {
             scheduleRehide()
             return
         }
+        if target != visibility {
+            revealedAt = Date()
+        }
         visibility = target
+        if wasCollapsed {
+            pointerVisitedSinceReveal = pointerIsInMenuBar
+        }
         revealedByHover = wasCollapsed && trigger == .hover
         apply()
         hideAppMenusIfNeeded(all: target == .revealedAll)
@@ -213,6 +232,8 @@ final class RevealCoordinator: ObservableObject {
         hoverTask = nil
         pointerExitTask?.cancel()
         pointerExitTask = nil
+        outsideClickTask?.cancel()
+        outsideClickTask = nil
         revealedByHover = false
         let changed = visibility != .collapsed
         visibility = .collapsed
@@ -228,11 +249,12 @@ final class RevealCoordinator: ObservableObject {
     /// Shows the section of an item that is about to be opened, and keeps it
     /// shown until the item's menu closes.
     func revealForActivation(of section: ItemSection) {
-        if visibilityBeforeActivation == nil {
+        if activations == 0 {
             visibilityBeforeActivation = visibility
         }
+        activations += 1
         hold()
-        zenLifted = model.isZenActive
+        zenLifts += 1
         if section == .visible {
             apply()
         } else {
@@ -245,28 +267,34 @@ final class RevealCoordinator: ObservableObject {
     func endActivation(watching pid: pid_t) {
         Task { [weak self] in
             guard let self else { return }
-            let height = self.model.statusBar.screen.map { ScreenGeometry.menuBarHeight(on: $0) } ?? 24
             let start = Date()
             var sawPopup = false
             while Date().timeIntervalSince(start) < 300 {
                 try? await Task.sleep(nanoseconds: 250_000_000)
-                let open = WindowCapture.hasOpenPopup(ownedBy: pid, menuBarHeight: height) || WindowCapture.anyMenuOpen()
+                let open = WindowCapture.hasOpenPopup(ownedBy: pid, menuBarStrips: ScreenGeometry.menuBarStrips)
+                    || WindowCapture.anyMenuOpen()
                 if open {
                     sawPopup = true
                 } else if sawPopup || Date().timeIntervalSince(start) > 2.5 {
                     break
                 }
             }
-            if self.zenLifted {
-                self.zenLifted = false
-                self.apply()
-            }
+            self.activations = max(self.activations - 1, 0)
+            self.endZenLift()
             self.release()
-            guard self.holds == 0 else { return }
-            // A reveal that only served to open the item always folds back.
+            guard self.activations == 0 else { return }
             let restore = self.visibilityBeforeActivation
             self.visibilityBeforeActivation = nil
+            guard self.holds == 0 else { return }
+            // A reveal that only served to open the item always folds back.
             self.scheduleRehide(after: 0.8, force: restore == .collapsed)
+        }
+    }
+
+    private func endZenLift() {
+        zenLifts = max(zenLifts - 1, 0)
+        if zenLifts == 0, model.isZenActive {
+            apply()
         }
     }
 
@@ -276,7 +304,7 @@ final class RevealCoordinator: ObservableObject {
         guard layoutSessions == 1 else { return }
         visibilityBeforeLayout = visibility
         hold()
-        zenLifted = model.isZenActive
+        zenLifts += 1
         model.statusBar.setDividersForcedVisible(true)
         reveal(all: true, trigger: .layout)
     }
@@ -286,8 +314,17 @@ final class RevealCoordinator: ObservableObject {
         layoutSessions -= 1
         guard layoutSessions == 0 else { return }
         model.statusBar.setDividersForcedVisible(false)
-        zenLifted = false
+        zenLifts = max(zenLifts - 1, 0)
         holds = max(holds - 1, 0)
+        guard holds == 0 else {
+            // An item being opened or a rule still needs the items shown. An
+            // opened item folds back to what was shown before the move.
+            if activations > 0, visibilityBeforeLayout == .collapsed {
+                visibilityBeforeActivation = .collapsed
+            }
+            apply()
+            return
+        }
         switch visibilityBeforeLayout {
         case .collapsed: collapse(trigger: .layout)
         case .revealed: visibility = .revealed; apply(); scheduleRehide()
@@ -335,8 +372,7 @@ final class RevealCoordinator: ObservableObject {
         guard visibility != .collapsed, holds == 0, model.settings.reveal.rehideOnFocusChange else { return }
         // An item that opens a window or popover may activate its app; keep
         // the items in place until that is dismissed.
-        let height = model.statusBar.screen.map { ScreenGeometry.menuBarHeight(on: $0) } ?? 24
-        if WindowCapture.anyMenuOpen() || WindowCapture.hasOpenPopup(ownedBy: pid, menuBarHeight: height) {
+        if WindowCapture.anyMenuOpen() || WindowCapture.hasOpenPopup(ownedBy: pid, menuBarStrips: ScreenGeometry.menuBarStrips) {
             scheduleRehide()
             return
         }
@@ -355,11 +391,13 @@ final class RevealCoordinator: ObservableObject {
         let settings = model.settings.reveal
 
         if inMenuBar {
+            pointerVisitedSinceReveal = true
             pointerExitTask?.cancel()
             pointerExitTask = nil
         }
 
-        if settings.onHover, visibility == .collapsed, !passiveRevealBlocked {
+        // While the Shelf shows the items, the menu bar stays as it is.
+        if settings.onHover, visibility == .collapsed, !model.shelf.isVisible, !passiveRevealBlocked {
             let point = ScreenGeometry.quartzPoint(fromCocoa: location)
             if inMenuBar, isEmptySpot(point) {
                 if hoverTask == nil {
@@ -369,7 +407,7 @@ final class RevealCoordinator: ObservableObject {
                         guard let self, !Task.isCancelled else { return }
                         self.hoverTask = nil
                         let current = ScreenGeometry.quartzPoint(fromCocoa: NSEvent.mouseLocation)
-                        if self.visibility == .collapsed, self.isEmptySpot(current) {
+                        if self.visibility == .collapsed, !self.model.shelf.isVisible, self.isEmptySpot(current) {
                             self.requestReveal(all: false, trigger: .hover)
                         }
                     }
@@ -380,8 +418,10 @@ final class RevealCoordinator: ObservableObject {
             }
         }
 
+        // Only a pointer that was in the menu bar can leave it, so a reveal
+        // from the keyboard stays until the pointer has been there.
         let exitRehides = settings.rehideOnMouseExit || revealedByHover
-        if !inMenuBar, exitRehides, visibility != .collapsed, holds == 0, pointerExitTask == nil {
+        if !inMenuBar, exitRehides, pointerVisitedSinceReveal, visibility != .collapsed, holds == 0, pointerExitTask == nil {
             pointerExitTask = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 600_000_000)
                 guard let self, !Task.isCancelled else { return }
@@ -405,9 +445,12 @@ final class RevealCoordinator: ObservableObject {
         }
         guard model.settings.reveal.rehideOnFocusChange else { return }
         // Clicks into menus or popovers of revealed items keep them revealed.
-        Task { [weak self] in
+        outsideClickTask?.cancel()
+        outsideClickTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 300_000_000)
-            guard let self, self.visibility != .collapsed, self.holds == 0 else { return }
+            guard let self, !Task.isCancelled else { return }
+            self.outsideClickTask = nil
+            guard self.visibility != .collapsed, self.holds == 0 else { return }
             if WindowCapture.anyMenuOpen() || Self.isFloatingWindow(at: point) { return }
             self.collapse(trigger: .focus)
         }
@@ -435,12 +478,14 @@ final class RevealCoordinator: ObservableObject {
         let threshold: CGFloat = 14
         if scrollAccumulator > threshold {
             scrollAccumulator = 0
-            if visibility == .collapsed {
+            if visibility == .collapsed, !model.shelf.isVisible {
                 requestReveal(all: false, trigger: .scroll)
             }
         } else if scrollAccumulator < -threshold {
             scrollAccumulator = 0
-            if visibility != .collapsed {
+            if model.shelf.isVisible {
+                model.shelf.hide()
+            } else if visibility != .collapsed {
                 collapse(trigger: .scroll)
             }
         }
@@ -462,7 +507,9 @@ final class RevealCoordinator: ObservableObject {
                 point.x >= frame.minX && point.x <= frame.maxX
             }
         }
-        // While revealed, the gap left of the leftmost item counts as empty.
+        // While revealed, the gap left of the leftmost item counts as empty,
+        // once a scan has seen where the revealed items are.
+        guard let scanned = model.inventory.scannedAt, scanned.timeIntervalSince(revealedAt) > 0.2 else { return false }
         let occupied = (model.inventory.items.map(\.frame) + model.statusBar.ownFrames)
             .filter { $0.width > 0 && screenRect.intersects($0) }
         guard let leftmost = occupied.map(\.minX).min() else { return false }
@@ -472,14 +519,17 @@ final class RevealCoordinator: ObservableObject {
     // MARK: - App menus
 
     func refreshAppMenuFrame(for pid: pid_t?) {
+        appMenuRequest += 1
+        let request = appMenuRequest
         guard let pid, model.permissions.accessibility else {
             appMenuFrame = nil
             return
         }
-        guard pid != AppInfo.ownPID else { return }
         Task { [weak self] in
             let frame = await AppMenuInspector.menuFrame(ofPID: pid)
-            self?.appMenuFrame = frame
+            // Only the app that became active last counts.
+            guard let self, self.appMenuRequest == request else { return }
+            self.appMenuFrame = frame
         }
     }
 

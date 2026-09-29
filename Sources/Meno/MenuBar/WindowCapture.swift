@@ -55,13 +55,19 @@ enum WindowCapture {
 
     /// Whether `pid` shows a menu, popover or panel right now (used to wait
     /// until an opened item is dismissed).
-    static func hasOpenPopup(ownedBy pid: pid_t, menuBarHeight: CGFloat) -> Bool {
+    ///
+    /// - Parameter menuBarStrips: The menu bars of all screens (Quartz), where
+    ///   the app's status item windows are.
+    static func hasOpenPopup(ownedBy pid: pid_t, menuBarStrips: [CGRect]) -> Bool {
         let floating = Int(CGWindowLevelForKey(.floatingWindow))
         let statusLevel = Int(CGWindowLevelForKey(.statusWindow))
         return windowList(onScreenOnly: true).contains { window in
             guard window.pid == pid, window.layer >= floating else { return false }
-            // Skip the status item windows themselves.
-            let isStatusItem = window.layer == statusLevel && window.bounds.minY <= 1 && window.bounds.height <= menuBarHeight + 2
+            // Skip the status item windows themselves. They can sit beyond
+            // the screen edges, so only their height and top are compared.
+            let isStatusItem = window.layer == statusLevel && menuBarStrips.contains { strip in
+                abs(window.bounds.minY - strip.minY) <= 1 && window.bounds.height <= strip.height + 2
+            }
             return !isStatusItem && window.bounds.width > 4 && window.bounds.height > 4
         }
     }

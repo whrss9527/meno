@@ -91,4 +91,16 @@ enum ScreenGeometry {
     static var screenWidths: [Double] {
         NSScreen.screens.map { Double($0.frame.width) }
     }
+
+    /// How far all screens together reach from left to right.
+    static var horizontalSpan: Double {
+        let frames = NSScreen.screens.map(\.frame)
+        guard let minX = frames.map(\.minX).min(), let maxX = frames.map(\.maxX).max() else { return 0 }
+        return Double(maxX - minX)
+    }
+
+    /// The menu bar of every screen, in Quartz coordinates.
+    static var menuBarStrips: [CGRect] {
+        NSScreen.screens.map { quartzRect(fromCocoa: menuBarRect(on: $0)) }
+    }
 }

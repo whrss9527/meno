@@ -42,6 +42,27 @@ final class ItemMover: ObservableObject {
         }
     }
 
+    /// One drag and how to tell that it is done.
+    private enum Move {
+        /// Into a section, across the divider that bounds it.
+        case section(MenuItemKey, ItemSection)
+        /// Right next to another token. Only tokens in `counted` may lie in
+        /// between; with `nil`, every token counts.
+        case step(MoveStep, counted: Set<LayoutToken>?)
+
+        var key: MenuItemKey {
+            switch self {
+            case .section(let key, _): return key
+            case .step(let step, _): return step.item
+            }
+        }
+    }
+
+    private enum Request {
+        case moves([Move])
+        case layout(SceneLayout)
+    }
+
     unowned let model: AppModel
 
     @Published private(set) var isMoving = false
@@ -56,30 +77,26 @@ final class ItemMover: ObservableObject {
     /// Moves an item into a section. Automatic moves (from rules and for new
     /// items) wait until the mouse and keyboard are idle.
     func move(_ key: MenuItemKey, to section: ItemSection, automatic: Bool = false) async throws {
-        let placement = LayoutPlanner.placement(for: section, includesStash: model.settings.general.stashEnabled)
-        try await perform([MoveStep(item: key, placement: placement)], layout: nil, automatic: automatic)
+        try await perform(.moves([.section(key, section)]), automatic: automatic)
     }
 
+    /// Moves an item right next to another one.
     func move(_ key: MenuItemKey, placement: Placement) async throws {
-        try await perform([MoveStep(item: key, placement: placement)], layout: nil, automatic: false)
+        try await perform(.moves([.step(MoveStep(item: key, placement: placement), counted: nil)]), automatic: false)
     }
 
     /// Arranges the menu bar like `layout`.
     func apply(_ layout: SceneLayout, automatic: Bool = false) async throws {
-        try await perform(nil, layout: layout, automatic: automatic)
-    }
-
-    func perform(_ steps: [MoveStep]) async throws {
-        try await perform(steps, layout: nil, automatic: false)
+        try await perform(.layout(layout), automatic: automatic)
     }
 
     /// Puts the items back where they were before the last change.
     func undo() async throws {
         guard let layout = undoLayout else { return }
-        try await perform(nil, layout: layout, automatic: false, isUndo: true)
+        try await perform(.layout(layout), automatic: false, isUndo: true)
     }
 
-    private func perform(_ plannedSteps: [MoveStep]?, layout: SceneLayout?, automatic: Bool, isUndo: Bool = false) async throws {
+    private func perform(_ request: Request, automatic: Bool, isUndo: Bool = false) async throws {
         guard model.permissions.accessibility else { throw MoveError.noPermission }
         if automatic {
             try await waitForIdleInput(duringMove: false)
@@ -91,62 +108,95 @@ final class ItemMover: ObservableObject {
             isMoving = false
             progress = nil
         }
+        var before: SceneLayout?
+        var moved = false
         do {
             try await Task.sleep(nanoseconds: 450_000_000)
             await model.inventory.refresh()
-            let before = model.inventory.currentLayout()
-            var steps = plannedSteps ?? []
-            if let layout {
-                let target = LayoutPlanner.targetOrder(for: layout, includesStash: model.settings.general.stashEnabled)
-                do {
-                    steps = try LayoutPlanner.plan(current: model.inventory.layoutTokens(), target: target)
-                } catch {
-                    throw MoveError.plan
-                }
-            }
-            for (index, step) in steps.enumerated() {
-                progress = (index, steps.count)
+            before = model.inventory.currentLayout()
+            let moves = try plannedMoves(for: request)
+            for (index, move) in moves.enumerated() {
+                progress = (index, moves.count)
                 if automatic && index > 0 {
                     try await waitForIdleInput(duringMove: true)
                 }
-                try await execute(step)
+                if try await execute(move) {
+                    moved = true
+                }
             }
-            progress = (steps.count, steps.count)
-            // Rules undo their own changes, so only changes made by the
-            // person can be undone here.
+            progress = (moves.count, moves.count)
             if isUndo {
                 undoLayout = nil
-            } else if !automatic, !steps.isEmpty {
-                undoLayout = before
             }
-            model.reveal.endLayoutSession()
-            model.inventory.scheduleRefresh(after: 0.5)
         } catch {
-            model.reveal.endLayoutSession()
-            model.inventory.scheduleRefresh(after: 0.5)
+            finish(before: before, moved: moved, automatic: automatic, isUndo: isUndo)
             throw error
+        }
+        finish(before: before, moved: moved, automatic: automatic, isUndo: isUndo)
+    }
+
+    private func finish(before: SceneLayout?, moved: Bool, automatic: Bool, isUndo: Bool) {
+        // Rules undo their own changes, so only changes made by the person
+        // can be undone here, including the part of one that failed midway.
+        if moved, !automatic, !isUndo, let before {
+            undoLayout = before
+        }
+        model.reveal.endLayoutSession()
+        model.inventory.scheduleRefresh(after: 0.5)
+    }
+
+    private func plannedMoves(for request: Request) throws -> [Move] {
+        switch request {
+        case .moves(let moves):
+            return moves
+        case .layout(let layout):
+            let target = LayoutPlanner.targetOrder(for: layout, includesStash: model.settings.general.stashEnabled)
+            let steps: [MoveStep]
+            do {
+                steps = try LayoutPlanner.plan(current: model.inventory.layoutTokens(), target: target)
+            } catch {
+                throw MoveError.plan
+            }
+            // Items the layout does not know stay where they are, so they
+            // may end up between the items it places.
+            let counted = Set(target)
+            return steps.map { .step($0, counted: counted) }
         }
     }
 
-    private func execute(_ step: MoveStep) async throws {
+    /// Carries out a move, returning whether anything was dragged.
+    private func execute(_ move: Move) async throws -> Bool {
         for attempt in 0..<3 {
-            guard let item = model.inventory.item(for: step.item) else { throw MoveError.itemMissing }
+            guard let item = model.inventory.item(for: move.key) else { throw MoveError.itemMissing }
             guard item.isMovable else { throw MoveError.notMovable(item.displayName) }
-            if isSatisfied(step) { return }
-            guard let reference = frame(of: step.placement.reference) else { throw MoveError.referenceMissing }
+            guard let placement = remainingPlacement(for: move, item: item) else { return attempt > 0 }
+            guard let reference = frame(of: placement.reference) else { throw MoveError.referenceMissing }
             guard item.isOnScreen else { throw MoveError.offScreen(item.displayName) }
             guard !Self.isBehindHousing(item.frame) else { throw MoveError.behindHousing(item.displayName) }
 
             let start = CGPoint(x: item.frame.midX, y: item.frame.midY)
-            let end = dropPoint(for: item.frame, reference: reference, placement: step.placement, attempt: attempt)
+            let end = dropPoint(for: item.frame, reference: reference, placement: placement, attempt: attempt)
             Log.move.info("Moving \(item.key.rawValue, privacy: .public) attempt \(attempt)")
             await EventSynthesizer.commandDrag(from: start, to: end, pace: 1 + Double(attempt) * 0.75)
             try await Task.sleep(nanoseconds: 450_000_000)
             await model.inventory.refresh()
-            if isSatisfied(step) { return }
         }
-        let name = model.inventory.item(for: step.item)?.displayName ?? step.item.owner
+        if let item = model.inventory.item(for: move.key), remainingPlacement(for: move, item: item) == nil {
+            return true
+        }
+        let name = model.inventory.item(for: move.key)?.displayName ?? move.key.owner
         throw MoveError.didNotMove(name)
+    }
+
+    /// Where the item still has to be dropped, or `nil` when the move is done.
+    private func remainingPlacement(for move: Move, item: MenuBarItem) -> Placement? {
+        switch move {
+        case .section(_, let section):
+            return LayoutPlanner.placement(moving: item.section, to: section, includesStash: model.settings.general.stashEnabled)
+        case .step(let step, let counted):
+            let done = LayoutPlanner.isSatisfied(step, in: model.inventory.layoutTokens(), counting: counted)
+            return done ? nil : step.placement
+        }
     }
 
     /// Waits for a pause in mouse and keyboard use, so an automatic move
@@ -184,16 +234,6 @@ final class ItemMover: ObservableObject {
     private static var secondsSinceInput: TimeInterval {
         let types: [CGEventType] = [.mouseMoved, .leftMouseDown, .leftMouseDragged, .rightMouseDown, .otherMouseDown, .scrollWheel, .keyDown, .flagsChanged]
         return types.map { CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: $0) }.min() ?? .greatestFiniteMagnitude
-    }
-
-    private func isSatisfied(_ step: MoveStep) -> Bool {
-        let tokens = model.inventory.layoutTokens()
-        guard let itemIndex = tokens.firstIndex(of: .item(step.item)),
-              let referenceIndex = tokens.firstIndex(of: step.placement.reference) else { return false }
-        switch step.placement {
-        case .rightOf: return itemIndex > referenceIndex
-        case .leftOf: return itemIndex < referenceIndex
-        }
     }
 
     private func frame(of token: LayoutToken) -> CGRect? {

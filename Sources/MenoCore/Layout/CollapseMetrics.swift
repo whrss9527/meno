@@ -20,10 +20,11 @@ public enum CollapseMetrics {
     public static let fallbackScreenWidth: Double = 1440
 
     /// Length of a single divider that pushes everything to its left off
-    /// every attached screen.
-    public static func wideLength(screenWidths: [Double]) -> Double {
+    /// every attached screen: twice the widest screen, or more than all
+    /// screens side by side reach (`horizontalSpan`).
+    public static func wideLength(screenWidths: [Double], horizontalSpan: Double = 0) -> Double {
         let widest = screenWidths.filter { $0 > 0 }.max() ?? fallbackScreenWidth
-        return min(max(widest * 2, 2_400), 10_000)
+        return min(max(widest * 2, horizontalSpan + 200, 2_400), 10_000)
     }
 
     /// The largest length one status item can have on every attached screen

@@ -14,6 +14,8 @@ final class ItemInventory: ObservableObject {
     @Published private(set) var items: [MenuBarItem] = []
     @Published private(set) var lastRefresh: Date?
     @Published private(set) var isRefreshing = false
+    /// When the scan behind `items` began. Their positions are from then.
+    private(set) var scannedAt: Date?
     /// Elements left out of the last scan, for the diagnostic report.
     private(set) var skipped = SkippedElements()
 
@@ -107,10 +109,12 @@ final class ItemInventory: ObservableObject {
                 self.refreshAgain = false
                 await self.performRefresh()
             } while self.refreshAgain
+            // Cleared here, not by the caller, so that a request arriving
+            // after the last pass starts a new scan.
+            self.refreshTask = nil
         }
         refreshTask = task
         await task.value
-        refreshTask = nil
     }
 
     private func performRefresh() async {
@@ -121,11 +125,13 @@ final class ItemInventory: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
 
+        let started = Date()
         let raw = await MenuBarScanner.scan(MenuBarScanner.currentTargets())
         let built = keepingBriefAbsences(build(from: raw))
         if built != items {
             items = built
         }
+        scannedAt = started
         lastRefresh = Date()
         model.statusBar.ensureDividerOrder()
         model.statusBar.refreshAppearance()
@@ -167,8 +173,7 @@ final class ItemInventory: ObservableObject {
         let reliable = framesAreReliable
         let dividers = model.statusBar.dividerLayout
         let customNames = model.settings.itemNames
-        let menoFrames = [model.statusBar.hiddenDividerFrame, model.statusBar.stashDividerFrame, model.statusBar.toggleFrame]
-            .compactMap { $0 }
+        let menoFrames = model.statusBar.ownFrames
         var result: [MenuBarItem] = []
 
         var skipped = SkippedElements()
@@ -222,8 +227,13 @@ final class ItemInventory: ObservableObject {
                     cachedSections[key] = section
                     cachedPositions[key] = frame.minX
                 } else {
+                    // Without dividers to compare with (they may be hidden
+                    // while items are shown), the last known section holds,
+                    // but a position that can be trusted stays.
                     section = cachedSections[key] ?? .hidden
-                    if let x = cachedPositions[key] {
+                    if trustworthy {
+                        cachedPositions[key] = frame.minX
+                    } else if let x = cachedPositions[key] {
                         frame.origin.x = x
                     }
                 }
@@ -264,7 +274,7 @@ final class ItemInventory: ObservableObject {
     }
 
     /// Items never overlap Meno's own items. One reported inside a divider
-    /// still has its position from before the divider grew over it.
+    /// or spacer still has its position from before it grew over it.
     static func overlaps(_ frame: CGRect, _ menoFrames: [CGRect]) -> Bool {
         menoFrames.contains { $0.minX < frame.midX && frame.midX < $0.maxX }
     }

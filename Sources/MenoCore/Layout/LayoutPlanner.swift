@@ -154,18 +154,46 @@ public enum LayoutPlanner {
         return order
     }
 
-    /// Where to drop an item so that it ends up in `section`.
+    /// The section an item in `section` really ends up in: without a Stash,
+    /// its items are hidden.
+    public static func effectiveSection(_ section: ItemSection, includesStash: Bool) -> ItemSection {
+        section == .stash && !includesStash ? .hidden : section
+    }
+
+    /// Where to drop an item that is in `current` so that it ends up in
+    /// `section`, or `nil` when it is already there.
     ///
-    /// Items moving into a section are placed right next to the divider that
-    /// bounds it, which keeps the drag distance short.
-    public static func placement(for section: ItemSection, includesStash: Bool) -> Placement {
-        switch section {
+    /// Items are placed right next to the divider they have to cross, which
+    /// keeps the drag distance short.
+    public static func placement(moving current: ItemSection, to section: ItemSection, includesStash: Bool) -> Placement? {
+        let from = effectiveSection(current, includesStash: includesStash)
+        let to = effectiveSection(section, includesStash: includesStash)
+        guard from != to else { return nil }
+        switch to {
         case .visible:
             return .rightOf(hiddenDivider)
         case .hidden:
-            return .leftOf(hiddenDivider)
+            return from == .stash ? .rightOf(stashDivider) : .leftOf(hiddenDivider)
         case .stash:
-            return includesStash ? .leftOf(stashDivider) : .leftOf(hiddenDivider)
+            return .leftOf(stashDivider)
+        }
+    }
+
+    /// Whether a step already holds in `order`: its item is right next to its
+    /// reference, on the requested side.
+    ///
+    /// Only tokens in `counted` may not lie in between; others (items a
+    /// scene does not know, for example) are ignored. With `nil`, every token
+    /// counts.
+    public static func isSatisfied(_ step: MoveStep, in order: [LayoutToken], counting counted: Set<LayoutToken>? = nil) -> Bool {
+        let relevant = order.filter { token in
+            token == .item(step.item) || token == step.placement.reference || counted?.contains(token) ?? true
+        }
+        guard let itemIndex = relevant.firstIndex(of: .item(step.item)),
+              let referenceIndex = relevant.firstIndex(of: step.placement.reference) else { return false }
+        switch step.placement {
+        case .rightOf: return itemIndex == referenceIndex + 1
+        case .leftOf: return itemIndex == referenceIndex - 1
         }
     }
 }

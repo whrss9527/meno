@@ -74,8 +74,6 @@ final class StatusBarController: NSObject {
         toggle = makeItem(name: Name.toggle, action: #selector(toggleClicked(_:)))
         hiddenDivider = makeItem(name: Name.hiddenDivider, action: #selector(dividerClicked(_:)))
         syncStashDivider()
-        toggle?.button?.setAccessibilityLabel("Meno")
-        hiddenDivider?.button?.setAccessibilityLabel(String(localized: "Hidden section divider"))
         refreshAppearance()
     }
 
@@ -84,7 +82,6 @@ final class StatusBarController: NSObject {
         if model.settings.general.stashEnabled {
             guard stashDivider == nil else { return }
             stashDivider = makeItem(name: Name.stashDivider, action: #selector(dividerClicked(_:)))
-            stashDivider?.button?.setAccessibilityLabel(String(localized: "Stash section divider"))
         } else if let divider = stashDivider {
             removeSpacers(.stash)
             NSStatusBar.system.removeStatusItem(divider)
@@ -235,6 +232,9 @@ final class StatusBarController: NSObject {
         if let old = self[keyPath: keyPath] {
             NSStatusBar.system.removeStatusItem(old)
         }
+        // The stepped engine's spacers belong next to the divider, so they
+        // are made again where it goes.
+        removeSpacers(name == Name.stashDivider ? .stash : .hidden)
         let width = Double(item.button?.window?.frame.width ?? 20)
         UserDefaults.standard.set(base + max(width / 2, 4), forKey: Self.positionKey(name))
         let replacement = makeItem(name: name, action: #selector(dividerClicked(_:)))
@@ -252,8 +252,18 @@ final class StatusBarController: NSObject {
             button.action = action
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             button.imagePosition = .imageOnly
+            button.setAccessibilityLabel(Self.accessibilityLabel(for: name))
         }
         return item
+    }
+
+    private static func accessibilityLabel(for name: String) -> String? {
+        switch name {
+        case Name.toggle: return "Meno"
+        case Name.hiddenDivider: return String(localized: "Hidden section divider")
+        case Name.stashDivider: return String(localized: "Stash section divider")
+        default: return nil
+        }
     }
 
     // MARK: - State
@@ -302,7 +312,10 @@ final class StatusBarController: NSObject {
 
     private func applyWide() {
         for group in SpacerGroup.allCases { removeSpacers(group) }
-        let wide = CGFloat(CollapseMetrics.wideLength(screenWidths: ScreenGeometry.screenWidths))
+        let wide = CGFloat(CollapseMetrics.wideLength(
+            screenWidths: ScreenGeometry.screenWidths,
+            horizontalSpan: ScreenGeometry.horizontalSpan
+        ))
         hiddenDivider?.length = state.hiddenCollapsed ? wide : expandedDividerLength
         stashDivider?.length = state.stashCollapsed ? wide : expandedDividerLength
         toggle?.length = zenPushesVisibleItems ? wide : toggleLength
@@ -346,6 +359,11 @@ final class StatusBarController: NSObject {
 
     private func ramp(_ items: [NSStatusItem], to target: CGFloat) async {
         guard !items.isEmpty else { return }
+        // Longer items (left by the wide engine or a wider screen) would be
+        // dropped from the menu bar, so they shrink at once.
+        for item in items where item.length > target {
+            item.length = target
+        }
         var lengths = items.map { max($0.length, 0) }
         let increment = CGFloat(CollapseMetrics.steppedIncrement)
         while lengths.contains(where: { $0 < target }) {
@@ -484,7 +502,11 @@ final class StatusBarController: NSObject {
 
     /// The screen that shows Meno's items.
     var screen: NSScreen? {
-        toggle?.button?.window?.screen ?? ScreenGeometry.primaryScreen
+        guard let window = toggle?.button?.window else { return ScreenGeometry.primaryScreen }
+        // Zen can grow the icon across the screens to its left, so its right
+        // end tells where it is.
+        let end = NSPoint(x: window.frame.maxX - 1, y: window.frame.midY)
+        return ScreenGeometry.screen(containingCocoa: end) ?? window.screen ?? ScreenGeometry.primaryScreen
     }
 
     var dividerLayout: DividerLayout? {
@@ -565,11 +587,11 @@ final class StatusBarController: NSObject {
     }
 
     /// Shows Meno's menu below the Meno icon, or at the pointer while the
-    /// icon is hidden.
+    /// icon is hidden or grown by Zen.
     func showMenu() {
         guard let toggle else { return }
         let menu = model.makeStatusMenu()
-        guard model.settings.appearance.showsMenoIcon, toggleFrame != nil else {
+        guard model.settings.appearance.showsMenoIcon, toggleFrame != nil, !zenPushesVisibleItems else {
             menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
             return
         }
