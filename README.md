@@ -93,6 +93,7 @@ Meno has no analytics or accounts. It only goes online to ask GitHub for the lat
 | `meno://hide`, `meno://toggle` | Hides them again, or switches |
 | `meno://zen`, `meno://zen/on`, `meno://zen/off` | Switches Zen, turns it on or off |
 | `meno://scene/Work` | Applies the scene named *Work* |
+| `meno://group/Tools` | Shows the group named *Tools* below its icon |
 | `meno://open/Wi-Fi`, `meno://open/Wi-Fi?menu=secondary` | Opens a menu bar item by name |
 | `meno://quick-open`, `meno://shelf`, `meno://settings/rules` | Opens Quick Open, the Shelf or a Settings pane |
 

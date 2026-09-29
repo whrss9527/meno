@@ -28,6 +28,8 @@ final class LinkCommandTests: XCTestCase {
         XCTAssertEqual(command("meno://scene/%E5%B7%A5%E4%BD%9C"), .scene(name: "工作"))
         XCTAssertEqual(command("meno://scene?name=Presenting"), .scene(name: "Presenting"))
         XCTAssertNil(command("meno://scene"))
+        XCTAssertEqual(command("meno://group/Tools"), .group(name: "Tools"))
+        XCTAssertNil(command("meno://group"))
     }
 
     func testOpeningItems() {
@@ -50,7 +52,7 @@ final class LinkCommandTests: XCTestCase {
     func testLinksRoundTrip() {
         let commands: [LinkCommand] = [
             .show(all: false), .show(all: true), .hide, .toggle(all: true), .zen(nil), .zen(true), .zen(false),
-            .scene(name: "At Home"), .scene(name: "工作/周末"), .scene(name: "What? #1"),
+            .scene(name: "At Home"), .scene(name: "工作/周末"), .scene(name: "What? #1"), .group(name: "开发 工具"),
             .open(name: "com.apple.controlcenter#id:com.apple.menuextra.wifi", secondary: false),
             .open(name: "Dropbox", secondary: true),
             .quickOpen, .shelf, .settings(pane: nil), .settings(pane: "rules"),

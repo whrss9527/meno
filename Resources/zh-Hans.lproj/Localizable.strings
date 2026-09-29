@@ -365,6 +365,7 @@
 "Show Everything" = "显示全部";
 "Show everything" = "显示全部";
 "show everything" = "显示全部";
+"Show Group “%@”" = "显示分组“%@”";
 "Show Hidden Items" = "显示隐藏项目";
 "Show hidden items" = "显示隐藏项目";
 "show hidden items" = "显示隐藏项目";
@@ -420,6 +421,7 @@
 "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing." = "当菜单栏放不下时（例如刘海附近），托盘能让项目依然触手可及。";
 "The tint sits behind the menu bar. It is most visible with a transparent menu bar, as on macOS 26 and later." = "着色位于菜单栏后方，在透明菜单栏（如 macOS 26 及更高版本）上最明显。";
 "Then" = "然后";
+"There is no group named “%@”." = "没有名为“%@”的分组。";
 "There is no scene named “%@”." = "没有名为“%@”的场景。";
 "This Mac" = "这台 Mac";
 "This week" = "本周";

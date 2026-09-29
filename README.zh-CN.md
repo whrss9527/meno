@@ -93,6 +93,7 @@ Meno 没有数据分析或账户。它只会在检查更新时联网，向 GitHu
 | `meno://hide`、`meno://toggle` | 重新隐藏，或在显示与隐藏之间切换 |
 | `meno://zen`、`meno://zen/on`、`meno://zen/off` | 切换、开启或关闭禅模式 |
 | `meno://scene/工作` | 应用名为“工作”的场景 |
+| `meno://group/工具` | 在图标下方显示名为“工具”的分组 |
 | `meno://open/Wi-Fi`、`meno://open/Wi-Fi?menu=secondary` | 按名称打开菜单栏项目 |
 | `meno://quick-open`、`meno://shelf`、`meno://settings/rules` | 打开快速打开、托盘或某个设置页面 |
 

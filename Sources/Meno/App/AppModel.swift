@@ -324,6 +324,12 @@ final class AppModel: ObservableObject {
                 return
             }
             Task { await applyScene(scene) }
+        case .group(let name):
+            guard let group = settings.groups.first(where: { $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }) else {
+                toasts.show(String(localized: "There is no group named “\(name)”."), symbol: "questionmark.circle")
+                return
+            }
+            shelf.toggle(group: group.id)
         case .open(let name, let secondary):
             Task {
                 if item(matching: name) == nil {

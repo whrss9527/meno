@@ -154,6 +154,16 @@ final class QuickOpenController: ObservableObject {
                 Task { await model.applyScene(scene) }
             }
         }
+        commands += model.settings.groups.map { group in
+            QuickCommand(
+                id: "group:" + group.id.uuidString,
+                title: String(localized: "Show Group “\(group.name)”"),
+                symbol: group.symbol,
+                keywords: [group.name]
+            ) {
+                model.shelf.toggle(group: group.id)
+            }
+        }
         commands += [
             QuickCommand(id: "zen", title: model.isZenActive ? String(localized: "Turn Zen Off") : String(localized: "Turn Zen On"), symbol: "leaf", keywords: ["Zen"]) {
                 model.setZen(!model.isZenActive)

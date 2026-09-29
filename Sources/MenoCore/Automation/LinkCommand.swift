@@ -10,6 +10,7 @@ import Foundation
 /// | `meno://toggle`, `meno://toggle/all` | Shows or hides |
 /// | `meno://zen`, `meno://zen/on`, `meno://zen/off` | Toggles or sets Zen |
 /// | `meno://scene/Work` | Applies a scene by name |
+/// | `meno://group/Tools` | Shows a group's items below its icon |
 /// | `meno://open/Wi-Fi`, `meno://open/Wi-Fi?menu=secondary` | Opens a menu bar item by name |
 /// | `meno://quick-open`, `meno://shelf` | Opens Quick Open or the Shelf |
 /// | `meno://settings`, `meno://settings/rules` | Opens Settings |
@@ -20,6 +21,7 @@ public enum LinkCommand: Equatable, Sendable {
     /// `nil` toggles.
     case zen(Bool?)
     case scene(name: String)
+    case group(name: String)
     /// Opens an item found by name, or by its key when `name` is a key.
     case open(name: String, secondary: Bool)
     case quickOpen
@@ -55,6 +57,9 @@ public enum LinkCommand: Equatable, Sendable {
         case "scene":
             guard let name = Self.name(arguments: arguments, query: query) else { return nil }
             self = .scene(name: name)
+        case "group":
+            guard let name = Self.name(arguments: arguments, query: query) else { return nil }
+            self = .group(name: name)
         case "open", "item":
             guard let name = Self.name(arguments: arguments, query: query, keys: ["name", "key"]) else { return nil }
             let menu = query["menu"]?.lowercased()
@@ -88,6 +93,9 @@ public enum LinkCommand: Equatable, Sendable {
             if let enabled { components.path = enabled ? "/on" : "/off" }
         case .scene(let name):
             components.host = "scene"
+            components.path = "/" + name
+        case .group(let name):
+            components.host = "group"
             components.path = "/" + name
         case .open(let name, let secondary):
             components.host = "open"
