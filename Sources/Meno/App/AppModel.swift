@@ -209,7 +209,7 @@ final class AppModel: ObservableObject {
         if old.tint != new.tint {
             tint.update()
         }
-        if old.rules != new.rules || old.scenes != new.scenes {
+        if old.rules != new.rules || old.scenes != new.scenes || old.rulesPaused != new.rulesPaused {
             automation.rulesChanged()
         }
         if old.general.usageTracking != new.general.usageTracking {

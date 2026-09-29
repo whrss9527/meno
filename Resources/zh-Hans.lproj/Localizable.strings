@@ -316,6 +316,8 @@
 "Or drag it onto a section, or onto another item. A line shows on which side it will land." = "也可以直接拖：拖到某个分区，或拖到另一个项目上，竖线标出它会落在哪一边。";
 "Other colors in Dark Mode" = "深色模式使用其他颜色";
 "Passing over the menu bar without it shows nothing." = "不按住这个键时，指针经过菜单栏不会显示任何项目。";
+"Pause All Rules" = "暂停所有规则";
+"Pause Rules" = "暂停规则";
 "Permissions" = "权限";
 "Please leave the mouse alone for a moment." = "请暂时不要移动鼠标。";
 "Pointer" = "指针";
@@ -357,6 +359,7 @@
 "Reset and Grant Again" = "清除并重新授权";
 "Reset Statistics…" = "重置统计…";
 "Reset usage statistics?" = "要重置使用统计吗？";
+"Resume Rules" = "恢复规则";
 "Revealing hidden items" = "显示隐藏项目";
 "Reveals over the last two weeks" = "最近两周的展开次数";
 "Reveals today" = "今日展开";
@@ -365,6 +368,7 @@
 "Rules" = "规则";
 "Rules and Scenes" = "规则与场景";
 "Rules are checked when apps switch, displays change, power or network changes, a microphone or camera starts or stops, and every 30 seconds." = "在切换 App、显示器变化、电源或网络变化、麦克风或摄像头开始或停止使用时，以及每 30 秒检查一次规则。";
+"Rules are paused" = "规则已暂停";
 "Running on battery" = "使用电池供电";
 "Save" = "存储";
 "Save a scene first" = "请先存储一个场景";
@@ -506,6 +510,7 @@
 "When the pointer leaves the menu bar" = "指针离开菜单栏时";
 "When you switch to another app or click elsewhere" = "切换到其他 App 或点按别处时";
 "While Meno moves an item it briefly takes over the pointer. It puts the pointer back when it is done." = "Meno 移动项目时会短暂接管指针，完成后会把指针放回原处。";
+"While rules are paused, none of them applies. Rules that undo their action when it ends have undone it." = "规则暂停期间，任何规则都不会生效；设为“条件不再满足时撤销”的规则已撤销了它们的动作。";
 "Wide divider" = "宽分隔符";
 "Width" = "宽度";
 "Without it, click, hover or scroll over an empty part of the menu bar, or use a hotkey. Right-click an empty part for Meno's menu, and open Meno again for Settings." = "隐藏后，可以点按、悬停或滚动菜单栏的空白处，或使用快捷键来显示项目。右键点按空白处可打开 Meno 的菜单，再次打开 Meno 即可进入设置。";

@@ -26,9 +26,21 @@ public struct MenoSettings: Codable, Equatable, Sendable {
     @LossyArray public var groups: [ItemGroup] = []
     public var scenes: [LayoutScene] = []
     @LossyArray public var rules: [AutomationRule] = []
+    /// Stops all rules for a while without turning each one off.
+    public var rulesPaused = false
     public var onboardingCompleted = false
 
     public init() {}
+
+    /// The rules as they apply now: while rules are paused, none is on.
+    public var effectiveRules: [AutomationRule] {
+        guard rulesPaused else { return rules }
+        return rules.map { rule in
+            var paused = rule
+            paused.isEnabled = false
+            return paused
+        }
+    }
 
     /// Whether hidden items can be shown without the Meno icon: by clicking,
     /// hovering or scrolling over the menu bar, or with a hotkey.

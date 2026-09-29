@@ -124,7 +124,7 @@ final class AutomationController: ObservableObject {
             }
         }
         watchCaptureActivity()
-        commandChecks.watch(model.settings.rules.commands)
+        commandChecks.watch(model.settings.effectiveRules.commands)
         evaluate()
     }
 
@@ -146,14 +146,14 @@ final class AutomationController: ObservableObject {
             }
         }
         watchCaptureActivity()
-        commandChecks.watch(model.settings.rules.commands)
+        commandChecks.watch(model.settings.effectiveRules.commands)
         evaluate()
     }
 
     /// Microphones and cameras are only watched while an enabled rule
     /// depends on them.
     private func watchCaptureActivity() {
-        let conditions = model.settings.rules.filter(\.isEnabled).flatMap(\.conditions)
+        let conditions = model.settings.effectiveRules.filter(\.isEnabled).flatMap(\.conditions)
         let microphones = conditions.contains(.microphoneInUse)
         let cameras = conditions.contains(.cameraInUse)
         guard microphones || cameras || watchesCaptureActivity else { return }
@@ -164,7 +164,7 @@ final class AutomationController: ObservableObject {
     func evaluate() {
         guard isStarted else { return }
         context = SystemSignals.snapshot(isOnline: isOnline, capture: capture, succeededCommands: succeededCommands)
-        let transitions = evaluator.update(rules: model.settings.rules, context: context)
+        let transitions = evaluator.update(rules: model.settings.effectiveRules, context: context)
         activeRuleIDs = evaluator.activeRuleIDs
         for transition in transitions {
             switch transition {

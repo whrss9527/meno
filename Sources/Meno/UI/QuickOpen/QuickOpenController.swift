@@ -124,7 +124,11 @@ final class QuickOpenController: ObservableObject {
         let usage = model.usage
         if trimmed.isEmpty {
             let order: [ItemSection: Int] = [.hidden: 0, .stash: 1, .visible: 2]
+            let changed = model.changes.changedItems
             results = items.sorted { lhs, rhs in
+                // Items that changed unseen come first.
+                let leftChanged = changed.contains(lhs.key)
+                if leftChanged != changed.contains(rhs.key) { return leftChanged }
                 let left = usage.usage(of: lhs.key)?.total ?? 0
                 let right = usage.usage(of: rhs.key)?.total ?? 0
                 if left != right { return left > right }
@@ -174,6 +178,17 @@ final class QuickOpenController: ObservableObject {
             ) {
                 model.shelf.toggle(group: group.id, trigger: .menu, takesKeyboard: true)
             }
+        }
+        if !model.settings.rules.isEmpty {
+            let paused = model.settings.rulesPaused
+            commands.append(QuickCommand(
+                id: "pause-rules",
+                title: paused ? String(localized: "Resume Rules") : String(localized: "Pause Rules"),
+                symbol: paused ? "play.circle" : "pause.circle",
+                keywords: [String(localized: "Rules")]
+            ) {
+                model.settings.rulesPaused.toggle()
+            })
         }
         commands += [
             QuickCommand(id: "zen", title: model.isZenActive ? String(localized: "Turn Zen Off") : String(localized: "Turn Zen On"), symbol: "leaf", keywords: ["Zen"]) {
@@ -281,7 +296,7 @@ final class QuickOpenController: ObservableObject {
         let panel = FloatingPanel(level: .modalPanel)
         panel.allowsKey = true
         panel.becomesKeyOnlyIfNeeded = false
-        let view = FirstMouseHostingView(rootView: QuickOpenView(controller: self, model: model, images: model.images))
+        let view = FirstMouseHostingView(rootView: QuickOpenView(controller: self, model: model, images: model.images, changes: model.changes))
         panel.contentView = view
         self.panel = panel
         hostingView = view

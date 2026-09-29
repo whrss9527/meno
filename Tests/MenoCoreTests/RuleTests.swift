@@ -48,6 +48,29 @@ final class RuleTests: XCTestCase {
         XCTAssertFalse(RuleCondition.displayConnected(name: "").isSatisfied(by: RuleContext(displayNames: [""])))
     }
 
+    func testPausedRulesDoNotApply() {
+        var settings = MenoSettings()
+        settings.rules = [
+            AutomationRule(name: "Battery", conditions: [.onBattery], action: .zen),
+            AutomationRule(name: "VPN", conditions: [.commandSucceeds(command: "vpn-up")], action: .revealAll),
+        ]
+        XCTAssertEqual(settings.effectiveRules, settings.rules)
+        var evaluator = RuleEvaluator()
+        let context = RuleContext(isOnBattery: true, succeededCommands: ["vpn-up"])
+        XCTAssertEqual(evaluator.update(rules: settings.effectiveRules, context: context).count, 2)
+
+        settings.rulesPaused = true
+        XCTAssertTrue(settings.effectiveRules.allSatisfy { !$0.isEnabled })
+        XCTAssertTrue(settings.effectiveRules.commands.isEmpty)
+        // Pausing deactivates what was active, which undoes it.
+        let transitions = evaluator.update(rules: settings.effectiveRules, context: context)
+        XCTAssertEqual(transitions.count, 2)
+        XCTAssertTrue(transitions.allSatisfy { if case .deactivated = $0 { return true } else { return false } })
+        // The rules themselves stay on.
+        XCTAssertTrue(settings.rules.allSatisfy(\.isEnabled))
+        XCTAssertFalse(try MenoSettings.decode(from: MenoSettings().encoded()).rulesPaused)
+    }
+
     func testForgottenRuleActivatesAgain() {
         let rule = AutomationRule(name: "Battery", conditions: [.onBattery], action: .zen)
         var evaluator = RuleEvaluator()

@@ -35,7 +35,23 @@ struct RulesPane: View {
                     }
                     .fixedSize()
                     Spacer()
+                    if !model.settings.rules.isEmpty {
+                        Toggle("Pause All Rules", isOn: $model.settings.rulesPaused)
+                            .toggleStyle(.switch)
+                            .controlSize(.small)
+                    }
                 }
+            }
+
+            if model.settings.rulesPaused, !model.settings.rules.isEmpty {
+                Banner(
+                    symbol: "pause.circle.fill",
+                    tint: .orange,
+                    title: "Rules are paused",
+                    message: "While rules are paused, none of them applies. Rules that undo their action when it ends have undone it.",
+                    actionTitle: "Resume Rules",
+                    action: { model.settings.rulesPaused = false }
+                )
             }
 
             if model.settings.rules.isEmpty {

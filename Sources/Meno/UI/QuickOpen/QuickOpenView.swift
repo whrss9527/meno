@@ -5,6 +5,7 @@ struct QuickOpenView: View {
     @ObservedObject var controller: QuickOpenController
     @ObservedObject var model: AppModel
     @ObservedObject var images: ItemImageCache
+    @ObservedObject var changes: ChangeWatcher
 
     @FocusState private var fieldFocused: Bool
 
@@ -78,7 +79,8 @@ struct QuickOpenView: View {
                                     image: images.image(for: item),
                                     isSelected: index == controller.selection,
                                     shortcut: index < 9 ? index + 1 : nil,
-                                    uses: model.usage.usage(of: item.key)?.total ?? 0
+                                    uses: model.usage.usage(of: item.key)?.total ?? 0,
+                                    isChanged: changes.changedItems.contains(item.key)
                                 )
                             case .command(let command):
                                 QuickCommandRow(
@@ -132,6 +134,8 @@ private struct QuickOpenRow: View {
     let isSelected: Bool
     let shortcut: Int?
     let uses: Int
+    /// The item changed since the person last saw it.
+    var isChanged = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -145,9 +149,18 @@ private struct QuickOpenRow: View {
                         .fill(Color.primary.opacity(0.06))
                 }
             VStack(alignment: .leading, spacing: 1) {
-                Text(verbatim: item.displayName)
-                    .font(.system(size: 14, weight: .medium))
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(verbatim: item.displayName)
+                        .font(.system(size: 14, weight: .medium))
+                        .lineLimit(1)
+                    if isChanged {
+                        Circle()
+                            .fill(Color.orange)
+                            .frame(width: 7, height: 7)
+                            .help(Text("Changed since you last looked"))
+                            .accessibilityLabel(Text("Changed"))
+                    }
+                }
                 if item.appName != item.displayName {
                     Text(verbatim: item.appName)
                         .font(.system(size: 11))

@@ -35,6 +35,13 @@ struct StatusMenuBuilder {
         }
         zen.state = model.isZenActive ? .on : .off
         menu.addItem(zen)
+        if !model.settings.rules.isEmpty {
+            let pause = item(String(localized: "Pause Rules"), symbol: "pause.circle") {
+                model.settings.rulesPaused.toggle()
+            }
+            pause.state = model.settings.rulesPaused ? .on : .off
+            menu.addItem(pause)
+        }
         menu.addItem(scenesItem())
         menu.addItem(.separator())
         menu.addItem(item(String(localized: "Arrange Menu Bar…"), symbol: "rectangle.3.group", hotkey: .arrangeMenuBar) {
