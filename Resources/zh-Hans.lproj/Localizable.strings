@@ -156,6 +156,7 @@
 "Item shortcuts" = "项目快捷键";
 "Items left of this divider are hidden" = "此分隔符左侧的项目会被隐藏";
 "Items left of this divider go to the Stash" = "此分隔符左侧的项目会放入暗格";
+"Items on the left do not fit into the menu bar" = "左侧是菜单栏里放不下的项目";
 "keep %@ visible" = "让 %@ 保持显示";
 "Keep an item visible" = "让某个项目保持显示";
 "Keep Visible" = "保持显示";

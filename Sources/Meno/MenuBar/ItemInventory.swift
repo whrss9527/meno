@@ -133,7 +133,9 @@ final class ItemInventory: ObservableObject {
         model.images.refresh(for: items, captureAllowed: model.permissions.screenRecording)
     }
 
-    private var framesAreReliable: Bool {
+    /// Whether item positions reflect the menu bar right now. While the
+    /// stepped engine hides items, their positions are not reported.
+    var framesAreReliable: Bool {
         let state = model.statusBar.state
         switch model.statusBar.engine {
         case .wide:

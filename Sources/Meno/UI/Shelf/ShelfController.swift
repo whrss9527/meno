@@ -31,9 +31,26 @@ final class ShelfController: ObservableObject {
     }
 
     var items: [MenuBarItem] {
-        let hidden = model.inventory.items(in: .hidden)
+        let hidden = crowdedItems + model.inventory.items(in: .hidden)
         guard includesStash, model.settings.general.stashEnabled else { return hidden }
         return hidden + model.inventory.items(in: .stash)
+    }
+
+    /// Visible items that macOS could not fit into the menu bar. They sit
+    /// behind the camera housing or off the screen, where they cannot be
+    /// clicked, so the Shelf offers them first.
+    var crowdedItems: [MenuBarItem] {
+        guard model.inventory.framesAreReliable, !model.isZenActive else { return [] }
+        let housings = NSScreen.screens
+            .compactMap { ScreenGeometry.notchRect(on: $0) }
+            .map { ScreenGeometry.quartzRect(fromCocoa: $0) }
+        return model.inventory.items(in: .visible).filter { item in
+            guard item.kind != .marker, item.frame.width > 0 else { return false }
+            if !item.isOnScreen { return true }
+            return housings.contains { housing in
+                housing.minY <= item.frame.midY && item.frame.midY <= housing.maxY && item.frame.midX < housing.maxX
+            }
+        }
     }
 
     func toggle(trigger: RevealTrigger) {

@@ -10,23 +10,26 @@ struct ShelfView: View {
     private var settings: ShelfSettings { model.settings.shelf }
 
     var body: some View {
+        let crowded = shelf.crowdedItems
         let hidden = inventory.items(in: .hidden)
         let stash = shelf.includesStash && model.settings.general.stashEnabled ? inventory.items(in: .stash) : []
 
         GlassGroup(spacing: 10) {
             HStack(spacing: 8) {
-                if hidden.isEmpty && stash.isEmpty {
+                if crowded.isEmpty && hidden.isEmpty && stash.isEmpty {
                     emptyState
                 } else {
+                    ForEach(crowded) { item in
+                        ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
+                    }
+                    if !crowded.isEmpty && !hidden.isEmpty {
+                        separator.help(Text("Items on the left do not fit into the menu bar"))
+                    }
                     ForEach(hidden) { item in
                         ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
                     }
                     if !stash.isEmpty {
-                        Capsule()
-                            .fill(Color.primary.opacity(0.18))
-                            .frame(width: 1.5, height: CGFloat(settings.iconSize) + 6)
-                            .padding(.horizontal, 2)
-                            .help(Text("Stash"))
+                        separator.help(Text("Stash"))
                         ForEach(stash) { item in
                             ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
                         }
@@ -44,6 +47,13 @@ struct ShelfView: View {
         }
         .padding(14)
         .fixedSize()
+    }
+
+    private var separator: some View {
+        Capsule()
+            .fill(Color.primary.opacity(0.18))
+            .frame(width: 1.5, height: CGFloat(settings.iconSize) + 6)
+            .padding(.horizontal, 2)
     }
 
     private var emptyState: some View {
@@ -115,20 +125,22 @@ private struct ShelfItemButton: View {
             Button("Open") { shelf.open(item, secondary: false) }
             Button("Open Secondary Menu") { shelf.open(item, secondary: true) }
             Divider()
-            Button("Keep Visible") {
-                shelf.hide()
-                shelf.model.move(item.key, to: .visible)
+            if item.section != .visible {
+                Button("Keep Visible") {
+                    shelf.hide()
+                    shelf.model.move(item.key, to: .visible)
+                }
+            }
+            if item.section != .hidden {
+                Button("Move to Hidden") {
+                    shelf.hide()
+                    shelf.model.move(item.key, to: .hidden)
+                }
             }
             if item.section != .stash, shelf.model.settings.general.stashEnabled {
                 Button("Move to Stash") {
                     shelf.hide()
                     shelf.model.move(item.key, to: .stash)
-                }
-            }
-            if item.section == .stash {
-                Button("Move to Hidden") {
-                    shelf.hide()
-                    shelf.model.move(item.key, to: .hidden)
                 }
             }
         }
