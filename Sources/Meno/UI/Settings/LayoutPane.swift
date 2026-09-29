@@ -184,7 +184,11 @@ struct LayoutPane: View {
                             },
                             showsOnChange: model.showsOnChange(item.key),
                             setShowsOnChange: { model.setShowsOnChange(item.key, $0) },
-                            copyLink: { model.copyLink(.open(name: item.key.rawValue, secondary: false)) }
+                            copyLink: { model.copyLink(.open(name: item.key.rawValue, secondary: false)) },
+                            addHotkey: {
+                                model.hotkeyDraftItem = item.key
+                                model.openSettings(.hotkeys)
+                            }
                         )
                     }
                 }
@@ -272,6 +276,7 @@ private struct LayoutChip: View {
     let showsOnChange: Bool
     let setShowsOnChange: (Bool) -> Void
     let copyLink: () -> Void
+    let addHotkey: () -> Void
 
     @State private var dropEdge: HorizontalEdge?
     @State private var isHovering = false
@@ -336,10 +341,12 @@ private struct LayoutChip: View {
             MoveCommand(title: String(localized: "Rename…"), symbol: "pencil", startsGroup: startsGroup, action: rename)
         }
         let copyLinkCommand = MoveCommand(title: String(localized: "Copy Link"), symbol: "link", action: copyLink)
+        let hotkeyCommand = MoveCommand(title: String(localized: "Add Shortcut…"), symbol: "keyboard", action: addHotkey)
         guard item.isMovable else {
             return [
                 MoveCommand(title: String(localized: "macOS keeps this item in place"), symbol: "lock.fill", isEnabled: false) {},
                 renameCommand(),
+                hotkeyCommand,
                 copyLinkCommand,
             ]
         }
@@ -363,6 +370,7 @@ private struct LayoutChip: View {
         } else {
             result.append(renameCommand())
         }
+        result.append(hotkeyCommand)
         result.append(copyLinkCommand)
         return result
     }

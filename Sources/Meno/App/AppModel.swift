@@ -14,6 +14,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var isZenActive = false
     @Published private(set) var activeSceneID: UUID?
     @Published private(set) var launchAtLogin: Bool
+    /// An item picked elsewhere (for example in the layout editor) to get a
+    /// shortcut in the Hotkeys pane.
+    @Published var hotkeyDraftItem: MenuItemKey?
 
     let storage: Storage
     let permissions: PermissionCenter

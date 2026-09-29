@@ -31,6 +31,7 @@
 "Add Condition" = "添加条件";
 "Add Marker" = "添加标记";
 "Add Rule" = "添加规则";
+"Add Shortcut…" = "添加快捷键…";
 "Advanced" = "高级";
 "After" = "延迟";
 "After an update, System Settings can still list an earlier build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "更新之后，系统设置里可能还留着旧版本 Meno 的记录，它对新版本不生效。先清除这条记录，再在系统提示时打开 Meno 的开关。";

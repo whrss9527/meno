@@ -10,6 +10,19 @@ struct HotkeysPane: View {
     @State private var newClick: ClickKind = .primary
 
     var body: some View {
+        content
+            .onAppear(perform: takeDraftItem)
+            .onChange(of: model.hotkeyDraftItem) { _, _ in takeDraftItem() }
+    }
+
+    /// Picks the item chosen in the layout editor for a new shortcut.
+    private func takeDraftItem() {
+        guard let key = model.hotkeyDraftItem else { return }
+        newItemKey = key
+        model.hotkeyDraftItem = nil
+    }
+
+    private var content: some View {
         VStack(spacing: 16) {
             SettingsCard("Global shortcuts", symbol: "command", footnote: "Shortcuts work in every app. Press Delete while recording to remove one, or Escape to cancel.") {
                 ForEach(HotkeyAction.allCases, id: \.self) { action in
