@@ -213,7 +213,6 @@ private struct LayoutChip: View {
     let moveToSection: (ItemSection) -> Void
     let place: (MenuItemKey, Placement) -> Void
 
-    @State private var width: CGFloat = 100
     @State private var dropEdge: HorizontalEdge?
     @State private var isHovering = false
 
@@ -226,16 +225,9 @@ private struct LayoutChip: View {
             Text(verbatim: item.displayName)
                 .font(.system(size: 12, weight: .medium))
                 .lineLimit(1)
-            if item.isMovable {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(.secondary)
-            } else {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.secondary)
-                    .help(Text("macOS keeps this item in place"))
-            }
+            Image(systemName: item.isMovable ? "chevron.down" : "lock.fill")
+                .font(.system(size: item.isMovable ? 8 : 9, weight: item.isMovable ? .bold : .regular))
+                .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
@@ -253,49 +245,21 @@ private struct LayoutChip: View {
                     .offset(x: dropEdge == .leading ? -5 : 5)
             }
         }
-        .background {
-            GeometryReader { proxy in
-                Color.clear
-                    .onAppear { width = proxy.size.width }
-                    .onChange(of: proxy.size.width) { _, newWidth in
-                        width = newWidth
-                    }
-            }
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-        .onHover { isHovering = $0 }
-        .simultaneousGesture(TapGesture().onEnded { showMenu() })
-        .onDrag {
-            draggedKey = item.key
-            return NSItemProvider(object: item.key.rawValue as NSString)
-        } preview: {
-            HStack(spacing: 6) {
-                Image(nsImage: image)
-                    .resizable()
-                    .frame(width: 16, height: 16)
-                Text(verbatim: item.displayName)
-                    .font(.system(size: 12, weight: .medium))
-            }
-            .padding(8)
-        }
-        .onDrop(
-            of: [.plainText],
-            delegate: ChipDropDelegate(target: item, width: width, draggedKey: $draggedKey, edge: $dropEdge, place: place)
-        )
-        .contextMenu {
-            ForEach(commands) { command in
-                if command.startsGroup {
-                    Divider()
+        .overlay {
+            ChipMouseArea(
+                key: item.key,
+                toolTip: item.isMovable ? (item.bundleID ?? item.appName) : String(localized: "macOS keeps this item in place"),
+                makeMenu: makeMenu,
+                makeDragImage: { ChipMouseView.dragImage(icon: image, name: item.displayName) },
+                onHover: { isHovering = $0 },
+                onDragStart: { draggedKey = item.key },
+                onDragEnd: { draggedKey = nil },
+                onDropEdge: { dropEdge = $0 },
+                onDrop: { key, edge in
+                    place(key, edge == .leading ? .leftOf(item.layoutToken) : .rightOf(item.layoutToken))
                 }
-                Button {
-                    command.action()
-                } label: {
-                    Label(command.title, systemImage: command.symbol)
-                }
-                .disabled(!command.isEnabled)
-            }
+            )
         }
-        .help(Text(verbatim: item.bundleID ?? item.appName))
     }
 
     /// Moves to the other sections, and one step left or right. macOS keeps
@@ -316,8 +280,8 @@ private struct LayoutChip: View {
         return result
     }
 
-    /// Shows the commands at the pointer, like a context menu.
-    private func showMenu() {
+    /// The commands as a menu, shown on click and on right-click.
+    private func makeMenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
         for command in commands {
@@ -332,12 +296,7 @@ private struct LayoutChip: View {
             entry.isEnabled = command.isEnabled
             menu.addItem(entry)
         }
-        let location = NSEvent.mouseLocation
-        // Opening the menu outside the gesture keeps its tracking loop from
-        // running inside SwiftUI's event handling.
-        DispatchQueue.main.async {
-            menu.popUp(positioning: nil, at: location, in: nil)
-        }
+        return menu
     }
 }
 
@@ -353,42 +312,185 @@ private struct MoveCommand: Identifiable {
     var id: String { title }
 }
 
-/// Shows on which side of an item a dragged item will land, and puts it there.
-private struct ChipDropDelegate: DropDelegate {
-    let target: MenuBarItem
-    let width: CGFloat
-    @Binding var draggedKey: MenuItemKey?
-    @Binding var edge: HorizontalEdge?
-    let place: (MenuItemKey, Placement) -> Void
+/// Takes the mouse over an item in the layout editor.
+///
+/// SwiftUI gestures there lost clicks and drags to the window, which moved
+/// instead, so an AppKit view handles them: a click opens the item's menu,
+/// a drag starts a drag session, and dropping another item on it reports
+/// the side it landed on.
+private struct ChipMouseArea: NSViewRepresentable {
+    let key: MenuItemKey
+    let toolTip: String
+    let makeMenu: () -> NSMenu
+    let makeDragImage: () -> NSImage
+    let onHover: (Bool) -> Void
+    let onDragStart: () -> Void
+    let onDragEnd: () -> Void
+    let onDropEdge: (HorizontalEdge?) -> Void
+    let onDrop: (MenuItemKey, HorizontalEdge) -> Void
 
-    func validateDrop(info: DropInfo) -> Bool {
-        guard let draggedKey else { return false }
-        return draggedKey != target.key
+    func makeNSView(context: Context) -> ChipMouseView {
+        let view = ChipMouseView()
+        view.registerForDraggedTypes([.string])
+        return view
     }
 
-    func dropEntered(info: DropInfo) {
-        edge = side(of: info)
+    func updateNSView(_ view: ChipMouseView, context: Context) {
+        view.key = key
+        view.toolTip = toolTip
+        view.makeMenu = makeMenu
+        view.makeDragImage = makeDragImage
+        view.onHover = onHover
+        view.onDragStart = onDragStart
+        view.onDragEnd = onDragEnd
+        view.onDropEdge = onDropEdge
+        view.onDrop = onDrop
+    }
+}
+
+private final class ChipMouseView: NSView, NSDraggingSource {
+    var key: MenuItemKey?
+    var makeMenu: () -> NSMenu = { NSMenu() }
+    var makeDragImage: () -> NSImage = { NSImage() }
+    var onHover: (Bool) -> Void = { _ in }
+    var onDragStart: () -> Void = {}
+    var onDragEnd: () -> Void = {}
+    var onDropEdge: (HorizontalEdge?) -> Void = { _ in }
+    var onDrop: (MenuItemKey, HorizontalEdge) -> Void = { _, _ in }
+
+    private var mouseDownPoint: NSPoint?
+    private var isDragging = false
+
+    override var mouseDownCanMoveWindow: Bool { false }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    // MARK: Pointer
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas {
+            removeTrackingArea(area)
+        }
+        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil))
     }
 
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        edge = side(of: info)
-        return DropProposal(operation: .move)
+    override func mouseEntered(with event: NSEvent) {
+        onHover(true)
     }
 
-    func dropExited(info: DropInfo) {
-        edge = nil
+    override func mouseExited(with event: NSEvent) {
+        onHover(false)
     }
 
-    func performDrop(info: DropInfo) -> Bool {
-        edge = nil
-        guard let key = draggedKey, key != target.key else { return false }
-        draggedKey = nil
-        let token = target.layoutToken
-        place(key, side(of: info) == .leading ? .leftOf(token) : .rightOf(token))
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    // MARK: Click and drag
+
+    override func mouseDown(with event: NSEvent) {
+        mouseDownPoint = convert(event.locationInWindow, from: nil)
+        isDragging = false
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard !isDragging, let start = mouseDownPoint, let key else { return }
+        let point = convert(event.locationInWindow, from: nil)
+        guard hypot(point.x - start.x, point.y - start.y) > 3 else { return }
+        isDragging = true
+        onDragStart()
+        let image = makeDragImage()
+        let item = NSDraggingItem(pasteboardWriter: key.rawValue as NSString)
+        item.setDraggingFrame(NSRect(origin: .zero, size: image.size), contents: image)
+        beginDraggingSession(with: [item], event: event, source: self)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        defer { mouseDownPoint = nil }
+        guard !isDragging, mouseDownPoint != nil else { return }
+        makeMenu().popUp(positioning: nil, at: NSPoint(x: 0, y: -4), in: self)
+    }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        makeMenu()
+    }
+
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+        context == .withinApplication ? [.move, .copy, .generic] : []
+    }
+
+    func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+        isDragging = false
+        mouseDownPoint = nil
+        onDragEnd()
+    }
+
+    // MARK: Dropping another item
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        track(sender)
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        track(sender)
+    }
+
+    override func draggingExited(_ sender: NSDraggingInfo?) {
+        onDropEdge(nil)
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        onDropEdge(nil)
+        guard let dragged = draggedKey(sender), dragged != key else { return false }
+        onDrop(dragged, edge(of: sender))
         return true
     }
 
-    private func side(of info: DropInfo) -> HorizontalEdge {
-        info.location.x < width / 2 ? .leading : .trailing
+    private func track(_ sender: NSDraggingInfo) -> NSDragOperation {
+        guard let dragged = draggedKey(sender), dragged != key else {
+            onDropEdge(nil)
+            return []
+        }
+        onDropEdge(edge(of: sender))
+        return .move
+    }
+
+    private func draggedKey(_ sender: NSDraggingInfo) -> MenuItemKey? {
+        sender.draggingPasteboard.string(forType: .string).flatMap { MenuItemKey(rawValue: $0) }
+    }
+
+    private func edge(of sender: NSDraggingInfo) -> HorizontalEdge {
+        convert(sender.draggingLocation, from: nil).x < bounds.midX ? .leading : .trailing
+    }
+
+    // MARK: Drag image
+
+    /// The item's icon and name on a rounded plate.
+    static func dragImage(icon: NSImage, name: String) -> NSImage {
+        let text = NSAttributedString(string: name, attributes: [
+            .font: NSFont.systemFont(ofSize: 12, weight: .medium),
+            .foregroundColor: NSColor.labelColor,
+        ])
+        let textSize = text.size()
+        let size = NSSize(width: ceil(textSize.width) + 40, height: 28)
+        let glyph = icon.isTemplate ? tinted(icon) : icon
+        return NSImage(size: size, flipped: false) { rect in
+            NSColor.windowBackgroundColor.withAlphaComponent(0.92).setFill()
+            NSBezierPath(roundedRect: rect, xRadius: 9, yRadius: 9).fill()
+            glyph.draw(in: NSRect(x: 8, y: (rect.height - 16) / 2, width: 16, height: 16))
+            text.draw(at: NSPoint(x: 30, y: (rect.height - textSize.height) / 2))
+            return true
+        }
+    }
+
+    /// Template images are black; menu bar icons need the label color.
+    private static func tinted(_ image: NSImage) -> NSImage {
+        NSImage(size: image.size, flipped: false) { rect in
+            image.draw(in: rect)
+            NSColor.labelColor.set()
+            rect.fill(using: .sourceAtop)
+            return true
+        }
     }
 }
