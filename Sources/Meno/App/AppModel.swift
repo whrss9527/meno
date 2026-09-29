@@ -266,6 +266,7 @@ final class AppModel: ObservableObject {
         case .quickOpen: quickOpen.toggle()
         case .toggleShelf: shelf.toggle(trigger: .hotkey)
         case .toggleZen: setZen(!isZenActive)
+        case .arrangeMenuBar: openSettings(.layout)
         case .openSettings: openSettings()
         }
     }

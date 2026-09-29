@@ -115,6 +115,7 @@ public enum HotkeyAction: String, Codable, CaseIterable, Sendable {
     case quickOpen
     case toggleShelf
     case toggleZen
+    case arrangeMenuBar
     case openSettings
 }
 

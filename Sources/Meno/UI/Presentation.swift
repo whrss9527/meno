@@ -207,6 +207,7 @@ extension HotkeyAction {
         case .quickOpen: return String(localized: "Quick Open")
         case .toggleShelf: return String(localized: "Show or hide the Shelf")
         case .toggleZen: return String(localized: "Turn Zen on or off")
+        case .arrangeMenuBar: return String(localized: "Arrange the menu bar")
         case .openSettings: return String(localized: "Open Settings")
         }
     }
@@ -218,6 +219,7 @@ extension HotkeyAction {
         case .quickOpen: return "magnifyingglass"
         case .toggleShelf: return "rectangle.topthird.inset.filled"
         case .toggleZen: return "leaf"
+        case .arrangeMenuBar: return "rectangle.3.group"
         case .openSettings: return "gearshape"
         }
     }

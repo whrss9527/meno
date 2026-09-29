@@ -37,7 +37,7 @@ struct StatusMenuBuilder {
         menu.addItem(zen)
         menu.addItem(scenesItem())
         menu.addItem(.separator())
-        menu.addItem(item(String(localized: "Arrange Menu Bar…"), symbol: "rectangle.3.group") {
+        menu.addItem(item(String(localized: "Arrange Menu Bar…"), symbol: "rectangle.3.group", hotkey: .arrangeMenuBar) {
             model.openSettings(.layout)
         })
         menu.addItem(item(String(localized: "Settings…"), symbol: "gearshape", keyEquivalent: ",") {
@@ -51,6 +51,9 @@ struct StatusMenuBuilder {
         menu.addItem(.separator())
         menu.addItem(item(String(localized: "About Meno"), symbol: "info.circle") {
             model.openSettings(.about)
+        })
+        menu.addItem(item(String(localized: "Check for Updates…"), symbol: "arrow.down.circle") {
+            Task { await model.updates.check(userInitiated: true) }
         })
         menu.addItem(item(String(localized: "Quit Meno"), symbol: "power", keyEquivalent: "q") {
             NSApp.terminate(nil)
