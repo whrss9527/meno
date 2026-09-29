@@ -52,6 +52,8 @@ final class StatusBarController: NSObject {
     private(set) var state = BarState()
     private var applyTask: Task<Void, Never>?
     private var zenGlyphView: NSImageView?
+    /// A dot on the Meno icon while watched items changed unseen.
+    private var changeDot: NSView?
     private var dividersForcedVisible = false
     private var orderRepairs = 0
     private var orderHintShown = false
@@ -439,9 +441,15 @@ final class StatusBarController: NSObject {
                 button.image = MenoIconRenderer.toggleImage(for: appearance.icon, revealed: !state.hiddenCollapsed)
             }
             updateBadge(on: button)
-            button.toolTip = state.zen
+            var toolTip = state.zen
                 ? String(localized: "Zen is on. Click to leave Zen.")
                 : String(localized: "Meno — click to show or hide items, ⌥-click to include the Stash, right-click for more")
+            let changed = changedItemNames
+            if !changed.isEmpty {
+                toolTip += "\n" + String(localized: "Changed: \(ListFormatter.localizedString(byJoining: changed))")
+            }
+            button.toolTip = toolTip
+            updateChangeDot(on: button, visible: !changed.isEmpty)
         }
         updateZenGlyph()
         if let button = hiddenDivider?.button {
@@ -452,6 +460,37 @@ final class StatusBarController: NSObject {
             button.image = state.stashCollapsed ? nil : MenoIconRenderer.dividerImage(appearance.dividerGlyph, double: true)
             button.toolTip = String(localized: "Items left of this divider go to the Stash")
         }
+    }
+
+    /// Names of watched hidden items that changed unseen, while the icon
+    /// can show them.
+    private var changedItemNames: [String] {
+        guard model.settings.appearance.showsMenoIcon, state.hiddenCollapsed, !state.zen else { return [] }
+        return model.changes.changedItems.sorted().map { key in
+            model.inventory.item(for: key)?.displayName ?? key.owner
+        }
+    }
+
+    private func updateChangeDot(on button: NSStatusBarButton, visible: Bool) {
+        guard visible else {
+            changeDot?.removeFromSuperview()
+            changeDot = nil
+            button.setAccessibilityValue(nil)
+            return
+        }
+        let size: CGFloat = 6
+        let dot = changeDot ?? NSView()
+        dot.wantsLayer = true
+        dot.layer?.backgroundColor = NSColor.systemOrange.cgColor
+        dot.layer?.cornerRadius = size / 2
+        let top = button.isFlipped ? 3 : button.bounds.height - 3 - size
+        dot.frame = NSRect(x: max(button.bounds.width - size - 2, 0), y: top, width: size, height: size)
+        dot.autoresizingMask = button.isFlipped ? [.minXMargin, .maxYMargin] : [.minXMargin, .minYMargin]
+        if dot.superview == nil {
+            button.addSubview(dot)
+        }
+        changeDot = dot
+        button.setAccessibilityValue(String(localized: "Items changed"))
     }
 
     private func updateBadge(on button: NSStatusBarButton) {

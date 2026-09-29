@@ -23,6 +23,7 @@ final class ShelfController: ObservableObject {
     @Published private(set) var maxContentWidth: CGFloat = 1200
 
     private var panel: FloatingPanel?
+    private var presentedTrigger: RevealTrigger?
     private var hideTask: Task<Void, Never>?
     private var hostingView: NSHostingView<ShelfView>?
     private var subscriptions: Set<AnyCancellable> = []
@@ -103,6 +104,7 @@ final class ShelfController: ObservableObject {
         hideTask = nil
         model.quickOpen.hide()
         includesStash = includeStash
+        presentedTrigger = trigger
         if let screen = model.statusBar.screen ?? NSScreen.main {
             // The panel keeps 8 pt from the screen edges; the view adds
             // 24 pt of padding on each side.
@@ -159,6 +161,11 @@ final class ShelfController: ObservableObject {
         hideTask?.cancel()
         hideTask = nil
         guard isVisible else { return }
+        // Items the person had in front of them count as seen, unless the
+        // Shelf only opened because they changed.
+        if presentedTrigger != .change {
+            model.changes.markSeen(shownItems.map(\.key))
+        }
         isVisible = false
         hoveredKey = nil
         keyboardSelection = nil
@@ -222,7 +229,7 @@ final class ShelfController: ObservableObject {
 
     private func makePanel() -> FloatingPanel {
         let panel = FloatingPanel(level: .statusBar)
-        let view = FirstMouseHostingView(rootView: ShelfView(model: model, shelf: self, inventory: model.inventory, images: model.images))
+        let view = FirstMouseHostingView(rootView: ShelfView(model: model, shelf: self, inventory: model.inventory, images: model.images, changes: model.changes))
         panel.contentView = view
         self.panel = panel
         hostingView = view

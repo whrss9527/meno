@@ -7,11 +7,15 @@ import MenoCore
 /// Texts come from Accessibility. Icons are compared too when Screen
 /// Recording is allowed and items can be captured (up to macOS 26).
 @MainActor
-final class ChangeWatcher {
+final class ChangeWatcher: ObservableObject {
     unowned let model: AppModel
 
     /// How long a changed item stays shown.
     static let showDuration: TimeInterval = 6
+
+    /// Items that changed since the person last saw them. The Meno icon
+    /// and the Shelf mark them until they are opened or shown.
+    @Published private(set) var changedItems: Set<MenuItemKey> = []
 
     private var tracker = ChangeTracker()
     private var loop: Task<Void, Never>?
@@ -35,9 +39,23 @@ final class ChangeWatcher {
             loop = nil
             tracker.reset()
         }
+        let watched = Set(model.settings.revealOnChange.compactMap(MenuItemKey.init(rawValue:)))
+        markSeen(changedItems.subtracting(watched))
+    }
+
+    /// Takes the marks off items the person opened or looked at.
+    func markSeen<Keys: Sequence>(_ keys: Keys) where Keys.Element == MenuItemKey {
+        let remaining = changedItems.subtracting(keys)
+        guard remaining != changedItems else { return }
+        changedItems = remaining
+        model.statusBar.refreshAppearance()
     }
 
     private func check() async {
+        // Items that are gone or visible now need no mark.
+        markSeen(changedItems.filter { key in
+            model.inventory.item(for: key).map { $0.section == .visible } ?? true
+        })
         let keys = Set(model.settings.revealOnChange.compactMap(MenuItemKey.init(rawValue:)))
         let items = model.inventory.items.filter {
             keys.contains($0.key) && $0.section != .visible && $0.kind != .marker && $0.element != nil
@@ -71,6 +89,7 @@ final class ChangeWatcher {
 
     private func show(_ items: [MenuBarItem]) {
         Log.menuBar.info("Showing \(items.map(\.key.rawValue).joined(separator: ", "), privacy: .public) after a change")
+        changedItems.formUnion(items.map(\.key))
         model.reveal.requestReveal(all: items.contains { $0.section == .stash }, trigger: .change)
         // A whole section is shown, so the notice says which items changed.
         let names = ListFormatter.localizedString(byJoining: items.map(\.displayName))
@@ -80,5 +99,6 @@ final class ChangeWatcher {
         } else {
             model.reveal.scheduleRehide(after: Self.showDuration, force: true)
         }
+        model.statusBar.refreshAppearance()
     }
 }

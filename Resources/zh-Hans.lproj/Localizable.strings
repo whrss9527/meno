@@ -83,6 +83,9 @@
 "Border width" = "边框宽度";
 "Cancel" = "取消";
 "Centered" = "居中";
+"Changed" = "有变化";
+"Changed since you last looked" = "自上次查看后有变化";
+"Changed: %@" = "有变化：%@";
 "Check for Updates" = "检查更新";
 "Check for updates once a day" = "每天检查一次更新";
 "Check for Updates…" = "检查更新…";
@@ -201,6 +204,7 @@
 "Item" = "项目";
 "Item changed" = "项目变化";
 "Item shortcuts" = "项目快捷键";
+"Items changed" = "有项目发生变化";
 "Items left of this divider are hidden" = "此分隔符左侧的项目会被隐藏";
 "Items left of this divider go to the Stash" = "此分隔符左侧的项目会放入暗格";
 "Items on the left do not fit into the menu bar" = "左侧是菜单栏里放不下的项目";

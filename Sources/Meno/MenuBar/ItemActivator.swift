@@ -18,6 +18,7 @@ final class ItemActivator {
         }
         guard let element = item.element else { return }
         model.recordItemUse(item, source: source)
+        model.changes.markSeen([item.key])
 
         model.reveal.revealForActivation(of: item.section)
         var target = item

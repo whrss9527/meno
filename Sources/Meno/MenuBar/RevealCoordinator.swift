@@ -236,9 +236,19 @@ final class RevealCoordinator: ObservableObject {
         if wasCollapsed {
             model.recordReveal(trigger: trigger)
         }
+        if Self.personTriggers.contains(trigger) {
+            // Changed items the person now has in front of them are seen.
+            let sections: Set<ItemSection> = target == .revealedAll ? [.hidden, .stash] : [.hidden]
+            model.changes.markSeen(model.changes.changedItems.filter { key in
+                model.inventory.item(for: key).map { sections.contains($0.section) } ?? false
+            })
+        }
         scheduleRehide()
         model.inventory.scheduleRefresh(after: 0.45)
     }
+
+    /// Reveals the person asked for, as opposed to automatic ones.
+    private static let personTriggers: Set<RevealTrigger> = [.click, .emptyArea, .hover, .scroll, .hotkey, .menu, .link, .drag]
 
     func collapse(trigger: RevealTrigger) {
         rehideTask?.cancel()

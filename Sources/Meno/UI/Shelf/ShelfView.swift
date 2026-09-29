@@ -6,6 +6,7 @@ struct ShelfView: View {
     @ObservedObject var shelf: ShelfController
     @ObservedObject var inventory: ItemInventory
     @ObservedObject var images: ItemImageCache
+    @ObservedObject var changes: ChangeWatcher
 
     private var settings: ShelfSettings { model.settings.shelf }
 
@@ -49,7 +50,7 @@ struct ShelfView: View {
             .padding(.horizontal, 6)
         } else {
             ForEach(items) { item in
-                ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
+                ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf, isChanged: changes.changedItems.contains(item.key))
             }
         }
     }
@@ -63,18 +64,18 @@ struct ShelfView: View {
             emptyState
         } else {
             ForEach(crowded) { item in
-                ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
+                ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf, isChanged: changes.changedItems.contains(item.key))
             }
             if !crowded.isEmpty && !hidden.isEmpty {
                 separator.help(Text("Items on the left do not fit into the menu bar"))
             }
             ForEach(hidden) { item in
-                ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
+                ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf, isChanged: changes.changedItems.contains(item.key))
             }
             if !stash.isEmpty {
                 separator.help(Text("Stash"))
                 ForEach(stash) { item in
-                    ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
+                    ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf, isChanged: changes.changedItems.contains(item.key))
                 }
             }
         }
@@ -118,6 +119,8 @@ private struct ShelfItemButton: View {
     let image: NSImage
     let settings: ShelfSettings
     @ObservedObject var shelf: ShelfController
+    /// The item changed since the person last saw it.
+    var isChanged = false
 
     @State private var isHovering = false
 
@@ -149,6 +152,16 @@ private struct ShelfItemButton: View {
                     .strokeBorder(Color.accentColor, lineWidth: 2)
             }
         }
+        .overlay(alignment: .topTrailing) {
+            if isChanged {
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 7, height: 7)
+                    .offset(x: -3, y: 3)
+                    .help(Text("Changed since you last looked"))
+            }
+        }
+        .accessibilityValue(isChanged ? Text("Changed") : Text(verbatim: ""))
         .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onHover { hovering in
             isHovering = hovering
