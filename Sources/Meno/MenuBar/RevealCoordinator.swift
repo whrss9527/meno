@@ -79,6 +79,7 @@ final class RevealCoordinator: ObservableObject {
     }
     private var dragPasteboardCount = 0
     private var revealedByDrag = false
+    private var dragRevealTask: Task<Void, Never>?
 
     private lazy var clickMonitor = GlobalEventMonitor(mask: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
         self?.clickedElsewhere(event)
@@ -410,9 +411,14 @@ final class RevealCoordinator: ObservableObject {
     }
 
     private func pointerMoved(_ event: NSEvent) {
+        let settings = model.settings.reveal
+        // A modifier key only matters when hovering needs one, and then
+        // only while it goes down.
+        if event.type == .flagsChanged, settings.hoverModifier == .none || !hoverKeyIsHeld {
+            return
+        }
         let location = NSEvent.mouseLocation
         let inMenuBar = ScreenGeometry.isInMenuBar(cocoa: location)
-        let settings = model.settings.reveal
 
         if inMenuBar {
             pointerVisitedSinceReveal = true
@@ -431,7 +437,10 @@ final class RevealCoordinator: ObservableObject {
                         guard let self, !Task.isCancelled else { return }
                         self.hoverTask = nil
                         let current = ScreenGeometry.quartzPoint(fromCocoa: NSEvent.mouseLocation)
-                        if self.visibility == .collapsed, !self.model.shelf.isVisible, self.hoverKeyIsHeld, self.isEmptySpot(current) {
+                        // Keys typed meanwhile, as in ⌘-Tab, mean the person
+                        // is typing rather than pointing.
+                        let typing = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown) < delay
+                        if self.visibility == .collapsed, !self.model.shelf.isVisible, self.hoverKeyIsHeld, !typing, self.isEmptySpot(current) {
                             self.requestReveal(all: false, trigger: .hover)
                         }
                     }
@@ -471,15 +480,35 @@ final class RevealCoordinator: ObservableObject {
         case .leftMouseDown:
             dragPasteboardCount = NSPasteboard(name: .drag).changeCount
         case .leftMouseDragged:
-            guard visibility == .collapsed, !model.shelf.isVisible, !passiveRevealBlocked,
-                  ScreenGeometry.isInMenuBar(cocoa: NSEvent.mouseLocation),
-                  NSPasteboard(name: .drag).changeCount != dragPasteboardCount else { return }
-            if model.isZenActive {
-                model.setZen(false)
+            guard ScreenGeometry.isInMenuBar(cocoa: NSEvent.mouseLocation) else {
+                dragRevealTask?.cancel()
+                dragRevealTask = nil
+                return
             }
-            revealedByDrag = true
-            reveal(all: false, trigger: .drag)
+            // Items in the Shelf cannot take a drop, so this only reveals in
+            // the menu bar.
+            guard dragRevealTask == nil, visibility == .collapsed, !model.shelf.isVisible, !passiveRevealBlocked,
+                  !shouldUseShelf(all: false),
+                  NSPasteboard(name: .drag).changeCount != dragPasteboardCount else { return }
+            // A drag that only grazes the menu bar on its way elsewhere
+            // reveals nothing.
+            let delay = max(model.settings.reveal.hoverDelay, 0.2)
+            dragRevealTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                guard let self, !Task.isCancelled else { return }
+                self.dragRevealTask = nil
+                guard NSEvent.pressedMouseButtons & 1 != 0,
+                      ScreenGeometry.isInMenuBar(cocoa: NSEvent.mouseLocation),
+                      self.visibility == .collapsed else { return }
+                if self.model.isZenActive {
+                    self.model.setZen(false)
+                }
+                self.revealedByDrag = true
+                self.reveal(all: false, trigger: .drag)
+            }
         case .leftMouseUp:
+            dragRevealTask?.cancel()
+            dragRevealTask = nil
             guard revealedByDrag else { return }
             revealedByDrag = false
             // The item that took the drop may show a menu; rehiding waits
@@ -491,9 +520,14 @@ final class RevealCoordinator: ObservableObject {
     }
 
     private func clickedElsewhere(_ event: NSEvent) {
-        guard visibility != .collapsed, holds == 0 else { return }
         let location = NSEvent.mouseLocation
         let point = ScreenGeometry.quartzPoint(fromCocoa: location)
+        // An item clicked right in the menu bar has been seen.
+        if !model.changes.changedItems.isEmpty, ScreenGeometry.isInMenuBar(cocoa: location),
+           let item = model.inventory.items.first(where: { $0.kind != .marker && $0.frame.contains(point) }) {
+            model.changes.markSeen([item.key])
+        }
+        guard visibility != .collapsed, holds == 0 else { return }
         if ScreenGeometry.isInMenuBar(cocoa: location) {
             if event.type == .leftMouseDown, model.settings.reveal.onEmptyAreaClick, isEmptySpot(point) {
                 collapse(trigger: .emptyArea)

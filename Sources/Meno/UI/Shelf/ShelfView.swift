@@ -161,7 +161,6 @@ private struct ShelfItemButton: View {
                     .help(Text("Changed since you last looked"))
             }
         }
-        .accessibilityValue(isChanged ? Text("Changed") : Text(verbatim: ""))
         .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onHover { hovering in
             isHovering = hovering
@@ -209,6 +208,7 @@ private struct ShelfItemButton: View {
         .help(Text(verbatim: item.displayName))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: item.displayName))
+        .accessibilityValue(isChanged ? Text("Changed") : Text(verbatim: ""))
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { shelf.open(item, secondary: false) }
         .animation(.easeOut(duration: 0.12), value: isHovering)

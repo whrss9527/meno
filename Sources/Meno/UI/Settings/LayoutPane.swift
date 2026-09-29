@@ -226,6 +226,7 @@ struct LayoutPane: View {
                 Button("") { filterIsFocused = true }
                     .keyboardShortcut("f", modifiers: .command)
                     .opacity(0)
+                    .focusable(false)
                     .accessibilityHidden(true)
             }
         }
@@ -311,6 +312,8 @@ struct LayoutPane: View {
                             }
                         )
                         .opacity(matchesFilter(item) ? 1 : 0.25)
+                        // VoiceOver skips the items the search leaves out.
+                        .accessibilityHidden(!matchesFilter(item))
                         .overlay {
                             if !filter.isEmpty, matchesFilter(item) {
                                 RoundedRectangle(cornerRadius: 11, style: .continuous)

@@ -50,7 +50,7 @@ struct GeneralPane: View {
                 }
                 ToggleRow(
                     "Drag a file onto the menu bar",
-                    subtitle: "Hidden items appear, so the file can be dropped on one of them.",
+                    subtitle: "Hidden items appear in the menu bar, so the file can be dropped on one of them. Items in the Shelf cannot take drops.",
                     isOn: $model.settings.reveal.onDrag
                 )
                 ToggleRow(

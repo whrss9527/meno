@@ -266,8 +266,9 @@ final class AutomationController: ObservableObject {
     private func deactivate(_ rule: AutomationRule) {
         Log.rules.info("Rule deactivated: \(rule.name, privacy: .public)")
         // A rule that is undone calls off moves it has not made yet. One
-        // that is not undone still makes them.
-        finish(rule.id, reverting: rule.revertsWhenInactive, callsOffMoves: rule.revertsWhenInactive)
+        // that is not undone still makes them, unless rules were paused.
+        let callsOffMoves = rule.revertsWhenInactive || model.settings.rulesPaused
+        finish(rule.id, reverting: rule.revertsWhenInactive, callsOffMoves: callsOffMoves)
     }
 
     /// Cleans up after a rule and, if asked, undoes what it did.

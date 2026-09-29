@@ -168,7 +168,7 @@
 "Hidden" = "隐藏";
 "Hidden and Stash" = "隐藏与暗格";
 "Hidden items appear for a moment when something happens." = "隐藏的项目有变化时会短暂出现。";
-"Hidden items appear, so the file can be dropped on one of them." = "隐藏的项目会显示出来，方便把文件放到其中一个项目上。";
+"Hidden items appear in the menu bar, so the file can be dropped on one of them. Items in the Shelf cannot take drops." = "隐藏的项目会显示在菜单栏中，方便把文件放到其中一个项目上。托盘中的项目无法接收拖放。";
 "Hidden items cannot be shown" = "隐藏的项目无法显示";
 "Hidden section divider" = "隐藏分区分隔符";
 "Hide" = "隐藏";
