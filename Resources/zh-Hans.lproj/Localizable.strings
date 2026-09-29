@@ -189,6 +189,7 @@
 "Meno needs Accessibility access to open items." = "Meno 需要辅助功能权限才能打开项目。";
 "Meno reads and moves menu bar items through Accessibility." = "Meno 通过辅助功能读取和移动菜单栏项目。";
 "Meno Settings" = "Meno 设置";
+"Meno shows this name in the Shelf, Quick Open, hotkeys and rules. The menu bar itself does not change." = "Meno 会在托盘、快速打开、快捷键和规则中使用这个名字，菜单栏本身不会改变。";
 "Meno works entirely on your Mac. It has no network features, no analytics and no accounts. Usage statistics and settings are stored in ~/Library/Application Support/Meno." = "Meno 完全在你的 Mac 上运行：没有联网功能，没有数据分析，也没有账户。使用统计和设置保存在 ~/Library/Application Support/Meno 中。";
 "Meno — click to show or hide items, ⌥-click to include the Stash, right-click for more" = "Meno — 点按显示或隐藏项目，按住 ⌥ 点按包含暗格，右键点按查看更多";
 "Menu" = "菜单";
@@ -262,6 +263,7 @@
 "Relaunch to finish" = "重新打开以完成设置";
 "Remove shortcut" = "移除快捷键";
 "Rename" = "重命名";
+"Rename Item" = "重命名项目";
 "Rename Scene" = "重命名场景";
 "Rename…" = "重命名…";
 "Report an Issue" = "反馈问题";
@@ -389,6 +391,7 @@
 "Updated %@" = "更新于%@";
 "Updated “%@”." = "已更新“%@”。";
 "Usage statistics are off" = "使用统计已关闭";
+"Use Original Name" = "恢复原名";
 "Use System Default" = "使用系统默认值";
 "Use the Stash" = "使用暗格";
 "Version %@ (%@)" = "版本 %@（%@）";

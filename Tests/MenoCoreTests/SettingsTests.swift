@@ -18,6 +18,14 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.appearance, AppearanceSettings())
     }
 
+    func testItemNamesRoundTrip() throws {
+        XCTAssertEqual(try MenoSettings.decode(from: Data("{}".utf8)).itemNames, [:])
+        var settings = MenoSettings()
+        settings.itemNames = ["com.apple.controlcenter#id:com.apple.menuextra.focusmode": "Focus", "com.example.sync#solo": "同步"]
+        let decoded = try MenoSettings.decode(from: settings.encoded())
+        XCTAssertEqual(decoded.itemNames, settings.itemNames)
+    }
+
     func testUnknownKeysAreIgnored() throws {
         let json = #"{"futureFeature": {"x": 1}, "shelf": {"iconSize": 22, "brandNew": true}}"#
         let settings = try MenoSettings.decode(from: Data(json.utf8))

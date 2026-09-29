@@ -119,7 +119,7 @@ struct InsightsPane: View {
                             .foregroundStyle(.secondary)
                             .frame(width: 18, height: 18)
                     }
-                    Text(verbatim: item?.displayName ?? AppDirectory.name(for: entry.key.owner))
+                    Text(verbatim: item?.displayName ?? model.settings.itemNames[entry.key.rawValue] ?? AppDirectory.name(for: entry.key.owner))
                         .font(.system(size: 12))
                         .lineLimit(1)
                         .frame(width: 180, alignment: .leading)
@@ -161,7 +161,7 @@ struct InsightsPane: View {
                             .frame(width: 18, height: 18)
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(verbatim: item?.displayName ?? suggestion.key.owner)
+                        Text(verbatim: item?.displayName ?? model.settings.itemNames[suggestion.key.rawValue] ?? suggestion.key.owner)
                             .font(.system(size: 13, weight: .medium))
                         switch suggestion {
                         case .promote(_, let uses):

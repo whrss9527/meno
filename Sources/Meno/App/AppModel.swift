@@ -313,6 +313,14 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Gives an item a name in Meno, or goes back to the name macOS reports
+    /// when `name` is empty or `nil`.
+    func rename(_ key: MenuItemKey, to name: String?) {
+        let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        settings.itemNames[key.rawValue] = trimmed.isEmpty ? nil : trimmed
+        inventory.scheduleRefresh(after: 0)
+    }
+
     func handleNewArrival(_ item: MenuBarItem) {
         switch settings.general.newItemPolicy {
         case .ignore:

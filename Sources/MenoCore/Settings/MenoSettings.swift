@@ -15,6 +15,8 @@ public struct MenoSettings: Codable, Equatable, Sendable {
     public var spacing = IconSpacing()
     public var hotkeys = HotkeyBindings()
     public var itemHotkeys: [ItemHotkey] = []
+    /// Names given to items in Meno, by item key.
+    public var itemNames: [String: String] = [:]
     public var markers: [MenuMarker] = []
     public var scenes: [LayoutScene] = []
     public var rules: [AutomationRule] = []

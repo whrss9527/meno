@@ -163,6 +163,7 @@ final class ItemInventory: ObservableObject {
     private func build(from raw: [RawMenuBarItem]) -> [MenuBarItem] {
         let reliable = framesAreReliable
         let dividers = model.statusBar.dividerLayout
+        let customNames = model.settings.itemNames
         let menoFrames = [model.statusBar.hiddenDividerFrame, model.statusBar.stashDividerFrame, model.statusBar.toggleFrame]
             .compactMap { $0 }
         var result: [MenuBarItem] = []
@@ -204,7 +205,9 @@ final class ItemInventory: ObservableObject {
                     continue
                 }
                 let isSystem = owner.hasPrefix("com.apple.")
-                let name = Self.displayName(for: entry, siblings: sorted.count, isSystem: isSystem)
+                let scannedName = Self.displayName(for: entry, siblings: sorted.count, isSystem: isSystem)
+                let customName = customNames[key.rawValue]
+                let name = customName ?? scannedName
                 var frame = entry.frame
                 var section = ItemSection.visible
                 let trustworthy = (reliable || isOnScreen(frame)) && !Self.overlaps(frame, menoFrames)
@@ -231,7 +234,12 @@ final class ItemInventory: ObservableObject {
                     section: section,
                     isMovable: !Self.isPinned(entry, owner: owner),
                     element: entry.element,
-                    keywords: Self.keywords(for: name, appName: entry.target.name, bundleID: entry.target.bundleID, identifier: entry.identifier),
+                    keywords: Self.keywords(
+                        for: [customName, scannedName].compactMap { $0 },
+                        appName: entry.target.name,
+                        bundleID: entry.target.bundleID,
+                        identifier: entry.identifier
+                    ),
                     markerID: nil
                 ))
             }
@@ -320,9 +328,10 @@ final class ItemInventory: ObservableObject {
         return identifier.hasSuffix(".clock") || identifier.hasSuffix(".controlcenter") || identifier == "clock"
     }
 
-    static func keywords(for name: String, appName: String, bundleID: String?, identifier: String?) -> [String] {
-        var words: [String] = []
-        for text in [name, appName] {
+    static func keywords(for names: [String], appName: String, bundleID: String?, identifier: String?) -> [String] {
+        // The first name is shown; the others stay searchable.
+        var words = Array(names.dropFirst())
+        for text in names + [appName] {
             if let latin = romanized(text) {
                 words.append(latin)
                 words.append(FuzzyMatcher.initials(of: latin))

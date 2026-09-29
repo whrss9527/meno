@@ -90,7 +90,8 @@ final class ItemImageCache: ObservableObject {
             ("keyboard", "keyboard"), ("timemachine", "clock.arrow.circlepath"),
             ("time machine", "clock.arrow.circlepath"), ("vpn", "network"),
             ("accessibility", "accessibility"), ("stage", "rectangle.split.3x1"),
-            ("weather", "cloud.sun"), ("script", "applescript"),
+            ("weather", "cloud.sun"), ("script", "applescript"), ("airdrop", "dot.radiowaves.up.forward"),
+            ("hearing", "ear"), ("gamemode", "gamecontroller"), ("game mode", "gamecontroller"),
         ]
         return table.first { haystack.contains($0.0) }?.1
     }

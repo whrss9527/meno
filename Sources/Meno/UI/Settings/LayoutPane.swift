@@ -16,6 +16,9 @@ struct LayoutPane: View {
     @State private var draggedKey: MenuItemKey?
     @State private var savingScene = false
     @State private var sceneName = ""
+    @State private var isRenaming = false
+    @State private var renamingKey: MenuItemKey?
+    @State private var newName = ""
 
     private var sections: [ItemSection] {
         model.settings.general.stashEnabled ? [.visible, .hidden, .stash] : [.visible, .hidden]
@@ -68,6 +71,18 @@ struct LayoutPane: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("A scene remembers which items are visible, hidden or stashed.")
+        }
+        .alert("Rename Item", isPresented: $isRenaming) {
+            TextField("Name", text: $newName)
+            Button("Rename") {
+                if let key = renamingKey { model.rename(key, to: newName) }
+            }
+            if let key = renamingKey, model.settings.itemNames[key.rawValue] != nil {
+                Button("Use Original Name") { model.rename(key, to: nil) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Meno shows this name in the Shelf, Quick Open, hotkeys and rules. The menu bar itself does not change.")
         }
     }
 
@@ -138,7 +153,12 @@ struct LayoutPane: View {
                             right: index + 1 < items.count ? items[index + 1] : nil,
                             draggedKey: $draggedKey,
                             moveToSection: { model.move(item.key, to: $0) },
-                            place: { key, placement in model.move(key, placement: placement) }
+                            place: { key, placement in model.move(key, placement: placement) },
+                            rename: {
+                                newName = item.displayName
+                                renamingKey = item.key
+                                isRenaming = true
+                            }
                         )
                     }
                 }
@@ -221,6 +241,7 @@ private struct LayoutChip: View {
     @Binding var draggedKey: MenuItemKey?
     let moveToSection: (ItemSection) -> Void
     let place: (MenuItemKey, Placement) -> Void
+    let rename: () -> Void
 
     @State private var dropEdge: HorizontalEdge?
     @State private var isHovering = false
@@ -274,8 +295,12 @@ private struct LayoutChip: View {
     /// Moves to the other sections, and one step left or right. macOS keeps
     /// fixed items at the right end, so they are never passed.
     private var commands: [MoveCommand] {
+        let renameCommand = MoveCommand(title: String(localized: "Rename…"), symbol: "pencil", startsGroup: true, action: rename)
         guard item.isMovable else {
-            return [MoveCommand(title: String(localized: "macOS keeps this item in place"), symbol: "lock.fill", isEnabled: false) {}]
+            return [
+                MoveCommand(title: String(localized: "macOS keeps this item in place"), symbol: "lock.fill", isEnabled: false) {},
+                renameCommand,
+            ]
         }
         var result = sections.filter { $0 != item.section }.map { section in
             MoveCommand(title: section.moveTitle, symbol: section.symbol) { moveToSection(section) }
@@ -286,6 +311,7 @@ private struct LayoutChip: View {
         result.append(MoveCommand(title: String(localized: "Move Right"), symbol: "arrow.right", isEnabled: right?.isMovable == true) {
             if let right { place(item.key, .rightOf(right.layoutToken)) }
         })
+        result.append(renameCommand)
         return result
     }
 

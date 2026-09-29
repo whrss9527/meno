@@ -86,7 +86,7 @@ struct HotkeysPane: View {
                 Image(systemName: "questionmark.circle")
                     .foregroundStyle(.secondary)
             }
-            Text(verbatim: item?.displayName ?? AppDirectory.name(for: key.owner))
+            Text(verbatim: item?.displayName ?? model.settings.itemNames[key.rawValue] ?? AppDirectory.name(for: key.owner))
                 .font(.system(size: 13))
                 .lineLimit(1)
         }
