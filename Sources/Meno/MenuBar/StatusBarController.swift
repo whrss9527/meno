@@ -52,8 +52,6 @@ final class StatusBarController: NSObject {
     private(set) var state = BarState()
     private var applyTask: Task<Void, Never>?
     private var zenGlyphView: NSImageView?
-    /// A dot on the Meno icon while watched items changed unseen.
-    private var changeDot: NSView?
     private var dividersForcedVisible = false
     private var orderRepairs = 0
     private var orderHintShown = false
@@ -449,7 +447,12 @@ final class StatusBarController: NSObject {
                 toolTip += "\n" + String(localized: "Changed: \(ListFormatter.localizedString(byJoining: changed))")
             }
             button.toolTip = toolTip
-            updateChangeDot(on: button, visible: !changed.isEmpty)
+            setChangeDot(on: button, visible: !changed.isEmpty)
+        }
+        // A group's icon is marked when one of its items changed.
+        for group in model.settings.groups {
+            guard let button = groupItems[group.id]?.button else { continue }
+            setChangeDot(on: button, visible: !model.changes.changedItems.isDisjoint(with: group.items))
         }
         updateZenGlyph()
         if let button = hiddenDivider?.button {
@@ -471,15 +474,21 @@ final class StatusBarController: NSObject {
         }
     }
 
-    private func updateChangeDot(on button: NSStatusBarButton, visible: Bool) {
+    private static let changeDotID = NSUserInterfaceItemIdentifier("meno.changeDot")
+
+    /// Puts a dot on an icon while items behind it changed unseen.
+    private func setChangeDot(on button: NSStatusBarButton, visible: Bool) {
+        let existing = button.subviews.first { $0.identifier == Self.changeDotID }
         guard visible else {
-            changeDot?.removeFromSuperview()
-            changeDot = nil
-            button.setAccessibilityValue(nil)
+            if existing != nil {
+                existing?.removeFromSuperview()
+                button.setAccessibilityValue(nil)
+            }
             return
         }
         let size: CGFloat = 6
-        let dot = changeDot ?? NSView()
+        let dot = existing ?? NSView()
+        dot.identifier = Self.changeDotID
         dot.wantsLayer = true
         dot.layer?.backgroundColor = NSColor.systemOrange.cgColor
         dot.layer?.cornerRadius = size / 2
@@ -489,7 +498,6 @@ final class StatusBarController: NSObject {
         if dot.superview == nil {
             button.addSubview(dot)
         }
-        changeDot = dot
         button.setAccessibilityValue(String(localized: "Items changed"))
     }
 
