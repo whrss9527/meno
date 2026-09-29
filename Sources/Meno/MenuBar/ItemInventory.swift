@@ -345,7 +345,7 @@ final class ItemInventory: ObservableObject {
     }
 
     /// A Latin transcription (for example pinyin) for names in other scripts.
-    static func romanized(_ text: String) -> String? {
+    nonisolated static func romanized(_ text: String) -> String? {
         guard text.unicodeScalars.contains(where: { $0.value > 0x2E7F }) else { return nil }
         guard let latin = text.applyingTransform(.toLatin, reverse: false)?
             .applyingTransform(.stripDiacritics, reverse: false) else { return nil }

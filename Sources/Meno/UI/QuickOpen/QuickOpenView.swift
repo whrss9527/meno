@@ -44,7 +44,7 @@ struct QuickOpenView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 19, weight: .medium))
                 .foregroundStyle(.secondary)
-            TextField("Search menu bar items", text: $controller.query)
+            TextField("Search menu bar items and actions", text: $controller.query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 21))
                 .focused($fieldFocused)
@@ -69,15 +69,26 @@ struct QuickOpenView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 2) {
-                    ForEach(Array(controller.results.enumerated()), id: \.element.id) { index, item in
-                        QuickOpenRow(
-                            item: item,
-                            image: images.image(for: item),
-                            isSelected: index == controller.selection,
-                            shortcut: index < 9 ? index + 1 : nil,
-                            uses: model.usage.usage(of: item.key)?.total ?? 0
-                        )
-                        .id(item.id)
+                    ForEach(Array(controller.results.enumerated()), id: \.element.id) { index, result in
+                        Group {
+                            switch result {
+                            case .item(let item):
+                                QuickOpenRow(
+                                    item: item,
+                                    image: images.image(for: item),
+                                    isSelected: index == controller.selection,
+                                    shortcut: index < 9 ? index + 1 : nil,
+                                    uses: model.usage.usage(of: item.key)?.total ?? 0
+                                )
+                            case .command(let command):
+                                QuickCommandRow(
+                                    command: command,
+                                    isSelected: index == controller.selection,
+                                    shortcut: index < 9 ? index + 1 : nil
+                                )
+                            }
+                        }
+                        .id(result.id)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             controller.selection = index
@@ -152,6 +163,49 @@ private struct QuickOpenRow: View {
                     .labelStyle(.titleAndIcon)
             }
             SectionBadge(section: item.section)
+            if let shortcut {
+                Text(verbatim: "⌘\(shortcut)")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, alignment: .trailing)
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: QuickOpenController.rowHeight - 2)
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(isSelected ? Color.accentColor.opacity(0.22) : Color.clear)
+        }
+    }
+}
+
+private struct QuickCommandRow: View {
+    let command: QuickCommand
+    let isSelected: Bool
+    let shortcut: Int?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: command.symbol)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 30, height: 30)
+                .background {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.accentColor.opacity(0.12))
+                }
+            Text(verbatim: command.title)
+                .font(.system(size: 14, weight: .medium))
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            Text("Action")
+                .font(.system(size: 10, weight: .semibold))
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .foregroundStyle(.secondary)
+                .background {
+                    Capsule().fill(Color.primary.opacity(0.08))
+                }
             if let shortcut {
                 Text(verbatim: "⌘\(shortcut)")
                     .font(.system(size: 11, weight: .medium, design: .rounded))

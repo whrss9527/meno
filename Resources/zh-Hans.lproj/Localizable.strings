@@ -25,6 +25,7 @@
 "Accessibility" = "辅助功能";
 "Accessibility access is needed" = "需要辅助功能权限";
 "Accessibility access needed" = "需要辅助功能权限";
+"Action" = "操作";
 "Active" = "生效中";
 "Add" = "添加";
 "Add Condition" = "添加条件";
@@ -48,6 +49,7 @@
 "Apply & Relaunch Apps…" = "应用并重新打开 App…";
 "Apply a scene" = "应用场景";
 "Apply a scene at the desk" = "在办公桌前应用场景";
+"Apply Scene “%@”" = "应用场景“%@”";
 "apply “%@”" = "应用场景“%@”";
 "Approve Meno in System Settings › General › Login Items." = "请在“系统设置 › 通用 › 登录项”中允许 Meno。";
 "Arrange items by dragging them in Settings › Layout." = "在“设置 › 布局”中拖移项目进行整理。";
@@ -322,7 +324,7 @@
 "Screen Recording" = "屏幕录制";
 "Scroll" = "滚动";
 "Scroll or swipe over the menu bar" = "在菜单栏上滚动或轻扫";
-"Search menu bar items" = "搜索菜单栏项目";
+"Search menu bar items and actions" = "搜索菜单栏项目和操作";
 "Secondary click" = "辅助点按";
 "Sections" = "分区";
 "Set up shortcuts in Settings › Hotkeys, and open any item with Quick Open." = "在“设置 › 快捷键”中设置快捷键，并用“快速打开”打开任意项目。";
@@ -402,9 +404,11 @@
 "Tint" = "着色";
 "Tint the menu bar" = "为菜单栏着色";
 "to" = "至";
+"Turn Off Zen" = "关闭禅模式";
 "Turn On" = "开启";
 "Turn on Zen" = "开启禅模式";
 "turn on Zen" = "开启禅模式";
+"Turn On Zen" = "开启禅模式";
 "Turn them on to see which items you use and get suggestions." = "开启后即可查看你常用的项目并获得建议。";
 "Turn Zen Off" = "关闭禅模式";
 "Turn Zen On" = "开启禅模式";

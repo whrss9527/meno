@@ -3,7 +3,44 @@ import Combine
 import MenoCore
 import SwiftUI
 
-/// A Spotlight-style palette to find and open any menu bar item.
+/// A Meno action offered in Quick Open, such as applying a scene.
+struct QuickCommand {
+    let id: String
+    let title: String
+    let symbol: String
+    let searchFields: [String]
+    let run: () -> Void
+
+    init(id: String, title: String, symbol: String, keywords: [String] = [], run: @escaping () -> Void) {
+        self.id = id
+        self.title = title
+        self.symbol = symbol
+        var fields = [title] + keywords
+        for text in [title] + keywords {
+            if let latin = ItemInventory.romanized(text) {
+                fields += [latin, FuzzyMatcher.initials(of: latin)]
+            }
+        }
+        self.searchFields = fields
+        self.run = run
+    }
+}
+
+/// One row in Quick Open.
+enum QuickOpenResult: Identifiable {
+    case item(MenuBarItem)
+    case command(QuickCommand)
+
+    var id: String {
+        switch self {
+        case .item(let item): return "item:" + item.key.rawValue
+        case .command(let command): return "command:" + command.id
+        }
+    }
+}
+
+/// A Spotlight-style palette to find and open any menu bar item, and to run
+/// Meno's own actions.
 @MainActor
 final class QuickOpenController: ObservableObject {
     unowned let model: AppModel
@@ -11,7 +48,7 @@ final class QuickOpenController: ObservableObject {
     @Published var query = "" {
         didSet { recompute() }
     }
-    @Published private(set) var results: [MenuBarItem] = []
+    @Published private(set) var results: [QuickOpenResult] = []
     @Published var selection = 0
     @Published private(set) var isVisible = false
     /// Bumped whenever the palette opens, so the view can focus its field.
@@ -86,17 +123,65 @@ final class QuickOpenController: ObservableObject {
                 if left != right { return left > right }
                 if lhs.section != rhs.section { return order[lhs.section, default: 3] < order[rhs.section, default: 3] }
                 return lhs.displayName.localizedStandardCompare(rhs.displayName) == .orderedAscending
-            }
+            }.map(QuickOpenResult.item)
         } else {
-            let scored: [(item: MenuBarItem, score: Int)] = items.compactMap { item in
+            var scored: [(result: QuickOpenResult, score: Int)] = items.compactMap { item in
                 guard let score = FuzzyMatcher.bestScore(trimmed, fields: item.searchFields) else { return nil }
                 let bonus = min(usage.usage(of: item.key)?.total ?? 0, 20)
-                return (item, score + bonus)
+                return (QuickOpenResult.item(item), score + bonus)
             }
-            results = scored.sorted { $0.score > $1.score }.map(\.item)
+            // Items come first when they match as well as an action.
+            for command in commands() {
+                guard let score = FuzzyMatcher.bestScore(trimmed, fields: command.searchFields) else { continue }
+                scored.append((QuickOpenResult.command(command), score - 1))
+            }
+            results = scored.sorted { $0.score > $1.score }.map(\.result)
         }
         selection = results.isEmpty ? 0 : min(selection, results.count - 1)
         layoutSoon()
+    }
+
+    /// Meno's actions that can be found by name.
+    private func commands() -> [QuickCommand] {
+        let model = self.model
+        var commands = model.settings.scenes.map { scene in
+            QuickCommand(
+                id: "scene:" + scene.id.uuidString,
+                title: String(localized: "Apply Scene “\(scene.name)”"),
+                symbol: scene.symbol,
+                keywords: [scene.name]
+            ) {
+                Task { await model.applyScene(scene) }
+            }
+        }
+        commands += [
+            QuickCommand(id: "zen", title: model.isZenActive ? String(localized: "Turn Off Zen") : String(localized: "Turn On Zen"), symbol: "leaf", keywords: ["Zen"]) {
+                model.setZen(!model.isZenActive)
+            },
+            QuickCommand(id: "show", title: String(localized: "Show Hidden Items"), symbol: "eye") {
+                model.reveal.requestReveal(all: false, trigger: .menu)
+            },
+            QuickCommand(id: "show-all", title: String(localized: "Show Everything"), symbol: "eye.circle") {
+                model.reveal.requestReveal(all: true, trigger: .menu)
+            },
+            QuickCommand(id: "hide", title: String(localized: "Hide Items"), symbol: "eye.slash") {
+                model.shelf.hide()
+                model.reveal.collapse(trigger: .menu)
+            },
+            QuickCommand(id: "shelf", title: String(localized: "Open Shelf"), symbol: "rectangle.topthird.inset.filled") {
+                model.shelf.show(includeStash: false, trigger: .menu)
+            },
+            QuickCommand(id: "layout", title: String(localized: "Arrange Menu Bar…"), symbol: "rectangle.3.group") {
+                model.openSettings(.layout)
+            },
+            QuickCommand(id: "settings", title: String(localized: "Settings…"), symbol: "gearshape") {
+                model.openSettings()
+            },
+            QuickCommand(id: "updates", title: String(localized: "Check for Updates"), symbol: "arrow.down.circle") {
+                Task { await model.updates.check(userInitiated: true) }
+            },
+        ]
+        return commands
     }
 
     func moveSelection(by delta: Int) {
@@ -106,17 +191,25 @@ final class QuickOpenController: ObservableObject {
 
     func activateSelection(secondary: Bool) {
         guard results.indices.contains(selection) else { return }
-        let item = results[selection]
+        let result = results[selection]
         hide()
-        Task {
-            await model.activator.open(item, click: secondary ? .secondary : .primary, source: .quickOpen)
+        switch result {
+        case .item(let item):
+            Task {
+                await model.activator.open(item, click: secondary ? .secondary : .primary, source: .quickOpen)
+            }
+        case .command(let command):
+            command.run()
         }
     }
 
     /// Shows the item's section in the menu bar without opening it.
     func revealSelection() {
         guard results.indices.contains(selection) else { return }
-        let item = results[selection]
+        guard case .item(let item) = results[selection] else {
+            activateSelection(secondary: false)
+            return
+        }
         hide()
         if item.section != .visible {
             model.reveal.reveal(all: item.section == .stash, trigger: .menu)
