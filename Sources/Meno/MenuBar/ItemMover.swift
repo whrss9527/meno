@@ -11,6 +11,7 @@ final class ItemMover: ObservableObject {
         case notMovable(String)
         case referenceMissing
         case offScreen(String)
+        case behindHousing(String)
         case didNotMove(String)
         case plan
         case personBusy
@@ -29,6 +30,8 @@ final class ItemMover: ObservableObject {
                 return String(localized: "Meno could not find where to drop the item.")
             case .offScreen(let name):
                 return String(localized: "\(name) is not visible, so it cannot be dragged. Make room in the menu bar and try again.")
+            case .behindHousing(let name):
+                return String(localized: "\(name) sits behind the camera housing, where it cannot be dragged. Move other visible items to Hidden to make room, then try again.")
             case .didNotMove(let name):
                 return String(localized: "\(name) did not move. Try dragging it with ⌘ held down.")
             case .plan:
@@ -132,6 +135,7 @@ final class ItemMover: ObservableObject {
             if isSatisfied(step) { return }
             guard let reference = frame(of: step.placement.reference) else { throw MoveError.referenceMissing }
             guard item.isOnScreen else { throw MoveError.offScreen(item.displayName) }
+            guard !Self.isBehindHousing(item.frame) else { throw MoveError.behindHousing(item.displayName) }
 
             let start = CGPoint(x: item.frame.midX, y: item.frame.midY)
             let end = dropPoint(for: item.frame, reference: reference, placement: step.placement, attempt: attempt)
@@ -162,6 +166,17 @@ final class ItemMover: ObservableObject {
             try await Task.sleep(nanoseconds: 400_000_000)
         }
         throw MoveError.personBusy
+    }
+
+    /// Whether the middle of a frame is behind the camera housing of a
+    /// screen, where clicks do not reach the item.
+    static func isBehindHousing(_ frame: CGRect) -> Bool {
+        NSScreen.screens.contains { screen in
+            guard let notch = ScreenGeometry.notchRect(on: screen) else { return false }
+            let housing = ScreenGeometry.quartzRect(fromCocoa: notch)
+            return housing.minX < frame.midX && frame.midX < housing.maxX
+                && housing.minY <= frame.midY && frame.midY <= housing.maxY
+        }
     }
 
     /// Seconds since the person last used a mouse, trackpad or keyboard.

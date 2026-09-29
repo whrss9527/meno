@@ -6,6 +6,7 @@
 "%@ is in front" = "%@ 在前台";
 "%@ is not visible, so it cannot be dragged. Make room in the menu bar and try again." = "%@ 当前不可见，无法拖移。请在菜单栏腾出空间后再试。";
 "%@ is running" = "%@ 正在运行";
+"%@ sits behind the camera housing, where it cannot be dragged. Move other visible items to Hidden to make room, then try again." = "%@ 位于刘海后面，无法拖动。请先把其他常显项目移到“隐藏”腾出空间，再试一次。";
 "%lld items · %lld tucked away" = "共 %lld 项 · %lld 项已收起";
 "A calm menu bar, made with glass." = "一个安静的菜单栏，由玻璃打造。";
 "A camera is in use" = "摄像头正在使用";
