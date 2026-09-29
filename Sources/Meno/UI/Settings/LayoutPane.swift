@@ -314,6 +314,7 @@ private struct LayoutChip: View {
         .overlay {
             ChipMouseArea(
                 key: item.key,
+                label: "\(item.displayName), \(item.section.title)",
                 toolTip: item.isMovable ? (item.bundleID ?? item.appName) : String(localized: "macOS keeps this item in place"),
                 makeMenu: makeMenu,
                 makeDragImage: { ChipMouseView.dragImage(icon: image, name: item.displayName) },
@@ -408,6 +409,8 @@ private struct MoveCommand: Identifiable {
 /// the side it landed on.
 private struct ChipMouseArea: NSViewRepresentable {
     let key: MenuItemKey
+    /// What VoiceOver reads for the item.
+    let label: String
     let toolTip: String
     let makeMenu: () -> NSMenu
     let makeDragImage: () -> NSImage
@@ -425,6 +428,7 @@ private struct ChipMouseArea: NSViewRepresentable {
 
     func updateNSView(_ view: ChipMouseView, context: Context) {
         view.key = key
+        view.label = label
         view.toolTip = toolTip
         view.makeMenu = makeMenu
         view.makeDragImage = makeDragImage
@@ -438,6 +442,7 @@ private struct ChipMouseArea: NSViewRepresentable {
 
 private final class ChipMouseView: NSView, NSDraggingSource {
     var key: MenuItemKey?
+    var label = ""
     var makeMenu: () -> NSMenu = { NSMenu() }
     var makeDragImage: () -> NSImage = { NSImage() }
     var onHover: (Bool) -> Void = { _ in }
@@ -502,6 +507,26 @@ private final class ChipMouseView: NSView, NSDraggingSource {
 
     override func menu(for event: NSEvent) -> NSMenu? {
         makeMenu()
+    }
+
+    // MARK: Accessibility
+
+    // The view covers the chip, so it stands for the item: VoiceOver reads
+    // its name and section, and pressing it opens the same menu as a click.
+
+    override func isAccessibilityElement() -> Bool { true }
+
+    override func accessibilityRole() -> NSAccessibility.Role? { .menuButton }
+
+    override func accessibilityLabel() -> String? { label }
+
+    override func accessibilityPerformPress() -> Bool {
+        makeMenu().popUp(positioning: nil, at: NSPoint(x: 0, y: -4), in: self)
+        return true
+    }
+
+    override func accessibilityPerformShowMenu() -> Bool {
+        accessibilityPerformPress()
     }
 
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
