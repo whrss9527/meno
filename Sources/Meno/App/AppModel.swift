@@ -25,6 +25,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var refusedHotkeys: Set<KeyCombo> = []
     /// The shortcut recorder that is recording, if any.
     @Published var activeShortcutRecorder: UUID?
+    /// Whether nobody can see the menu bar: the displays sleep or another
+    /// user's session is in front. Background scans pause meanwhile.
+    private(set) var isAway = false
 
     let storage: Storage
     let permissions: PermissionCenter
@@ -153,6 +156,17 @@ final class AppModel: ObservableObject {
                 self?.systemLayoutChanged()
             }
         })
+        let away = [NSWorkspace.screensDidSleepNotification, NSWorkspace.sessionDidResignActiveNotification]
+        let back = [NSWorkspace.screensDidWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification]
+        for (names, goesAway) in [(away, true), (back, false)] {
+            for name in names {
+                observers.append(workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                    MainActor.assumeIsolated {
+                        self?.setAway(goesAway)
+                    }
+                })
+            }
+        }
         observers.append(NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil,
@@ -171,12 +185,22 @@ final class AppModel: ObservableObject {
         automation.evaluate()
     }
 
+    private func setAway(_ away: Bool) {
+        guard away != isAway else { return }
+        isAway = away
+        if !away {
+            // Catch up on what changed meanwhile.
+            inventory.scheduleRefresh(after: 1)
+        }
+    }
+
     private func startPeriodicRefresh() {
         periodicTask?.cancel()
         periodicTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 20_000_000_000)
                 guard let self else { return }
+                guard !self.isAway else { continue }
                 await self.inventory.refresh()
             }
         }

@@ -52,6 +52,8 @@ final class ChangeWatcher: ObservableObject {
     }
 
     private func check() async {
+        // Nobody sees the menu bar while the displays sleep.
+        guard !model.isAway else { return }
         // Items that are gone or visible now need no mark.
         markSeen(changedItems.filter { key in
             model.inventory.item(for: key).map { $0.section == .visible } ?? true
