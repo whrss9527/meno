@@ -40,8 +40,9 @@ struct AppearancePane: View {
                     } label: {
                         VStack(spacing: 6) {
                             HStack(spacing: 6) {
-                                Image(nsImage: MenoIconRenderer.toggleImage(for: icon, revealed: false))
-                                Image(nsImage: MenoIconRenderer.toggleImage(for: icon, revealed: true))
+                                let symbol = model.settings.appearance.customIconSymbol
+                                Image(nsImage: MenoIconRenderer.toggleImage(for: icon, customSymbol: symbol, revealed: false))
+                                Image(nsImage: MenoIconRenderer.toggleImage(for: icon, customSymbol: symbol, revealed: true))
                                     .opacity(0.55)
                             }
                             .foregroundStyle(.primary)
@@ -67,6 +68,9 @@ struct AppearancePane: View {
             }
             .disabled(!model.settings.appearance.showsMenoIcon)
             .opacity(model.settings.appearance.showsMenoIcon ? 1 : 0.45)
+            if model.settings.appearance.icon == .custom, model.settings.appearance.showsMenoIcon {
+                CustomIconPicker(symbol: $model.settings.appearance.customIconSymbol)
+            }
         }
     }
 
@@ -235,5 +239,68 @@ struct AppearancePane: View {
             get: { Double(draftSpacing[keyPath: keyPath] ?? value) },
             set: { draftSpacing[keyPath: keyPath] = Int($0.rounded()) }
         )
+    }
+}
+
+/// Picks the SF Symbol of the custom Meno icon, from a few suggestions or
+/// by name.
+private struct CustomIconPicker: View {
+    @Binding var symbol: String
+    @State private var name = ""
+
+    static let suggestions = [
+        "star", "heart", "bolt", "leaf", "moon", "sun.max", "sparkle", "flame", "drop", "cloud",
+        "circle.grid.2x2", "square.grid.2x2", "line.3.horizontal", "ellipsis", "command", "eye",
+        "tray", "archivebox", "shippingbox", "rectangle.stack", "hare", "tortoise", "cat", "bird",
+    ]
+
+    private let columns = [GridItem(.adaptive(minimum: 34), spacing: 6)]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            LazyVGrid(columns: columns, spacing: 6) {
+                ForEach(Self.suggestions.filter(MenoIconRenderer.symbolExists), id: \.self) { suggestion in
+                    let selected = suggestion == symbol
+                    Button {
+                        symbol = suggestion
+                        name = suggestion
+                    } label: {
+                        Image(systemName: suggestion)
+                            .font(.system(size: 14))
+                            .frame(width: 30, height: 26)
+                            .background {
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .fill(selected ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.05))
+                            }
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .stroke(selected ? Color.accentColor : Color.clear, lineWidth: 1.2)
+                            }
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(Text(verbatim: suggestion))
+                    .accessibilityLabel(Text(verbatim: suggestion))
+                }
+            }
+            SettingRow("SF Symbol name", subtitle: isKnown ? "Any symbol from the SF Symbols app. While items are shown, its filled variant is used when there is one." : "macOS has no symbol with this name.") {
+                TextField("SF Symbol name", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 180)
+                    .onSubmit(apply)
+                    .onChange(of: name) { apply() }
+            }
+        }
+        .onAppear { name = symbol }
+    }
+
+    private var isKnown: Bool {
+        MenoIconRenderer.symbolExists(name.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    private func apply() {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard MenoIconRenderer.symbolExists(trimmed), trimmed != symbol else { return }
+        symbol = trimmed
     }
 }

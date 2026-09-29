@@ -205,6 +205,8 @@ public struct AppearanceSettings: Codable, Equatable, Sendable {
     /// are shown from the empty part of the menu bar or with a hotkey.
     public var showsMenoIcon = true
     public var icon: MenoIcon = .meno
+    /// The SF Symbol of the custom Meno icon.
+    public var customIconSymbol = "star"
     /// Show the section dividers while items are revealed.
     public var showsDividers = true
     public var dividerGlyph: DividerGlyph = .chevron
@@ -221,12 +223,14 @@ public enum MenoIcon: String, Codable, CaseIterable, Sendable {
     case sparkles
     case stack
     case circle
+    /// An SF Symbol the person picked.
+    case custom
 
     /// SF Symbols for the collapsed and revealed state, or `nil` when the
-    /// artwork is drawn by Meno itself.
+    /// artwork is drawn by Meno itself or picked by the person.
     public var symbolNames: (collapsed: String, revealed: String)? {
         switch self {
-        case .meno: return nil
+        case .meno, .custom: return nil
         case .chevron: return ("chevron.left", "chevron.right")
         case .dots: return ("ellipsis.circle", "ellipsis.circle.fill")
         case .eye: return ("eye.slash", "eye")
@@ -234,6 +238,17 @@ public enum MenoIcon: String, Codable, CaseIterable, Sendable {
         case .stack: return ("square.stack.3d.up", "square.stack.3d.up.fill")
         case .circle: return ("circle", "circle.fill")
         }
+    }
+
+    /// The states of a symbol the person picked: its outline while items
+    /// are hidden and its filled variant while they are shown, when the
+    /// symbol has both. `exists` tells whether a symbol name is known.
+    public static func customSymbolNames(for symbol: String, exists: (String) -> Bool) -> (collapsed: String, revealed: String) {
+        let name = symbol.trimmingCharacters(in: .whitespacesAndNewlines)
+        let base = name.hasSuffix(".fill") ? String(name.dropLast(".fill".count)) : name
+        let collapsed = exists(base) ? base : name
+        let filled = base + ".fill"
+        return (collapsed, exists(filled) ? filled : collapsed)
     }
 }
 

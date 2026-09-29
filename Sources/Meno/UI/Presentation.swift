@@ -115,6 +115,7 @@ extension MenoIcon {
         case .sparkles: return String(localized: "Sparkles")
         case .stack: return String(localized: "Stack")
         case .circle: return String(localized: "Circle")
+        case .custom: return String(localized: "Custom")
         }
     }
 }

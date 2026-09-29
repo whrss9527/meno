@@ -20,6 +20,20 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.appearance, AppearanceSettings())
     }
 
+    func testCustomIconStates() {
+        let known: Set<String> = ["star", "star.fill", "hare", "tortoise.fill"]
+        let exists = { known.contains($0) }
+        XCTAssertTrue(MenoIcon.customSymbolNames(for: "star", exists: exists) == ("star", "star.fill"))
+        // A filled symbol still gets its outline while items are hidden.
+        XCTAssertTrue(MenoIcon.customSymbolNames(for: " star.fill ", exists: exists) == ("star", "star.fill"))
+        // Without a filled variant, both states look the same.
+        XCTAssertTrue(MenoIcon.customSymbolNames(for: "hare", exists: exists) == ("hare", "hare"))
+        // Without an outline, the filled symbol stays.
+        XCTAssertTrue(MenoIcon.customSymbolNames(for: "tortoise.fill", exists: exists) == ("tortoise.fill", "tortoise.fill"))
+        XCTAssertEqual(AppearanceSettings().customIconSymbol, "star")
+        XCTAssertNil(MenoIcon.custom.symbolNames)
+    }
+
     func testItemSymbolsRoundTrip() throws {
         XCTAssertEqual(try MenoSettings.decode(from: Data("{}".utf8)).itemSymbols, [:])
         var settings = MenoSettings()
@@ -128,7 +142,7 @@ final class SettingsTests: XCTestCase {
 
     func testMenoIconSymbols() {
         XCTAssertNil(MenoIcon.meno.symbolNames)
-        for icon in MenoIcon.allCases where icon != .meno {
+        for icon in MenoIcon.allCases where icon != .meno && icon != .custom {
             XCTAssertNotNil(icon.symbolNames, "\(icon)")
         }
     }

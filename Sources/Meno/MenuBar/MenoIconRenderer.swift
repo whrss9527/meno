@@ -5,13 +5,27 @@ import MenoCore
 enum MenoIconRenderer {
     static let canvas = NSSize(width: 18, height: 18)
 
-    /// The image of the Meno icon for a style and state.
-    static func toggleImage(for icon: MenoIcon, revealed: Bool) -> NSImage {
-        if let names = icon.symbolNames,
-           let image = symbol(revealed ? names.revealed : names.collapsed) {
+    /// The image of the Meno icon for a style and state. `customSymbol` is
+    /// the SF Symbol of the custom style.
+    static func toggleImage(for icon: MenoIcon, customSymbol: String, revealed: Bool) -> NSImage {
+        let names = icon == .custom ? customSymbolNames(customSymbol) : icon.symbolNames
+        if let names, let image = symbol(revealed ? names.revealed : names.collapsed) {
             return image
         }
         return menoGlyph(revealed: revealed)
+    }
+
+    static func toggleImage(for appearance: AppearanceSettings, revealed: Bool) -> NSImage {
+        toggleImage(for: appearance.icon, customSymbol: appearance.customIconSymbol, revealed: revealed)
+    }
+
+    /// Whether macOS has an SF Symbol of this name.
+    static func symbolExists(_ name: String) -> Bool {
+        !name.isEmpty && NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil
+    }
+
+    private static func customSymbolNames(_ symbol: String) -> (collapsed: String, revealed: String) {
+        MenoIcon.customSymbolNames(for: symbol, exists: symbolExists)
     }
 
     /// Meno's own artwork: three bars of increasing height, like icons in a

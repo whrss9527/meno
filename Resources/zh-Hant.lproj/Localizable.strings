@@ -56,6 +56,7 @@
 "An external display is connected" = "已連接外接顯示器";
 "an external display is connected" = "已連接外接顯示器";
 "Another move is still in progress." = "另一個移動操作仍在進行中。";
+"Any symbol from the SF Symbols app. While items are shown, its filled variant is used when there is one." = "可以使用 SF Symbols App 中的任意符號。顯示項目時，如果該符號有實心版本，會改用實心版本。";
 "App switch" = "切換 App";
 "Appearance" = "外觀";
 "Apply" = "套用";
@@ -128,6 +129,7 @@
 "Could not reset the entry. Remove Meno from the Accessibility list in System Settings, then add it again." = "無法清除這條記錄。請在系統設定的「輔助使用」列表裡刪掉 Meno，再重新新增。";
 "Create" = "建立";
 "Current" = "目前";
+"Custom" = "自訂";
 "Delete" = "刪除";
 "Delete Group" = "刪除群組";
 "Diagnostic report copied. Paste it into an issue or a message." = "診斷報告已複製，可以貼上到問題回報或訊息裡。";
@@ -251,6 +253,7 @@
 "macOS did not accept the shortcuts shown in orange. Another app may already use them." = "macOS 沒有接受以橘色顯示的快速鍵，可能已被其他 App 佔用。";
 "macOS did not accept this shortcut. Another app may already use it." = "macOS 沒有接受這個快速鍵，可能已被其他 App 佔用。";
 "macOS does not allow %@ to be moved." = "macOS 不允許移動 %@。";
+"macOS has no symbol with this name." = "macOS 中沒有這個名稱的符號。";
 "macOS keeps this item in place" = "macOS 固定了這個項目的位置";
 "macOS runs Meno from a temporary copy. Move Meno to the Applications folder, open it from there and try again." = "macOS 正從暫存副本執行 Meno。請把 Meno 移到「應用程式」資料夾，從那裡打開後再試一次。";
 "Makes room by hiding the menus of the frontmost app while items are shown." = "顯示項目時暫時隱藏最前方 App 的選單，騰出空間。";

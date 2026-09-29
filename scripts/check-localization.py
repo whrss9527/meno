@@ -84,9 +84,12 @@ def extract():
         for m in re.finditer(r"(?:Text|Button)\([^()\n]*\?\s*" + LITERAL + r"\s*:\s*" + LITERAL, source):
             keys.setdefault(to_key(m.group(1)), path.relative_to(ROOT))
             keys.setdefault(to_key(m.group(2)), path.relative_to(ROOT))
-        # Optional keys, as in subtitle: flag ? "A" : nil and Picker(title ?? "A").
-        for m in re.finditer(r"subtitle:[^\n]*\?\s*" + LITERAL + r"\s*:\s*nil", source):
+        # Keys picked by a condition, as in subtitle: flag ? "A" : "B" or
+        # subtitle: flag ? "A" : nil, and Picker(title ?? "A").
+        for m in re.finditer(r"subtitle:[^\n]*\?\s*" + LITERAL + r"\s*:\s*(?:nil|" + LITERAL + r")", source):
             keys.setdefault(to_key(m.group(1)), path.relative_to(ROOT))
+            if m.group(2) is not None:
+                keys.setdefault(to_key(m.group(2)), path.relative_to(ROOT))
         for m in re.finditer(r"Picker\([^\n]*\?\?\s*" + LITERAL, source):
             keys.setdefault(to_key(m.group(1)), path.relative_to(ROOT))
     for key in EXTRA:

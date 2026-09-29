@@ -436,7 +436,7 @@ final class StatusBarController: NSObject {
             } else if state.zen {
                 button.image = zenPushesVisibleItems ? nil : MenoIconRenderer.zenGlyph()
             } else {
-                button.image = MenoIconRenderer.toggleImage(for: appearance.icon, revealed: !state.hiddenCollapsed)
+                button.image = MenoIconRenderer.toggleImage(for: appearance, revealed: !state.hiddenCollapsed)
             }
             updateBadge(on: button)
             var toolTip = state.zen
