@@ -67,17 +67,18 @@ enum MenuBarScanner {
         }
     }
 
-    /// Reads the description, title and help text of each element.
-    static func texts(of elements: [AXUIElement]) async -> [[String?]] {
+    /// Reads the description, title and help text of each element, or `nil`
+    /// for an element that could not be read (for example a busy app).
+    static func texts(of elements: [AXUIElement]) async -> [[String?]?] {
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .utility).async {
-                let texts = elements.map { element -> [String?] in
+                let texts = elements.map { element -> [String?]? in
                     AX.setTimeout(element, seconds: 0.3)
-                    return [
-                        AX.string(element, AX.Attribute.description),
-                        AX.string(element, AX.Attribute.title),
-                        AX.string(element, AX.Attribute.help),
-                    ]
+                    let reads = [AX.Attribute.description, AX.Attribute.title, AX.Attribute.help].map {
+                        AX.readString(element, $0)
+                    }
+                    guard reads.allSatisfy(\.readable) else { return nil }
+                    return reads.map(\.text)
                 }
                 continuation.resume(returning: texts)
             }

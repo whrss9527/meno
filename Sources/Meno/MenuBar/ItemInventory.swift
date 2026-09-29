@@ -195,6 +195,13 @@ final class ItemInventory: ObservableObject {
             }
             named = named.enumerated().filter { !duplicates.contains($0.offset) }.map(\.element)
         }
+        // Leftovers go before keys are derived: siblings' keys depend on how
+        // many items an app has.
+        named = named.filter { entry in
+            guard isLeftoverSlot(entry.frame, reliable: reliable) else { return true }
+            skipped.empty[entry.target.bundleID ?? entry.target.name, default: 0] += 1
+            return false
+        }
         let grouped = Dictionary(grouping: named) { $0.target.bundleID ?? $0.target.name }
         for (owner, group) in grouped {
             let sorted = group.sorted { $0.frame.minX < $1.frame.minX }
@@ -203,10 +210,6 @@ final class ItemInventory: ObservableObject {
             })
             for (entry, token) in zip(sorted, tokens) {
                 let key = MenuItemKey(owner: owner, token: token)
-                if isLeftoverSlot(entry.frame, reliable: reliable) {
-                    skipped.empty[owner, default: 0] += 1
-                    continue
-                }
                 let isSystem = owner.hasPrefix("com.apple.")
                 let scannedName = Self.displayName(for: entry, siblings: sorted.count, isSystem: isSystem)
                 let customName = customNames[key.rawValue]

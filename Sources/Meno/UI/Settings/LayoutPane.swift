@@ -125,10 +125,11 @@ struct LayoutPane: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
-            ForEach($model.settings.groups) { $group in
+            ForEach(model.settings.groups) { group in
                 let id = group.id
                 GroupRow(
-                    group: $group,
+                    group: group,
+                    update: { change in model.updateGroup(id, change) },
                     items: group.items.compactMap { inventory.item(for: $0) },
                     images: images,
                     isTargeted: targetedGroup == id,

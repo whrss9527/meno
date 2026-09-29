@@ -5,29 +5,54 @@ import Foundation
 /// Each check reports the item's text (with digits and punctuation
 /// removed, so counters and percentages do not count) and, when it can be
 /// captured, a fingerprint of its artwork. A change has to show up in
-/// consecutive checks, which ignores brief flickers, and an item is shown
-/// at most once per cooldown.
+/// consecutive checks, which ignores brief flickers. After a report the item
+/// has to settle (look the same in two checks in a row) before it can be
+/// reported again, so an animation, such as a spinner while syncing, is
+/// reported once. On top of that an item is shown at most once per cooldown.
 public struct ChangeTracker: Sendable {
     public struct Sample: Equatable, Sendable {
-        public var text: String
+        /// `nil` when the text could not be read in this check.
+        public var text: String?
+        /// `nil` when the artwork could not be captured in this check.
         public var glyph: GlyphSignature?
 
-        public init(text: String, glyph: GlyphSignature? = nil) {
+        public init(text: String?, glyph: GlyphSignature? = nil) {
             self.text = text
             self.glyph = glyph
         }
 
-        /// A sample from raw accessibility texts.
-        public init(texts: [String?], glyph: GlyphSignature? = nil) {
-            self.init(text: texts.compactMap { $0 }.map(MenuItemKey.normalize).joined(separator: " "), glyph: glyph)
+        /// A sample from raw accessibility texts, or `nil` texts when they
+        /// could not be read.
+        public init(texts: [String?]?, glyph: GlyphSignature? = nil) {
+            self.init(text: texts.map { $0.compactMap { $0 }.map(MenuItemKey.normalize).joined(separator: " ") }, glyph: glyph)
         }
     }
 
     private struct State: Sendable {
-        var text: String
+        var text: String?
         var glyph: GlyphSignature?
         var pending = 0
+        /// Reported (or seen while absorbing) and not yet steady again.
+        var settling = false
         var lastShown: Date?
+
+        /// Whether a sample has a part that can be compared with the state.
+        func canCompare(_ sample: Sample) -> Bool {
+            (sample.text != nil && text != nil) || (sample.glyph != nil && glyph != nil)
+        }
+
+        /// Whether a sample shows something else than the state knows.
+        /// Parts that are unknown on either side do not count.
+        func differs(from sample: Sample) -> Bool {
+            if let new = sample.text, let old = text, new != old { return true }
+            if let new = sample.glyph, let old = glyph, new.differs(from: old) { return true }
+            return false
+        }
+
+        mutating func adopt(_ sample: Sample) {
+            text = sample.text ?? text
+            glyph = sample.glyph ?? glyph
+        }
     }
 
     /// How many checks in a row have to see the change.
@@ -55,26 +80,31 @@ public struct ChangeTracker: Sendable {
                 states[key] = State(text: sample.text, glyph: sample.glyph)
                 continue
             }
-            var glyphChanged = false
-            if let new = sample.glyph, let old = state.glyph {
-                glyphChanged = new.differs(from: old)
-            }
-            let isDifferent = sample.text != state.text || glyphChanged
-            if absorbing || !isDifferent {
-                state.text = sample.text
-                state.glyph = sample.glyph ?? state.glyph
+            let isDifferent = state.differs(from: sample)
+            if absorbing {
+                state.adopt(sample)
                 state.pending = 0
-            } else {
+                state.settling = isDifferent
+            } else if state.settling {
+                // Follows the item until it looks the same twice in a row.
+                let isSteady = !isDifferent && state.canCompare(sample)
+                state.adopt(sample)
+                state.pending = 0
+                state.settling = !isSteady
+            } else if isDifferent {
                 state.pending += 1
                 if state.pending >= confirmations {
-                    state.text = sample.text
-                    state.glyph = sample.glyph ?? state.glyph
+                    state.adopt(sample)
                     state.pending = 0
+                    state.settling = true
                     if state.lastShown.map({ date.timeIntervalSince($0) >= cooldown }) ?? true {
                         state.lastShown = date
                         changed.append(key)
                     }
                 }
+            } else {
+                state.adopt(sample)
+                state.pending = 0
             }
             states[key] = state
         }

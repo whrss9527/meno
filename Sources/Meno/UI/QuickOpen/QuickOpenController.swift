@@ -161,7 +161,7 @@ final class QuickOpenController: ObservableObject {
                 symbol: group.symbol,
                 keywords: [group.name]
             ) {
-                model.shelf.toggle(group: group.id)
+                model.shelf.toggle(group: group.id, trigger: .menu, takesKeyboard: true)
             }
         }
         commands += [

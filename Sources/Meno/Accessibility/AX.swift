@@ -63,6 +63,22 @@ enum AX {
         return string.isEmpty ? nil : string
     }
 
+    /// A string attribute, telling a missing value apart from a failed read,
+    /// for example when a busy app does not answer in time.
+    static func readString(_ element: AXUIElement, _ attribute: String) -> (text: String?, readable: Bool) {
+        var value: CFTypeRef?
+        switch AXUIElementCopyAttributeValue(element, attribute as CFString, &value) {
+        case .success:
+            guard let value, CFGetTypeID(value) == CFStringGetTypeID() else { return (nil, true) }
+            let string = unsafeBitCast(value, to: CFString.self) as String
+            return (string.isEmpty ? nil : string, true)
+        case .noValue, .attributeUnsupported:
+            return (nil, true)
+        default:
+            return (nil, false)
+        }
+    }
+
     static func bool(_ element: AXUIElement, _ attribute: String) -> Bool? {
         guard let value = value(element, attribute), CFGetTypeID(value) == CFBooleanGetTypeID() else {
             return nil

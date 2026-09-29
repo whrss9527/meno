@@ -50,14 +50,18 @@ final class ShelfController: ObservableObject {
     /// clicked, so the Shelf offers them first.
     var crowdedItems: [MenuBarItem] {
         guard model.inventory.framesAreReliable, !model.isZenActive else { return [] }
-        let housings = NSScreen.screens
-            .compactMap { ScreenGeometry.notchRect(on: $0) }
-            .map { ScreenGeometry.quartzRect(fromCocoa: $0) }
+        // Each housing with the screen it belongs to, so items on another
+        // display next to it are not mistaken for items behind it.
+        let housings = NSScreen.screens.compactMap { screen -> (housing: CGRect, screen: CGRect)? in
+            guard let notch = ScreenGeometry.notchRect(on: screen) else { return nil }
+            return (ScreenGeometry.quartzRect(fromCocoa: notch), ScreenGeometry.quartzRect(fromCocoa: screen.frame))
+        }
         return model.inventory.items(in: .visible).filter { item in
             guard item.kind != .marker, item.frame.width > 0 else { return false }
             if !item.isOnScreen { return true }
-            return housings.contains { housing in
-                housing.minY <= item.frame.midY && item.frame.midY <= housing.maxY && item.frame.midX < housing.maxX
+            return housings.contains { housing, screen in
+                housing.minY <= item.frame.midY && item.frame.midY <= housing.maxY
+                    && screen.minX <= item.frame.midX && item.frame.midX < housing.maxX
             }
         }
     }
@@ -72,26 +76,28 @@ final class ShelfController: ObservableObject {
 
     func show(includeStash: Bool, trigger: RevealTrigger) {
         groupID = nil
-        present(includeStash: includeStash || model.settings.shelf.includesStash, trigger: trigger)
+        present(includeStash: includeStash || model.settings.shelf.includesStash, trigger: trigger, takesKeyboard: trigger == .hotkey)
     }
 
-    /// Shows a group's items below its icon, or hides them again.
-    func toggle(group id: UUID) {
+    /// Shows a group's items below its icon, or hides them again. Opened
+    /// from the keyboard, the Shelf takes the arrow keys.
+    func toggle(group id: UUID, trigger: RevealTrigger = .click, takesKeyboard: Bool = false) {
         if isVisible, groupID == id {
             hide()
         } else {
             groupID = id
-            present(includeStash: false, trigger: .click)
+            present(includeStash: false, trigger: trigger, takesKeyboard: takesKeyboard)
         }
     }
 
-    private func present(includeStash: Bool, trigger: RevealTrigger) {
+    private func present(includeStash: Bool, trigger: RevealTrigger, takesKeyboard: Bool) {
         hideTask?.cancel()
         hideTask = nil
+        model.quickOpen.hide()
         includesStash = includeStash
         let panel = self.panel ?? makePanel()
         // Opened from the keyboard, the Shelf takes the arrow keys.
-        let usesKeyboard = trigger == .hotkey
+        let usesKeyboard = takesKeyboard
         panel.allowsKey = usesKeyboard
         keyboardSelection = usesKeyboard ? shownItems.first?.key : nil
         isVisible = true
@@ -169,7 +175,8 @@ final class ShelfController: ObservableObject {
     /// Escape closes the Shelf; while it has the keyboard, the arrow keys
     /// pick an item and Return opens it (⌘Return for its secondary menu).
     private func handleKey(_ event: NSEvent) -> Bool {
-        guard isVisible else { return false }
+        // Keys typed into Settings or Quick Open are not for the Shelf.
+        guard isVisible, let panel, event.window === panel else { return false }
         switch event.keyCode {
         case 0x35: // escape
             hide()

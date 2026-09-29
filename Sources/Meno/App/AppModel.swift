@@ -62,6 +62,7 @@ final class AppModel: ObservableObject {
 
     func start() {
         AX.configureGlobalTimeout(0.6)
+        TextEditingShortcuts.install()
         toasts.screenProvider = { [weak self] in
             self?.statusBar.screen
         }
@@ -293,7 +294,7 @@ final class AppModel: ObservableObject {
             guard let combo = group.hotkey else { continue }
             let id = group.id
             hotkeys.register(combo) { [weak self] in
-                self?.shelf.toggle(group: id)
+                self?.shelf.toggle(group: id, trigger: .hotkey, takesKeyboard: true)
             }
         }
     }

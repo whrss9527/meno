@@ -63,16 +63,18 @@ final class ChangeWatcher {
         let absorbing = model.reveal.visibility != .collapsed || model.shelf.isVisible
             || model.mover.isMoving || model.isZenActive
         let changed = tracker.update(samples, at: Date(), absorbing: absorbing)
-        if let key = changed.first, let item = model.inventory.item(for: key) {
-            show(item)
+            .compactMap { model.inventory.item(for: $0) }
+        if !changed.isEmpty {
+            show(changed)
         }
     }
 
-    private func show(_ item: MenuBarItem) {
-        Log.menuBar.info("Showing \(item.key.rawValue, privacy: .public) after a change")
-        model.reveal.requestReveal(all: item.section == .stash, trigger: .change)
-        // Several items may be shown at once; the notice says which one changed.
-        model.toasts.show(String(localized: "\(item.displayName) changed."), symbol: "bell.fill", duration: Self.showDuration)
+    private func show(_ items: [MenuBarItem]) {
+        Log.menuBar.info("Showing \(items.map(\.key.rawValue).joined(separator: ", "), privacy: .public) after a change")
+        model.reveal.requestReveal(all: items.contains { $0.section == .stash }, trigger: .change)
+        // A whole section is shown, so the notice says which items changed.
+        let names = ListFormatter.localizedString(byJoining: items.map(\.displayName))
+        model.toasts.show(String(localized: "\(names) changed."), symbol: "bell.fill", duration: Self.showDuration)
         if model.shelf.isVisible {
             model.shelf.hide(after: Self.showDuration)
         } else {

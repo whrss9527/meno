@@ -50,6 +50,17 @@ struct MenuBarItem: Identifiable, Hashable {
             && lhs.section == rhs.section
             && lhs.displayName == rhs.displayName
             && lhs.pid == rhs.pid
+            && sameElement(lhs.element, rhs.element)
+    }
+
+    /// An app can replace its item with a new one in the same place; the
+    /// old element then no longer answers.
+    private static func sameElement(_ lhs: AXUIElement?, _ rhs: AXUIElement?) -> Bool {
+        switch (lhs, rhs) {
+        case (nil, nil): return true
+        case let (lhs?, rhs?): return CFEqual(lhs, rhs)
+        default: return false
+        }
     }
 
     func hash(into hasher: inout Hasher) {

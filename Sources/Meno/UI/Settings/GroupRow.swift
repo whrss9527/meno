@@ -2,8 +2,13 @@ import MenoCore
 import SwiftUI
 
 /// A group in the layout editor: its icon, name and items.
+///
+/// Changes go through `update`, which finds the group by its ID when the
+/// change is made, so a shortcut recorded while another group is deleted
+/// still lands in the right group.
 struct GroupRow: View {
-    @Binding var group: ItemGroup
+    let group: ItemGroup
+    let update: ((inout ItemGroup) -> Void) -> Void
     let items: [MenuBarItem]
     @ObservedObject var images: ItemImageCache
     /// Whether an item is being dragged over the group.
@@ -17,7 +22,7 @@ struct GroupRow: View {
                 Menu {
                     ForEach(ItemGroup.symbols, id: \.self) { symbol in
                         Button {
-                            group.symbol = symbol
+                            update { $0.symbol = symbol }
                         } label: {
                             Image(systemName: symbol)
                         }
@@ -28,11 +33,11 @@ struct GroupRow: View {
                 .menuStyle(.borderlessButton)
                 .fixedSize()
                 .help(Text("Icon"))
-                TextField("Name", text: $group.name)
+                TextField("Name", text: Binding(get: { group.name }, set: { name in update { $0.name = name } }))
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 220)
                 Spacer()
-                ShortcutRecorder(combo: $group.hotkey)
+                ShortcutRecorder(combo: Binding(get: { group.hotkey }, set: { combo in update { $0.hotkey = combo } }))
                     .help(Text("A shortcut that shows the group"))
                 Button(role: .destructive, action: onDelete) {
                     Image(systemName: "trash")
@@ -96,10 +101,11 @@ struct GroupRow: View {
     /// appears in the group's Shelf. Items of apps that are not running
     /// keep their place.
     private func move(_ key: MenuItemKey, by offset: Int) {
-        guard let shown = items.firstIndex(where: { $0.key == key }),
-              items.indices.contains(shown + offset),
-              let from = group.items.firstIndex(of: key),
-              let to = group.items.firstIndex(of: items[shown + offset].key) else { return }
-        group.items.swapAt(from, to)
+        guard let shown = items.firstIndex(where: { $0.key == key }), items.indices.contains(shown + offset) else { return }
+        let neighbour = items[shown + offset].key
+        update { group in
+            guard let from = group.items.firstIndex(of: key), let to = group.items.firstIndex(of: neighbour) else { return }
+            group.items.swapAt(from, to)
+        }
     }
 }

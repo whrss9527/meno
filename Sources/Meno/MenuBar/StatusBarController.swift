@@ -133,10 +133,12 @@ final class StatusBarController: NSObject {
 
     private func makeGroupItem(for group: ItemGroup) -> NSStatusItem {
         let name = Name.group(group.id)
-        // A new group's icon starts next to the Meno icon, on its visible side.
+        // A new group's icon starts right next to the Meno icon, on its
+        // visible side. Positions grow to the left, so a value just above the
+        // Meno icon's puts it between the icon and whatever is left of it,
+        // such as the Hidden divider.
         if Self.preferredPosition(of: name) == nil, let base = Self.preferredPosition(of: Name.toggle) {
-            let width = Double(toggle?.button?.window?.frame.width ?? 20)
-            UserDefaults.standard.set(base + max(width, 12) + Double(groupItems.count) * 4, forKey: Self.positionKey(name))
+            UserDefaults.standard.set(base + 1 + Double(groupItems.count), forKey: Self.positionKey(name))
         }
         return makeItem(name: name, action: #selector(groupClicked(_:)))
     }
@@ -196,9 +198,11 @@ final class StatusBarController: NSObject {
     /// divider left of the Hidden divider. Otherwise collapsing would push
     /// the Meno icon itself out of the menu bar.
     func ensureDividerOrder() {
-        guard let toggle, let toggleFrame, let hiddenFrame = hiddenDividerFrame else { return }
+        guard let hiddenFrame = hiddenDividerFrame else { return }
         var repaired = false
-        if hiddenFrame.maxX > toggleFrame.maxX {
+        // Without the Meno icon its item has no width and no frame, but the
+        // Stash divider is still checked.
+        if let toggle, let toggleFrame, hiddenFrame.maxX > toggleFrame.maxX {
             repaired = reseat(\.hiddenDivider, name: Name.hiddenDivider, leftOf: Name.toggle, item: toggle)
         } else if let hiddenDivider, let stashFrame = stashDividerFrame, stashFrame.maxX > hiddenFrame.maxX {
             repaired = reseat(\.stashDivider, name: Name.stashDivider, leftOf: Name.hiddenDivider, item: hiddenDivider)

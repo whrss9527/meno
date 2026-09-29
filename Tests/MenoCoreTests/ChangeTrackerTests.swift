@@ -64,6 +64,44 @@ final class ChangeTrackerTests: XCTestCase {
         XCTAssertEqual(tracker.update([sync: .init(text: "", glyph: badged)], at: at(9)), [sync])
     }
 
+    func testAnimationIsReportedOnce() {
+        var tracker = ChangeTracker()
+        _ = tracker.update([sync: .init(text: "idle")], at: at(0))
+        var reports: [TimeInterval] = []
+        // A spinner that looks different in every check for a minute.
+        for (index, time) in stride(from: 3.0, through: 60, by: 3).enumerated() {
+            if !tracker.update([sync: .init(text: "frame \(index % 2 == 0 ? "a" : "b") \(index)")], at: at(time)).isEmpty {
+                reports.append(time)
+            }
+        }
+        XCTAssertEqual(reports, [6])
+        // Once it settles, the next change is news again.
+        XCTAssertEqual(tracker.update([sync: .init(text: "idle")], at: at(63)), [])
+        XCTAssertEqual(tracker.update([sync: .init(text: "idle")], at: at(66)), [])
+        XCTAssertEqual(tracker.update([sync: .init(text: "failed")], at: at(69)), [])
+        XCTAssertEqual(tracker.update([sync: .init(text: "failed")], at: at(72)), [sync])
+    }
+
+    func testUnreadableChecksDoNotCount() {
+        var tracker = ChangeTracker()
+        _ = tracker.update([sync: .init(texts: ["Up to date"])], at: at(0))
+        // Accessibility timed out twice: nothing is known, nothing changed.
+        XCTAssertEqual(tracker.update([sync: .init(texts: nil)], at: at(3)), [])
+        XCTAssertEqual(tracker.update([sync: .init(texts: nil)], at: at(6)), [])
+        XCTAssertEqual(tracker.update([sync: .init(texts: ["Up to date"])], at: at(9)), [])
+    }
+
+    func testUnknownChecksDoNotEndSettling() {
+        var tracker = ChangeTracker(confirmations: 1)
+        _ = tracker.update([sync: .init(text: "a")], at: at(0))
+        XCTAssertEqual(tracker.update([sync: .init(text: "b")], at: at(3)), [sync])
+        // A check without any readable part says nothing about steadiness.
+        _ = tracker.update([sync: .init(text: nil)], at: at(40))
+        XCTAssertEqual(tracker.update([sync: .init(text: "c")], at: at(43)), [])
+        XCTAssertEqual(tracker.update([sync: .init(text: "c")], at: at(46)), [])
+        XCTAssertEqual(tracker.update([sync: .init(text: "d")], at: at(49)), [sync])
+    }
+
     func testItemsAreTrackedSeparatelyAndForgotten() {
         var tracker = ChangeTracker(confirmations: 1)
         _ = tracker.update([sync: .init(text: "a"), vpn: .init(text: "on")], at: at(0))

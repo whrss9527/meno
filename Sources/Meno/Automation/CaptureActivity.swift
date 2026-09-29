@@ -61,9 +61,9 @@ final class CaptureActivity: @unchecked Sendable {
             new.microphoneUsers = users?.sorted() ?? []
             new.microphone = users.map { !$0.isEmpty } ?? false
             if !new.microphone {
-                new.microphone = Microphones.devices().contains {
-                    (users == nil || !$0.hasOutput) && Microphones.isRunning($0.id)
-                }
+                // A device that also plays sound (a headset) runs for music as
+                // well, so only devices that just record count here.
+                new.microphone = Microphones.devices().contains { !$0.hasOutput && Microphones.isRunning($0.id) }
             }
         }
         if watchesCameras {

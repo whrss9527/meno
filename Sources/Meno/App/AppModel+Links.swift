@@ -23,17 +23,17 @@ extension AppModel {
         case .zen(let enabled):
             setZen(enabled ?? !isZenActive)
         case .scene(let name):
-            guard let scene = settings.scenes.first(where: { $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }) else {
+            guard let scene = settings.scenes.first(where: { Self.sameName($0.name, name) }) else {
                 toasts.show(String(localized: "There is no scene named “\(name)”."), symbol: "questionmark.circle")
                 return
             }
             Task { await applyScene(scene) }
         case .group(let name):
-            guard let group = settings.groups.first(where: { $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }) else {
+            guard let group = settings.groups.first(where: { Self.sameName($0.name, name) }) else {
                 toasts.show(String(localized: "There is no group named “\(name)”."), symbol: "questionmark.circle")
                 return
             }
-            shelf.toggle(group: group.id)
+            shelf.toggle(group: group.id, trigger: .link)
         case .open(let name, let secondary):
             Task {
                 if item(matching: name) == nil {
@@ -52,6 +52,12 @@ extension AppModel {
         case .settings(let pane):
             openSettings(pane.flatMap(SettingsPane.init(rawValue:)))
         }
+    }
+
+    /// Names in links are trimmed, so names are compared without the spaces
+    /// around them and without regard to case.
+    private static func sameName(_ name: String, _ query: String) -> Bool {
+        name.trimmingCharacters(in: .whitespaces).localizedCaseInsensitiveCompare(query.trimmingCharacters(in: .whitespaces)) == .orderedSame
     }
 
     /// An item by its key, its exact name, or the best fuzzy match.

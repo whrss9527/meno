@@ -24,6 +24,12 @@ extension AppModel {
         }
     }
 
+    /// Changes a group, found by its ID.
+    func updateGroup(_ id: UUID, _ change: (inout ItemGroup) -> Void) {
+        guard let index = settings.groups.firstIndex(where: { $0.id == id }) else { return }
+        change(&settings.groups[index])
+    }
+
     func removeItemFromGroups(_ key: MenuItemKey) {
         settings.groups.remove(key)
     }
