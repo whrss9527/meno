@@ -250,6 +250,7 @@ extension RuleCondition.Kind {
         case .offline: return String(localized: "The Mac is offline")
         case .microphoneInUse: return String(localized: "A microphone is in use")
         case .cameraInUse: return String(localized: "A camera is in use")
+        case .commandSucceeds: return String(localized: "A command succeeds")
         }
     }
 
@@ -268,6 +269,7 @@ extension RuleCondition.Kind {
         case .offline: return "wifi.slash"
         case .microphoneInUse: return "mic"
         case .cameraInUse: return "video"
+        case .commandSucceeds: return "terminal"
         }
     }
 }

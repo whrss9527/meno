@@ -48,12 +48,40 @@ final class RuleTests: XCTestCase {
         XCTAssertFalse(RuleCondition.displayConnected(name: "").isSatisfied(by: RuleContext(displayNames: [""])))
     }
 
+    func testCommandCondition() {
+        let vpn = RuleCondition.commandSucceeds(command: "scutil --nc list | grep -q Connected")
+        XCTAssertFalse(vpn.isSatisfied(by: RuleContext()))
+        XCTAssertTrue(vpn.isSatisfied(by: RuleContext(succeededCommands: ["scutil --nc list | grep -q Connected"])))
+        XCTAssertEqual(vpn.command, "scutil --nc list | grep -q Connected")
+        XCTAssertNil(RuleCondition.commandSucceeds(command: "  ").command)
+        XCTAssertNil(RuleCondition.onBattery.command)
+    }
+
+    func testCommandsOfEnabledRules() {
+        let rules = [
+            AutomationRule(name: "VPN", conditions: [.commandSucceeds(command: "vpn-up")], action: .revealAll),
+            AutomationRule(name: "Off", isEnabled: false, conditions: [.commandSucceeds(command: "off")], action: .zen),
+            AutomationRule(name: "Both", conditions: [.onBattery, .commandSucceeds(command: "vpn-up"), .commandSucceeds(command: " ")], action: .collapse),
+            AutomationRule(name: "Plain", conditions: [.onBattery], action: .collapse),
+        ]
+        XCTAssertEqual(rules.commands, ["vpn-up"])
+        XCTAssertTrue(rules[0].runsCommands)
+        XCTAssertFalse(rules[3].runsCommands)
+
+        let (disabled, changed) = rules.disablingCommands()
+        XCTAssertTrue(changed)
+        XCTAssertEqual(disabled.map(\.isEnabled), [false, false, false, true])
+        XCTAssertTrue(disabled.commands.isEmpty)
+        XCTAssertFalse(disabled.disablingCommands().changed)
+    }
+
     func testNewConditionsSurviveSaving() throws {
         var settings = MenoSettings()
         settings.rules = [
             AutomationRule(name: "Calls", conditions: [.microphoneInUse, .cameraInUse], action: .zen),
             AutomationRule(name: "Saver", conditions: [.lowPowerMode], action: .collapse),
             AutomationRule(name: "Office", conditions: [.displayConnected(name: "LG UltraFine")], action: .revealAll),
+            AutomationRule(name: "VPN", conditions: [.commandSucceeds(command: "test -e ~/.vpn")], action: .revealAll),
         ]
         let decoded = try MenoSettings.decode(from: settings.encoded())
         XCTAssertEqual(decoded.rules, settings.rules)

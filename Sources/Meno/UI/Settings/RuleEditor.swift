@@ -59,7 +59,14 @@ struct RuleEditor: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(conditions.count <= 1)
+                        .accessibilityLabel(Text("Remove Condition"))
                     }
+                }
+                if conditions.contains(where: { $0.condition.kind == .commandSucceeds }) {
+                    Text("Commands run with zsh every 10 seconds while the rule is on. A command counts as true when it exits with status 0; one that takes longer than 5 seconds is stopped.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Menu {
                     ForEach(RuleCondition.Kind.allCases, id: \.self) { kind in
@@ -137,6 +144,8 @@ struct RuleEditor: View {
             switch entry.condition {
             case .appFrontmost(let id), .appRunning(let id):
                 if id.isEmpty { return false }
+            case .commandSucceeds:
+                if entry.condition.command == nil { return false }
             default:
                 break
             }
@@ -154,6 +163,8 @@ struct RuleEditor: View {
 
 private struct ConditionEditor: View {
     @Binding var condition: RuleCondition
+    @State private var isTesting = false
+    @State private var testResult: Bool?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -189,8 +200,51 @@ private struct ConditionEditor: View {
                     .foregroundStyle(.secondary)
                 MinutePicker(minute: Binding(get: { end }, set: { condition = .timeWindow(startMinute: start, endMinute: $0) }))
             }
+        case .commandSucceeds(let command):
+            TextField(
+                String(localized: "Shell command"),
+                text: Binding(get: { command }, set: { condition = .commandSucceeds(command: $0) })
+            )
+            .textFieldStyle(.roundedBorder)
+            .font(.system(size: 12, design: .monospaced))
+            .autocorrectionDisabled()
+            .frame(minWidth: 160)
+            .onChange(of: command) { testResult = nil }
+            Button {
+                test(command)
+            } label: {
+                if isTesting {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Text("Test")
+                }
+            }
+            .disabled(condition.command == nil || isTesting)
+            if let testResult {
+                let label = testResult
+                    ? String(localized: "The command succeeded.")
+                    : String(localized: "The command failed or took too long.")
+                Image(systemName: testResult ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .foregroundStyle(testResult ? Color.green : Color.red)
+                    .help(label)
+                    .accessibilityLabel(label)
+            }
         default:
             EmptyView()
+        }
+    }
+}
+
+extension ConditionEditor {
+    /// Runs the command once, off the main thread, and shows the result.
+    private func test(_ command: String) {
+        isTesting = true
+        testResult = nil
+        Task {
+            let succeeded = await Task.detached { CommandChecks.succeeds(command) }.value
+            isTesting = false
+            testResult = succeeded
         }
     }
 }

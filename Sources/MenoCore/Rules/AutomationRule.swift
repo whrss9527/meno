@@ -18,6 +18,8 @@ public struct RuleContext: Equatable, Sendable {
     public var microphoneInUse: Bool
     /// Whether any app uses a camera.
     public var cameraInUse: Bool
+    /// The shell commands of rule conditions whose last run succeeded.
+    public var succeededCommands: Set<String>
 
     public init(
         frontmostBundleID: String? = nil,
@@ -30,7 +32,8 @@ public struct RuleContext: Equatable, Sendable {
         minuteOfDay: Int = 0,
         isOnline: Bool = true,
         microphoneInUse: Bool = false,
-        cameraInUse: Bool = false
+        cameraInUse: Bool = false,
+        succeededCommands: Set<String> = []
     ) {
         self.frontmostBundleID = frontmostBundleID
         self.runningBundleIDs = runningBundleIDs
@@ -43,6 +46,7 @@ public struct RuleContext: Equatable, Sendable {
         self.isOnline = isOnline
         self.microphoneInUse = microphoneInUse
         self.cameraInUse = cameraInUse
+        self.succeededCommands = succeededCommands
     }
 }
 
@@ -64,6 +68,9 @@ public enum RuleCondition: Codable, Hashable, Sendable {
     case offline
     case microphoneInUse
     case cameraInUse
+    /// A shell command of the user's exits with status 0. Meno runs it
+    /// every few seconds while an enabled rule has this condition.
+    case commandSucceeds(command: String)
 
     public func isSatisfied(by context: RuleContext) -> Bool {
         switch self {
@@ -97,7 +104,16 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             return context.microphoneInUse
         case .cameraInUse:
             return context.cameraInUse
+        case .commandSucceeds(let command):
+            return context.succeededCommands.contains(command)
         }
+    }
+
+    /// The shell command this condition runs, if any.
+    public var command: String? {
+        guard case .commandSucceeds(let command) = self else { return nil }
+        let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : command
     }
 
     /// A stable identifier of the condition's kind, used by editors.
@@ -116,6 +132,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case .offline: return .offline
         case .microphoneInUse: return .microphoneInUse
         case .cameraInUse: return .cameraInUse
+        case .commandSucceeds: return .commandSucceeds
         }
     }
 
@@ -133,6 +150,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case offline
         case microphoneInUse
         case cameraInUse
+        case commandSucceeds
 
         /// A reasonable starting value for a new condition of this kind.
         public var defaultCondition: RuleCondition {
@@ -150,6 +168,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             case .offline: return .offline
             case .microphoneInUse: return .microphoneInUse
             case .cameraInUse: return .cameraInUse
+            case .commandSucceeds: return .commandSucceeds(command: "")
             }
         }
     }
@@ -241,6 +260,33 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
 
     public func matches(_ context: RuleContext) -> Bool {
         isEnabled && !conditions.isEmpty && conditions.allSatisfy { $0.isSatisfied(by: context) }
+    }
+
+    /// Whether a condition of the rule runs a shell command.
+    public var runsCommands: Bool {
+        conditions.contains { $0.command != nil }
+    }
+}
+
+extension Array where Element == AutomationRule {
+    /// The shell commands that the enabled rules run.
+    public var commands: Set<String> {
+        Set(filter(\.isEnabled).flatMap(\.conditions).compactMap(\.command))
+    }
+
+    /// The rules with the ones that run shell commands turned off, and
+    /// whether any was turned off. Used for settings from elsewhere, which
+    /// should not run anything before the person has looked at them.
+    public func disablingCommands() -> (rules: [AutomationRule], changed: Bool) {
+        var changed = false
+        let rules = map { rule -> AutomationRule in
+            guard rule.isEnabled, rule.runsCommands else { return rule }
+            var rule = rule
+            rule.isEnabled = false
+            changed = true
+            return rule
+        }
+        return (rules, changed)
     }
 }
 

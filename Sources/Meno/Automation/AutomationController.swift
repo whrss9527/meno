@@ -25,6 +25,15 @@ final class AutomationController: ObservableObject {
             self.evaluate()
         }
     }
+    /// The commands of rule conditions that succeeded when they last ran.
+    private(set) var succeededCommands: Set<String> = []
+    private lazy var commandChecks = CommandChecks { [weak self] succeeded in
+        MainActor.assumeIsolated {
+            guard let self else { return }
+            self.succeededCommands = succeeded
+            self.evaluate()
+        }
+    }
 
     /// Work to undo when a rule stops applying.
     private struct Undo {
@@ -82,6 +91,7 @@ final class AutomationController: ObservableObject {
             }
         }
         watchCaptureActivity()
+        commandChecks.watch(model.settings.rules.commands)
         evaluate()
     }
 
@@ -93,6 +103,7 @@ final class AutomationController: ObservableObject {
             undo[id] = nil
         }
         watchCaptureActivity()
+        commandChecks.watch(model.settings.rules.commands)
         evaluate()
     }
 
@@ -108,7 +119,7 @@ final class AutomationController: ObservableObject {
     }
 
     func evaluate() {
-        context = SystemSignals.snapshot(isOnline: isOnline, capture: capture)
+        context = SystemSignals.snapshot(isOnline: isOnline, capture: capture, succeededCommands: succeededCommands)
         let transitions = evaluator.update(rules: model.settings.rules, context: context)
         activeRuleIDs = evaluator.activeRuleIDs
         for transition in transitions {

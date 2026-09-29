@@ -12,6 +12,7 @@
 "A calm menu bar, made with glass." = "一个安静的菜单栏，由玻璃打造。";
 "A camera is in use" = "摄像头正在使用";
 "a camera is in use" = "摄像头正在使用";
+"A command succeeds" = "命令执行成功";
 "a deleted scene" = "已删除的场景";
 "A glass bar for items that do not fit next to the notch." = "为刘海旁放不下的图标准备的玻璃托盘。";
 "A group gets its own icon in the menu bar that shows its items. Visible items move to the Stash." = "分组会在菜单栏里有自己的图标，用来显示组内的项目。常显的项目会移到暗格。";
@@ -102,6 +103,7 @@
 "Clicking again hides the items." = "再次点按会重新隐藏。";
 "Close" = "关闭";
 "Close after opening an item" = "打开项目后关闭托盘";
+"Commands run with zsh every 10 seconds while the rule is on. A command counts as true when it exits with status 0; one that takes longer than 5 seconds is stopped." = "规则开启时，命令每 10 秒用 zsh 运行一次。命令以状态 0 退出时条件成立；运行超过 5 秒的命令会被终止。";
 "Connected to power" = "连接电源";
 "connected to power" = "连接电源";
 "Continue" = "继续";
@@ -313,6 +315,7 @@
 "Relaunch Meno" = "重新打开 Meno";
 "Relaunch Meno later to use Screen Recording." = "稍后重新打开 Meno 即可使用屏幕录制权限。";
 "Relaunch to finish" = "重新打开以完成设置";
+"Remove Condition" = "移除条件";
 "Remove from Group" = "移出分组";
 "Remove from “%@”" = "从“%@”中移除";
 "Remove shortcut" = "移除快捷键";
@@ -361,12 +364,14 @@
 "Set up shortcuts in Settings › Hotkeys, and open any item with Quick Open." = "在“设置 › 快捷键”中设置快捷键，并用“快速打开”打开任意项目。";
 "Settings exported." = "设置已导出。";
 "Settings imported." = "设置已导入。";
+"Settings imported. Rules that run commands were turned off; check them before turning them on." = "设置已导入。带命令的规则已被关闭，请检查后再打开。";
 "Settings were reset." = "设置已重置。";
 "Settings…" = "设置…";
 "SF Symbol name" = "SF 符号名称";
 "Shadow" = "阴影";
 "Shape" = "形状";
 "Shelf" = "托盘";
+"Shell command" = "Shell 命令";
 "Shortcuts work in every app. Press Delete while recording to remove one, or Escape to cancel." = "快捷键在任何 App 中都可用。录制时按 Delete 键移除，按 Esc 键取消。";
 "Show Everything" = "显示全部";
 "Show everything" = "显示全部";
@@ -382,6 +387,7 @@
 "Show or hide everything, including the Stash" = "显示或隐藏全部（包含暗格）";
 "Show or hide hidden items" = "显示或隐藏隐藏项目";
 "Show or hide the Shelf" = "显示或隐藏托盘";
+"Show Rules" = "查看规则";
 "Show the battery when it runs low" = "电量低时显示电池";
 "Show the dividers while items are revealed" = "展开时显示分隔符";
 "Show the Meno Icon" = "显示 Meno 图标";
@@ -414,9 +420,12 @@
 "Symbol" = "符号";
 "Symbol: %@" = "符号：%@";
 "System Settings still lists the previous build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "系统设置里还留着上一个版本 Meno 的记录，它对新版本不生效。先清除这条记录，再在系统提示时打开 Meno 的开关。";
+"Test" = "测试";
 "Text" = "文字";
 "That file does not contain Meno settings." = "该文件不包含 Meno 设置。";
 "That item is not in the menu bar right now." = "该项目目前不在菜单栏中。";
+"The command failed or took too long." = "命令执行失败或耗时过长。";
+"The command succeeded." = "命令执行成功。";
 "The divider and a few helper spacers grow in small steps, each below the width limit of the macOS 27 menu bar. Pushed items move into the system overflow." = "分隔符和几个辅助占位项以小步逐渐加宽，每个都低于 macOS 27 菜单栏的宽度上限。被推开的项目会进入系统的溢出菜单。";
 "The item is no longer in the menu bar." = "该项目已不在菜单栏中。";
 "The layout could not be planned." = "无法规划布局。";
@@ -484,4 +493,5 @@
 "Zen while presenting with Keynote" = "用 Keynote 演示时开启禅模式";
 "“%@” is connected" = "已连接“%@”";
 "“%@” is not in the menu bar right now." = "“%@”现在不在菜单栏中。";
+"“%@” succeeds" = "“%@”执行成功";
 "⌥-click it to include the Stash." = "按住 ⌥ 点按它可同时显示暗格。";

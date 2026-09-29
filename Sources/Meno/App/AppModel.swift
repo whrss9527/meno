@@ -266,8 +266,21 @@ final class AppModel: ObservableObject {
         do {
             var imported = try MenoSettings.decode(from: Data(contentsOf: url))
             imported.onboardingCompleted = true
+            // Commands in a settings file only run once the person has
+            // looked at them and turned their rules back on.
+            let (rules, disabled) = imported.rules.disablingCommands()
+            imported.rules = rules
             settings = imported
-            toasts.show(String(localized: "Settings imported."), symbol: "square.and.arrow.down")
+            if disabled {
+                toasts.show(
+                    String(localized: "Settings imported. Rules that run commands were turned off; check them before turning them on."),
+                    symbol: "square.and.arrow.down",
+                    actions: [ToastCenter.Action(title: String(localized: "Show Rules")) { [weak self] in self?.openSettings(.rules) }],
+                    duration: 10
+                )
+            } else {
+                toasts.show(String(localized: "Settings imported."), symbol: "square.and.arrow.down")
+            }
         } catch {
             toasts.show(String(localized: "That file does not contain Meno settings."), symbol: "exclamationmark.triangle.fill")
         }

@@ -168,6 +168,8 @@ enum RuleDescriber {
             return String(localized: "a microphone is in use")
         case .cameraInUse:
             return String(localized: "a camera is in use")
+        case .commandSucceeds(let command):
+            return String(localized: "“\(command)” succeeds")
         }
     }
 
