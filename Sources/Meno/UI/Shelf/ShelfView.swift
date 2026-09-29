@@ -143,6 +143,13 @@ private struct ShelfItemButton: View {
                     shelf.model.move(item.key, to: .stash)
                 }
             }
+            if item.section != .visible {
+                Divider()
+                Toggle("Show When It Changes", isOn: Binding(
+                    get: { shelf.model.showsOnChange(item.key) },
+                    set: { shelf.model.setShowsOnChange(item.key, $0) }
+                ))
+            }
         }
         .help(Text(verbatim: item.displayName))
         .animation(.easeOut(duration: 0.12), value: isHovering)
