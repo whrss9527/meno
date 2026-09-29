@@ -156,7 +156,10 @@ final class ItemInventory: ObservableObject {
             .compactMap { $0 }
         var result: [MenuBarItem] = []
 
-        let grouped = Dictionary(grouping: raw) { $0.target.bundleID ?? $0.target.name }
+        let named = raw.filter { entry in
+            !ItemNaming.isUnnamedSystemElement(owner: entry.target.bundleID ?? entry.target.name, texts: [entry.detail, entry.title, entry.help])
+        }
+        let grouped = Dictionary(grouping: named) { $0.target.bundleID ?? $0.target.name }
         for (owner, group) in grouped {
             let sorted = group.sorted { $0.frame.minX < $1.frame.minX }
             let tokens = MenuItemKey.tokens(for: sorted.map {
@@ -252,7 +255,7 @@ final class ItemInventory: ObservableObject {
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .first { !$0.isEmpty }
         if isSystem {
-            return text ?? entry.target.name
+            return text.map { ItemNaming.leadingName(of: $0) } ?? entry.target.name
         }
         if siblings > 1, let text, text.caseInsensitiveCompare(entry.target.name) != .orderedSame {
             return "\(entry.target.name) – \(text)"
