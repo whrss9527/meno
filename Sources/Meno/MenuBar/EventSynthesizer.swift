@@ -30,16 +30,22 @@ enum EventSynthesizer {
     /// Performs a ⌘-drag from `start` to `end`, the gesture macOS uses to
     /// rearrange menu bar items. The pointer is detached from the physical
     /// mouse during the drag and restored afterwards.
-    static func commandDrag(from start: CGPoint, to end: CGPoint) async {
+    /// - Parameter pace: Stretches the pauses; retries go slower, since some
+    ///   setups need longer holds before an item follows the pointer.
+    static func commandDrag(from start: CGPoint, to end: CGPoint, pace: Double = 1) async {
         let source = CGEventSource(stateID: .combinedSessionState)
         let original = CGEvent(source: nil)?.location
         _ = CGAssociateMouseAndMouseCursorPosition(0)
 
+        func scaled(_ milliseconds: UInt64) -> UInt64 {
+            UInt64((Double(milliseconds) * max(pace, 1)).rounded())
+        }
+
         postKey(commandKey, down: true, source: source)
         postMouse(.mouseMoved, at: start, source: source, flags: .maskCommand)
-        await pause(milliseconds: 40)
+        await pause(milliseconds: scaled(40))
         postMouse(.leftMouseDown, at: start, source: source, flags: .maskCommand)
-        await pause(milliseconds: 150)
+        await pause(milliseconds: scaled(150))
 
         let distance = abs(end.x - start.x)
         let steps = max(10, Int(distance / 10))
@@ -47,11 +53,11 @@ enum EventSynthesizer {
             let fraction = CGFloat(step) / CGFloat(steps)
             let point = CGPoint(x: start.x + (end.x - start.x) * fraction, y: start.y + (end.y - start.y) * fraction)
             postMouse(.leftMouseDragged, at: point, source: source, flags: .maskCommand)
-            await pause(milliseconds: 12)
+            await pause(milliseconds: scaled(12))
         }
-        await pause(milliseconds: 150)
+        await pause(milliseconds: scaled(150))
         postMouse(.leftMouseUp, at: end, source: source, flags: .maskCommand)
-        await pause(milliseconds: 60)
+        await pause(milliseconds: scaled(60))
         postKey(commandKey, down: false, source: source)
 
         _ = CGAssociateMouseAndMouseCursorPosition(1)

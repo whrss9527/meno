@@ -140,7 +140,7 @@ final class ItemMover: ObservableObject {
             let start = CGPoint(x: item.frame.midX, y: item.frame.midY)
             let end = dropPoint(for: item.frame, reference: reference, placement: step.placement, attempt: attempt)
             Log.move.info("Moving \(item.key.rawValue, privacy: .public) attempt \(attempt)")
-            await EventSynthesizer.commandDrag(from: start, to: end)
+            await EventSynthesizer.commandDrag(from: start, to: end, pace: 1 + Double(attempt) * 0.75)
             try await Task.sleep(nanoseconds: 450_000_000)
             await model.inventory.refresh()
             if isSatisfied(step) { return }
