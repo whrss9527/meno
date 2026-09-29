@@ -69,6 +69,7 @@ final class AppModel: ObservableObject {
             self?.accessibilityGranted()
         }
         permissions.startMonitoring()
+        images.setCustomSymbols(settings.itemSymbols)
         statusBar.install()
         statusBar.syncGroups()
         markers.sync()
@@ -204,6 +205,9 @@ final class AppModel: ObservableObject {
         }
         if old.itemNames != new.itemNames {
             inventory.scheduleRefresh(after: 0)
+        }
+        if old.itemSymbols != new.itemSymbols {
+            images.setCustomSymbols(new.itemSymbols)
         }
         if old.groups != new.groups {
             statusBar.syncGroups()
@@ -379,6 +383,52 @@ final class AppModel: ObservableObject {
     func rename(_ key: MenuItemKey, to name: String?) {
         let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         settings.itemNames[key.rawValue] = trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// Picks a symbol to stand for an item in Meno, or goes back to its own
+    /// artwork with `nil`.
+    func setSymbol(_ symbol: String?, for key: MenuItemKey) {
+        settings.itemSymbols[key.rawValue] = symbol
+    }
+
+    /// Whether a hidden item is shown for a moment when it changes.
+    func showsOnChange(_ key: MenuItemKey) -> Bool {
+        settings.revealOnChange.contains(key.rawValue)
+    }
+
+    func setShowsOnChange(_ key: MenuItemKey, _ enabled: Bool) {
+        var keys = Set(settings.revealOnChange)
+        if enabled {
+            keys.insert(key.rawValue)
+        } else {
+            keys.remove(key.rawValue)
+        }
+        settings.revealOnChange = keys.sorted()
+    }
+
+    func handleNewArrival(_ item: MenuBarItem) {
+        switch settings.general.newItemPolicy {
+        case .ignore:
+            return
+        case .notify:
+            var actions = [ToastCenter.Action(title: String(localized: "Hide")) { [weak self] in
+                self?.move(item.key, to: .hidden)
+            }]
+            if settings.general.stashEnabled {
+                actions.append(ToastCenter.Action(title: String(localized: "Stash")) { [weak self] in
+                    self?.move(item.key, to: .stash)
+                })
+            }
+            toasts.show(String(localized: "New in the menu bar: \(item.displayName)"), symbol: "sparkles", actions: actions)
+        case .hide:
+            if item.section == .visible {
+                move(item.key, to: .hidden, automatic: true)
+            }
+        case .stash:
+            if item.section != .stash, settings.general.stashEnabled {
+                move(item.key, to: .stash, automatic: true)
+            }
+        }
     }
 
     /// Shows or hides the Meno icon. Without it, clicking an empty part of

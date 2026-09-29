@@ -18,6 +18,13 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.appearance, AppearanceSettings())
     }
 
+    func testItemSymbolsRoundTrip() throws {
+        XCTAssertEqual(try MenoSettings.decode(from: Data("{}".utf8)).itemSymbols, [:])
+        var settings = MenoSettings()
+        settings.itemSymbols = ["com.example.sync#solo": "cloud"]
+        XCTAssertEqual(try MenoSettings.decode(from: settings.encoded()).itemSymbols, settings.itemSymbols)
+    }
+
     func testItemNamesRoundTrip() throws {
         XCTAssertEqual(try MenoSettings.decode(from: Data("{}".utf8)).itemNames, [:])
         var settings = MenoSettings()

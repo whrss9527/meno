@@ -17,6 +17,8 @@ public struct MenoSettings: Codable, Equatable, Sendable {
     public var itemHotkeys: [ItemHotkey] = []
     /// Names given to items in Meno, by item key.
     public var itemNames: [String: String] = [:]
+    /// SF Symbols chosen to stand for items in Meno, by item key.
+    public var itemSymbols: [String: String] = [:]
     /// Keys of hidden items that are shown for a moment when their icon or
     /// text changes.
     public var revealOnChange: [String] = []

@@ -8,6 +8,8 @@ final class ItemImageCache: ObservableObject {
     @Published private(set) var revision = 0
 
     private var captured: [MenuItemKey: NSImage] = [:]
+    /// Symbols the person picked for items, by item key.
+    private var customSymbols: [String: String] = [:]
     private var captureTask: Task<Void, Never>?
     private var lastCapture: Date?
 
@@ -20,9 +22,21 @@ final class ItemImageCache: ObservableObject {
         captured[key]
     }
 
-    /// The best available image for an item.
+    /// The best available image for an item: a symbol the person picked,
+    /// the captured artwork, or a fallback.
     func image(for item: MenuBarItem) -> NSImage {
-        captured[item.key] ?? fallbackImage(for: item)
+        if let name = customSymbols[item.key.rawValue],
+           let symbol = NSImage(systemSymbolName: name, accessibilityDescription: item.displayName) {
+            symbol.isTemplate = true
+            return symbol
+        }
+        return captured[item.key] ?? fallbackImage(for: item)
+    }
+
+    func setCustomSymbols(_ symbols: [String: String]) {
+        guard symbols != customSymbols else { return }
+        customSymbols = symbols
+        revision += 1
     }
 
     /// The app icon (or symbol) for an item, ignoring captures.

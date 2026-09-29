@@ -251,6 +251,8 @@ struct LayoutPane: View {
                                 model.hotkeyDraftItem = item.key
                                 model.openSettings(.hotkeys)
                             },
+                            symbol: model.settings.itemSymbols[item.key.rawValue],
+                            setSymbol: { model.setSymbol($0, for: item.key) },
                             groups: model.settings.groups,
                             groupID: model.settings.groups.group(containing: item.key)?.id,
                             setGroup: { id in

@@ -34,44 +34,4 @@ extension AppModel {
             shelf.hide()
         }
     }
-
-    /// Whether a hidden item is shown for a moment when it changes.
-    func showsOnChange(_ key: MenuItemKey) -> Bool {
-        settings.revealOnChange.contains(key.rawValue)
-    }
-
-    func setShowsOnChange(_ key: MenuItemKey, _ enabled: Bool) {
-        var keys = Set(settings.revealOnChange)
-        if enabled {
-            keys.insert(key.rawValue)
-        } else {
-            keys.remove(key.rawValue)
-        }
-        settings.revealOnChange = keys.sorted()
-    }
-
-    func handleNewArrival(_ item: MenuBarItem) {
-        switch settings.general.newItemPolicy {
-        case .ignore:
-            return
-        case .notify:
-            var actions = [ToastCenter.Action(title: String(localized: "Hide")) { [weak self] in
-                self?.move(item.key, to: .hidden)
-            }]
-            if settings.general.stashEnabled {
-                actions.append(ToastCenter.Action(title: String(localized: "Stash")) { [weak self] in
-                    self?.move(item.key, to: .stash)
-                })
-            }
-            toasts.show(String(localized: "New in the menu bar: \(item.displayName)"), symbol: "sparkles", actions: actions)
-        case .hide:
-            if item.section == .visible {
-                move(item.key, to: .hidden, automatic: true)
-            }
-        case .stash:
-            if item.section != .stash, settings.general.stashEnabled {
-                move(item.key, to: .stash, automatic: true)
-            }
-        }
-    }
 }

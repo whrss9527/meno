@@ -24,6 +24,9 @@ struct LayoutChip: View {
     let copyLink: () -> Void
     let addHotkey: () -> Void
     /// All groups, and the one the item is in.
+    /// The symbol picked for the item, if any.
+    let symbol: String?
+    let setSymbol: (String?) -> Void
     let groups: [ItemGroup]
     let groupID: UUID?
     /// Puts the item in a group, or takes it out with `nil`.
@@ -107,10 +110,18 @@ struct LayoutChip: View {
         }
         groupEntries.append(MoveCommand(title: String(localized: "New Group…"), symbol: "plus", startsGroup: true, action: newGroup))
         let groupCommand = MoveCommand(title: String(localized: "Group"), symbol: "square.grid.2x2", children: groupEntries)
+        var symbolEntries = Self.symbolChoices.map { name in
+            MoveCommand(title: "", symbol: name, isChecked: name == symbol) { setSymbol(name) }
+        }
+        symbolEntries.append(MoveCommand(title: String(localized: "Use Its Own Icon"), symbol: "arrow.uturn.backward", isEnabled: symbol != nil, startsGroup: true) {
+            setSymbol(nil)
+        })
+        let symbolCommand = MoveCommand(title: String(localized: "Icon"), symbol: "star.square", children: symbolEntries)
         guard item.isMovable else {
             return [
                 MoveCommand(title: String(localized: "macOS keeps this item in place"), symbol: "lock.fill", isEnabled: false) {},
                 renameCommand(),
+                symbolCommand,
                 groupCommand,
                 hotkeyCommand,
                 copyLinkCommand,
@@ -136,6 +147,7 @@ struct LayoutChip: View {
         } else {
             result.append(renameCommand())
         }
+        result.append(symbolCommand)
         result.append(groupCommand)
         result.append(hotkeyCommand)
         result.append(copyLinkCommand)
@@ -143,6 +155,15 @@ struct LayoutChip: View {
     }
 
     /// The commands as a menu, shown on click and on right-click.
+    /// Symbols offered to stand for an item.
+    static let symbolChoices = [
+        "star", "heart", "bolt", "bell", "timer", "calendar", "clock", "cloud", "globe", "network",
+        "wifi", "lock", "key", "shield", "battery.100", "externaldrive", "printer", "keyboard",
+        "mic", "camera", "music.note", "headphones", "gamecontroller", "paintbrush", "hammer",
+        "wrench.and.screwdriver", "gearshape", "doc", "folder", "tray.full", "envelope",
+        "bubble.left", "person.crop.circle", "chart.bar", "leaf", "cup.and.saucer",
+    ]
+
     private func makeMenu() -> NSMenu {
         MoveCommand.menu(from: commands)
     }
@@ -160,7 +181,7 @@ struct MoveCommand: Identifiable {
     var children: [MoveCommand] = []
     var action: () -> Void = {}
 
-    var id: String { title }
+    var id: String { title + symbol }
 
     static func menu(from commands: [MoveCommand]) -> NSMenu {
         let menu = NSMenu()
