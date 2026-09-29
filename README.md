@@ -115,6 +115,15 @@ To hide a section, its divider grows until the items to its left no longer fit:
 
 Menu bar items are read through each app's accessibility tree, which works on every supported macOS version, including the single-window menu bar of macOS 27.
 
+## Troubleshooting
+
+- **Meno does not respond after an update.** Builds without a fixed certificate get a new Accessibility entry with every update. Meno replaces the old entry and macOS asks again; if it does not, open *Settings › Permissions* and click *Reset and Grant Again*.
+- **An update cannot be installed from within Meno.** Meno replaces itself only where it may write, for example in *Applications* with an administrator account, and not while macOS runs it from a temporary copy of a download. Otherwise it offers the download instead.
+- **An app's icon or the Meno icon is missing on macOS 26 or later.** macOS only shows the items of apps that are allowed in *System Settings › Menu Bar*. Meno's own icon can also be turned off in *Settings › Appearance*; open Settings from Quick Open, with `open meno://settings` or by opening Meno again.
+- **An item moves back after you moved it.** Meno only puts an item back when its app has just started and placed the item elsewhere. Items you move stay where you put them. To stop this, turn off *Keep items where you put them* in *General › Sections*.
+- **macOS asks every month whether Meno may keep recording the screen (macOS 15 and later).** Screen Recording is optional: without it the Shelf shows app icons instead of the items' own artwork, and changes are noticed by text only.
+- Anything else: *Settings › About › Copy Diagnostic Report* copies what Meno sees, to paste into an issue.
+
 ## Good to know
 
 - Moving items simulates ⌘-drags, so Meno briefly takes over the pointer and puts it back afterwards. Items that are not currently on screen cannot be dragged; reveal them first. The clock and the Control Center icon cannot be moved.

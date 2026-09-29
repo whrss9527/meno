@@ -115,6 +115,12 @@ final class UpdateChecker: ObservableObject {
     /// Downloads the latest release, puts it in place of this copy and
     /// opens it. On failure the release page is offered instead.
     func install() async {
+        // A check that runs meanwhile, for example the daily one, ends first.
+        var waited = 0
+        while phase == .checking, waited < 80 {
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            waited += 1
+        }
         guard phase == .idle, var release = available, var version = release.version else { return }
         phase = .downloading
         model.toasts.show(
