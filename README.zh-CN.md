@@ -49,7 +49,9 @@ Meno 会把你不常用的菜单栏图标收起来，需要时点按、悬停、
 
 ## 下载
 
-预编译版本会附在 [Releases](https://github.com/whrss9527/meno/releases) 中（推送 `v0.1.0` 这样的版本标签即可自动发布），每次 CI 运行也会上传 `Meno.zip` 构建产物。这些版本使用临时签名，首次打开时 macOS 会要求确认：右键点按 Meno.app 并选择“打开”，或运行 `xattr -dr com.apple.quarantine /Applications/Meno.app`。
+从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.zip`，解压后把 Meno.app 移到“应用程序”文件夹。该版本为通用二进制（支持 Apple 芯片与 Intel），使用临时签名，首次打开时 macOS 会要求确认：右键点按 Meno.app 并选择“打开”，或运行 `xattr -dr com.apple.quarantine /Applications/Meno.app`。
+
+发布新版本时，推送 `v*` 标签，或在 *Release* 工作流中填写版本号手动运行即可。
 
 ## 构建与运行
 

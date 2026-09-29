@@ -49,7 +49,9 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 
 ## Download
 
-Prebuilt builds are attached to [Releases](https://github.com/whrss9527/meno/releases) (tag a version such as `v0.1.0` to publish one), and every CI run uploads `Meno.zip` as an artifact. These builds are signed ad hoc, so macOS asks for confirmation on first launch: right-click Meno.app and choose *Open*, or run `xattr -dr com.apple.quarantine /Applications/Meno.app`.
+Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/releases/latest), unzip it and move Meno.app to *Applications*. The app is universal (Apple silicon and Intel) and signed ad hoc, so macOS asks for confirmation on first launch: right-click Meno.app and choose *Open*, or run `xattr -dr com.apple.quarantine /Applications/Meno.app`.
+
+New versions are published by pushing a `v*` tag or by running the *Release* workflow with a version number.
 
 ## Build and run
 
