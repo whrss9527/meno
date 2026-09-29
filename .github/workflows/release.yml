@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*"
+  # Builds the release zip without publishing, to check a release build.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,14 +18,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build
+      - name: Toolchain
         run: |
-          VERSION="${GITHUB_REF_NAME#v}" UNIVERSAL=1 make zip
+          xcodebuild -version
+          swift --version
+
+      - name: Build universal app
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            export VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          UNIVERSAL=1 make zip
+
+      - name: Verify bundle
+        run: |
+          lipo -archs build/Meno.app/Contents/MacOS/Meno
+          lipo -archs build/Meno.app/Contents/MacOS/Meno | grep -q arm64
+          lipo -archs build/Meno.app/Contents/MacOS/Meno | grep -q x86_64
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" build/Meno.app/Contents/Info.plist
+          codesign --verify --strict build/Meno.app
+
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Meno-universal
+          path: build/Meno.zip
+          if-no-files-found: error
 
       - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" build/Meno.zip \
-            --title "Meno ${GITHUB_REF_NAME#v}" \
-            --generate-notes
+          notes=".github/releases/${GITHUB_REF_NAME}.md"
+          if [[ -f "$notes" ]]; then
+            gh release create "$GITHUB_REF_NAME" build/Meno.zip \
+              --title "Meno ${GITHUB_REF_NAME#v}" \
+              --notes-file "$notes"
+          else
+            gh release create "$GITHUB_REF_NAME" build/Meno.zip \
+              --title "Meno ${GITHUB_REF_NAME#v}" \
+              --generate-notes
+          fi

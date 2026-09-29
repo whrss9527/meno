@@ -7,6 +7,7 @@
     <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white">
     <img alt="Swift" src="https://img.shields.io/badge/Swift-5.10%2B-F05138?logo=swift&logoColor=white">
     <img alt="Liquid Glass" src="https://img.shields.io/badge/UI-Liquid%20Glass-7C6CFF">
+    <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2563EB"></a>
   </p>
   <p><a href="README.md">English</a></p>
 </div>
@@ -107,3 +108,7 @@ scripts            打包 App、生成图标、检查本地化
 - `swift test` 运行 MenoCore 测试（也可在 Linux 上运行）。
 - `scripts/check-localization.py` 列出界面文字并检查 `Resources/*.lproj` 中的翻译是否完整。
 - `scripts/generate-icon.py` 生成 `Resources/AppIcon.icns`（需要 Pillow 和 numpy）。
+
+## 许可协议
+
+Meno 以 [MIT 许可协议](LICENSE) 发布。

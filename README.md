@@ -7,6 +7,7 @@
     <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white">
     <img alt="Swift" src="https://img.shields.io/badge/Swift-5.10%2B-F05138?logo=swift&logoColor=white">
     <img alt="Liquid Glass" src="https://img.shields.io/badge/UI-Liquid%20Glass-7C6CFF">
+    <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2563EB"></a>
   </p>
   <p><a href="README.zh-CN.md">简体中文</a></p>
 </div>
@@ -107,3 +108,7 @@ scripts            App bundling, icon generation, localization check
 - `swift test` runs the MenoCore tests (they also run on Linux).
 - `scripts/check-localization.py` lists user-facing strings and checks the translations in `Resources/*.lproj`.
 - `scripts/generate-icon.py` renders `Resources/AppIcon.icns` (needs Pillow and numpy).
+
+## License
+
+Meno is available under the [MIT License](LICENSE).
