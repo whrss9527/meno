@@ -207,7 +207,7 @@
 "Low Power Mode is on" = "低电量模式已开启";
 "macOS applies Screen Recording access after Meno restarts." = "macOS 会在 Meno 重新打开后应用屏幕录制权限。";
 "macOS applies the spacing when an app starts, so apps with menu bar items are quit and reopened. Save your work in them first." = "macOS 只在 App 启动时读取间距设置，因此带有菜单栏项目的 App 会被退出并重新打开。请先存储这些 App 中的工作。";
-"macOS asks you to approve these. Meno works locally and never sends anything anywhere." = "macOS 会请你确认这些权限。Meno 只在本地工作，从不向任何地方发送数据。";
+"macOS asks you to approve these. Meno works locally and sends nothing about you anywhere." = "macOS 会请你批准以下权限。Meno 在本地运行，不会把关于你的任何信息发送出去。";
 "macOS does not allow %@ to be moved." = "macOS 不允许移动 %@。";
 "macOS keeps this item in place" = "macOS 固定了这个项目的位置";
 "Makes room by hiding the menus of the frontmost app while items are shown." = "显示项目时暂时隐藏前台 App 的菜单，腾出空间。";
@@ -295,6 +295,7 @@
 "Privacy" = "隐私";
 "Private usage stats with suggestions for a tidier bar." = "私密的使用统计，并给出整理菜单栏的建议。";
 "Put it in the Stash" = "放入暗格";
+"Put items that belong together into a group with an icon of its own, from an item's menu in Settings › Layout." = "在“设置 › 布局”的项目菜单里，可以把相关的项目放进一个拥有独立图标的分组。";
 "Puts the items back where they were before the last change" = "把项目放回上一次更改之前的位置";
 "Quick Open" = "快速打开";
 "Quick Open…" = "快速打开…";

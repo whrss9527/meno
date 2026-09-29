@@ -130,7 +130,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("A little access")
                 .font(.system(size: 26, weight: .bold, design: .rounded))
-            Text("macOS asks you to approve these. Meno works locally and never sends anything anywhere.")
+            Text("macOS asks you to approve these. Meno works locally and sends nothing about you anywhere.")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
             accessRow(
@@ -165,6 +165,7 @@ struct OnboardingView: View {
             tip("contextualmenu.and.cursorarrow", "Right-click it for Quick Open, Zen, Scenes and Settings.")
             tip("keyboard", "Set up shortcuts in Settings › Hotkeys, and open any item with Quick Open.")
             tip("rectangle.3.group", "Arrange items by dragging them in Settings › Layout.")
+            tip("square.grid.2x2", "Put items that belong together into a group with an icon of its own, from an item's menu in Settings › Layout.")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
