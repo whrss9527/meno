@@ -23,6 +23,9 @@ struct LayoutPane: View {
     @State private var isNamingGroup = false
     @State private var groupDraftKey: MenuItemKey?
     @State private var groupName = ""
+    /// Finds items by name; the others fade so the layout stays in view.
+    @State private var filter = ""
+    @FocusState private var filterIsFocused: Bool
 
     private var sections: [ItemSection] {
         model.settings.general.stashEnabled ? [.visible, .hidden, .stash] : [.visible, .hidden]
@@ -194,7 +197,45 @@ struct LayoutPane: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
+            HStack(spacing: 5) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("Find an item", text: $filter)
+                    .textFieldStyle(.plain)
+                    .focused($filterIsFocused)
+                    .frame(width: 130)
+                    .onExitCommand { filter = "" }
+                if !filter.isEmpty {
+                    Button {
+                        filter = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Clear Search"))
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background {
+                Capsule().fill(Color.primary.opacity(0.07))
+            }
+            .background {
+                // ⌘F puts the cursor in the search field.
+                Button("") { filterIsFocused = true }
+                    .keyboardShortcut("f", modifiers: .command)
+                    .opacity(0)
+                    .accessibilityHidden(true)
+            }
         }
+    }
+
+    /// Whether an item matches the search, which every item does while the
+    /// search is empty.
+    private func matchesFilter(_ item: MenuBarItem) -> Bool {
+        let query = filter.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty || FuzzyMatcher.bestScore(query, fields: item.searchFields) != nil
     }
 
     private func lane(for section: ItemSection) -> some View {
@@ -269,6 +310,14 @@ struct LayoutPane: View {
                                 isNamingGroup = true
                             }
                         )
+                        .opacity(matchesFilter(item) ? 1 : 0.25)
+                        .overlay {
+                            if !filter.isEmpty, matchesFilter(item) {
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .strokeBorder(Color.accentColor, lineWidth: 1.5)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                     }
                 }
                 .animation(.easeInOut(duration: 0.2), value: items.map(\.key))

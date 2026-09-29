@@ -99,6 +99,7 @@
 "Choose which items stay in the menu bar and which ones Meno tucks away." = "选择哪些项目留在菜单栏里，哪些交给 Meno 收起来。";
 "Circle" = "圆形";
 "Clear" = "透明";
+"Clear Search" = "清除搜索";
 "Clear the app menus" = "清空 App 菜单";
 "Click" = "点按";
 "Click an empty part of the menu bar" = "点按菜单栏的空白处";
@@ -144,6 +145,7 @@
 "Eye" = "眼睛";
 "Fill" = "填充";
 "Fill in Dark Mode" = "深色模式下的填充";
+"Find an item" = "查找项目";
 "Find and open any item from the keyboard, pinyin included." = "用键盘查找并打开任意项目，支持拼音。";
 "Finder" = "访达";
 "Floating" = "悬浮";
