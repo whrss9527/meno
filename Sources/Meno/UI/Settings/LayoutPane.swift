@@ -55,6 +55,18 @@ struct LayoutPane: View {
                 tip("command", "You can also hold ⌘ and drag icons directly in the menu bar. Meno's dividers mark the sections: the single chevron starts the Hidden section, the double chevron the Stash.")
                 tip("cursorarrow.motionlines", "While Meno moves an item it briefly takes over the pointer. It puts the pointer back when it is done.")
                 tip("bell", "Choose Show When It Changes for a hidden item, and Meno shows it for a moment when its icon or text changes, for example when a sync fails. Icons are compared when Screen Recording is allowed.")
+                if AppInfo.osMajorVersion >= 26 {
+                    HStack(alignment: .top, spacing: 10) {
+                        tip("menubar.arrow.up.rectangle", "An app's items are missing? macOS 26 and later only show the items of apps that are allowed in System Settings › Menu Bar.")
+                        Spacer(minLength: 8)
+                        Button("Open Menu Bar Settings") {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.ControlCenter-Settings.extension") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                        .controlSize(.small)
+                    }
+                }
             }
         }
         .overlay {

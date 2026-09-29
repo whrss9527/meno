@@ -40,6 +40,7 @@
 "Always shown in the menu bar." = "始终显示在菜单栏中。";
 "An app is in front" = "某个 App 在前台";
 "An app is running" = "某个 App 正在运行";
+"An app's items are missing? macOS 26 and later only show the items of apps that are allowed in System Settings › Menu Bar." = "找不到某个 App 的图标？macOS 26 及以上只会显示在“系统设置 › 菜单栏”里允许的 App 的项目。";
 "An external display is connected" = "连接了外接显示器";
 "an external display is connected" = "连接了外接显示器";
 "Another move is still in progress." = "另一个移动操作仍在进行中。";
@@ -254,6 +255,7 @@
 "Open" = "打开";
 "Open a few items and they will show up here." = "打开几个项目后，它们就会出现在这里。";
 "Open a specific menu bar item from anywhere, even while it is hidden." = "在任何地方打开指定的菜单栏项目，即使它处于隐藏状态。";
+"Open Menu Bar Settings" = "打开菜单栏设置";
 "Open Secondary Menu" = "打开辅助菜单";
 "Open Settings" = "打开设置";
 "Open Shelf" = "打开托盘";
