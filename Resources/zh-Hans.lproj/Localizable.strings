@@ -13,6 +13,7 @@
 "a camera is in use" = "摄像头正在使用";
 "a deleted scene" = "已删除的场景";
 "A glass bar for items that do not fit next to the notch." = "为刘海旁放不下的图标准备的玻璃托盘。";
+"A group gets its own icon in the menu bar that shows its items. Visible items move to the Stash." = "分组会在菜单栏里有自己的图标，用来显示组内的项目。常显的项目会移到暗格。";
 "A little access" = "需要一点权限";
 "A meno:// link that applies this scene, for Shortcuts and launchers" = "应用这个场景的 meno:// 链接，可用于快捷指令和启动器";
 "A microphone is in use" = "麦克风正在使用";
@@ -109,8 +110,10 @@
 "Could not change the login item: %@" = "无法更改登录项：%@";
 "Could not check for updates." = "无法检查更新。";
 "Could not reset the entry. Remove Meno from the Accessibility list in System Settings, then add it again." = "没能清除这条记录。请在系统设置的“辅助功能”列表里删掉 Meno，再重新添加。";
+"Create" = "创建";
 "Current" = "当前";
 "Delete" = "删除";
+"Delete Group" = "删除分组";
 "Diagnostic report copied. Paste it into an issue or a message." = "诊断报告已复制，可以粘贴到问题反馈或消息里。";
 "Dividers" = "分隔符";
 "Dividers mark where each section starts. Drag them with ⌘ to change what is hidden." = "分隔符标记每个分区的起点。按住 ⌘ 拖移分隔符即可改变隐藏的内容。";
@@ -119,9 +122,12 @@
 "Dots" = "圆点";
 "Download" = "下载";
 "Drop items here" = "拖到这里";
+"Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items with Group in their menu. Hold ⌘ and drag a group's icon to move it." = "每个分组在菜单栏里都有自己的图标，点按即可在托盘中显示组内的项目。在项目菜单的“分组”里加入项目；按住 ⌘ 拖移分组图标可以调整它的位置。";
+"Edit Groups…" = "编辑分组…";
 "Edit Rule" = "编辑规则";
 "Edit…" = "编辑…";
 "Empty menu bar" = "菜单栏空白处";
+"Empty. Choose Group in an item's menu to add it." = "还是空的。在项目菜单的“分组”里即可加入。";
 "Experimental" = "实验性";
 "Export Settings…" = "导出设置…";
 "Eye" = "眼睛";
@@ -141,6 +147,8 @@
 "Grant Access…" = "授予权限…";
 "Granted" = "已授权";
 "Grant…" = "授权…";
+"Group" = "分组";
+"Groups" = "分组";
 "Hidden" = "隐藏";
 "Hidden and Stash" = "隐藏与暗格";
 "Hidden items cannot be shown" = "隐藏的项目无法显示";
@@ -165,6 +173,7 @@
 "Hover over an empty part of the menu bar" = "指针悬停在菜单栏空白处";
 "How hidden items appear and disappear." = "隐藏项目如何出现和消失。";
 "How you use the menu bar, measured on this Mac only." = "你如何使用菜单栏，仅在这台 Mac 上统计。";
+"Icon" = "图标";
 "Icon size" = "图标大小";
 "Icon spacing" = "图标间距";
 "Ignore hover, scrolling and clicks while Zen is on" = "禅模式开启时忽略悬停、滚动和点按";
@@ -238,11 +247,14 @@
 "Name" = "名称";
 "Never" = "从不";
 "Never shown in the menu bar. Reach these items from the Shelf, Quick Open or with ⌥-click." = "从不显示在菜单栏中。可通过托盘、快速打开或按住 ⌥ 点按来访问。";
+"New Group" = "新建分组";
+"New Group…" = "新建分组…";
 "New in the menu bar: %@" = "菜单栏新增：%@";
 "New markers appear at the left end of the menu bar. Hold ⌘ and drag them where you want them, or use the Layout pane." = "新标记会出现在菜单栏最左端。按住 ⌘ 把它们拖到想要的位置，或使用“布局”面板。";
 "New Rule" = "新建规则";
 "No external display" = "未连接外接显示器";
 "no external display is connected" = "未连接外接显示器";
+"No groups yet." = "还没有分组。";
 "No item shortcuts yet." = "还没有项目快捷键。";
 "No matching items" = "没有匹配的项目";
 "No rules yet. Presets are a good way to begin." = "还没有规则。可以从预设开始。";
@@ -250,6 +262,7 @@
 "No scenes yet." = "还没有场景。";
 "Not available, using frosted glass" = "不可用，改用磨砂玻璃";
 "Not used for %lld days." = "已有 %lld 天未使用。";
+"Nothing in this group yet. Add items from their menu in the layout editor." = "这个分组还是空的。可以在布局编辑器的项目菜单里加入项目。";
 "Nothing is hidden" = "没有隐藏的项目";
 "Nothing to set" = "无需设置";
 "Nothing to suggest right now. Your menu bar looks well arranged." = "暂时没有建议，你的菜单栏看起来井井有条。";
@@ -294,6 +307,8 @@
 "Relaunch Meno" = "重新打开 Meno";
 "Relaunch Meno later to use Screen Recording." = "稍后重新打开 Meno 即可使用屏幕录制权限。";
 "Relaunch to finish" = "重新打开以完成设置";
+"Remove from Group" = "移出分组";
+"Remove from “%@”" = "从“%@”中移除";
 "Remove shortcut" = "移除快捷键";
 "Rename" = "重命名";
 "Rename Item" = "重命名项目";

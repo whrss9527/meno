@@ -12,6 +12,8 @@ final class ShelfController: ObservableObject {
 
     @Published private(set) var isVisible = false
     @Published private(set) var includesStash = false
+    /// The group whose items the Shelf shows, or `nil` for hidden items.
+    @Published private(set) var groupID: UUID?
     @Published var hoveredKey: MenuItemKey?
 
     private var panel: FloatingPanel?
@@ -63,9 +65,24 @@ final class ShelfController: ObservableObject {
     }
 
     func show(includeStash: Bool, trigger: RevealTrigger) {
+        groupID = nil
+        present(includeStash: includeStash || model.settings.shelf.includesStash, trigger: trigger)
+    }
+
+    /// Shows a group's items below its icon, or hides them again.
+    func toggle(group id: UUID) {
+        if isVisible, groupID == id {
+            hide()
+        } else {
+            groupID = id
+            present(includeStash: false, trigger: .click)
+        }
+    }
+
+    private func present(includeStash: Bool, trigger: RevealTrigger) {
         hideTask?.cancel()
         hideTask = nil
-        includesStash = includeStash || model.settings.shelf.includesStash
+        includesStash = includeStash
         let panel = self.panel ?? makePanel()
         isVisible = true
         layout()
@@ -178,6 +195,12 @@ final class ShelfController: ObservableObject {
         guard let screen = model.statusBar.screen ?? NSScreen.main ?? NSScreen.screens.first else { return }
         let menuBarBottom = screen.frame.maxY - ScreenGeometry.menuBarHeight(on: screen)
         var x: CGFloat
+        if let groupID, let icon = model.statusBar.groupIconFrame(groupID) {
+            x = icon.midX - size.width / 2
+            x = min(max(x, screen.frame.minX + 8), screen.frame.maxX - size.width - 8)
+            panel.setFrame(NSRect(x: x, y: menuBarBottom - size.height - 6, width: size.width, height: size.height), display: true)
+            return
+        }
         switch model.settings.shelf.placement {
         case .underIcon:
             if let iconFrame = model.statusBar.toggle?.button?.window?.frame, iconFrame.width < 200 {

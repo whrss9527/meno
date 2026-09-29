@@ -21,6 +21,7 @@ public struct MenoSettings: Codable, Equatable, Sendable {
     /// text changes.
     public var revealOnChange: [String] = []
     @LossyArray public var markers: [MenuMarker] = []
+    @LossyArray public var groups: [ItemGroup] = []
     public var scenes: [LayoutScene] = []
     @LossyArray public var rules: [AutomationRule] = []
     public var onboardingCompleted = false

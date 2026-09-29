@@ -29,6 +29,10 @@ final class StatusBarController: NSObject {
         static func spacer(_ group: SpacerGroup, _ index: Int) -> String {
             "meno.spacer.\(group.rawValue).\(index)"
         }
+
+        static func group(_ id: UUID) -> String {
+            "meno.group.\(id.uuidString)"
+        }
     }
 
     enum SpacerGroup: String, CaseIterable {
@@ -43,6 +47,8 @@ final class StatusBarController: NSObject {
     var hiddenDivider: NSStatusItem?
     var stashDivider: NSStatusItem?
     private var spacers: [SpacerGroup: [NSStatusItem]] = [:]
+    /// The icons of item groups.
+    private var groupItems: [UUID: NSStatusItem] = [:]
     private(set) var state = BarState()
     private var applyTask: Task<Void, Never>?
     private var zenGlyphView: NSImageView?
@@ -87,12 +93,92 @@ final class StatusBarController: NSObject {
         apply(state)
     }
 
+    // MARK: - Groups
+
+    /// Adds, updates and removes the icons of item groups to match the
+    /// settings.
+    func syncGroups() {
+        let groups = model.settings.groups
+        let ids = Set(groups.map(\.id))
+        for (id, item) in groupItems where !ids.contains(id) {
+            NSStatusBar.system.removeStatusItem(item)
+            UserDefaults.standard.removeObject(forKey: Self.positionKey(Name.group(id)))
+            groupItems[id] = nil
+        }
+        for group in groups {
+            let item = groupItems[group.id] ?? makeGroupItem(for: group)
+            groupItems[group.id] = item
+            let image = NSImage(systemSymbolName: group.symbol, accessibilityDescription: group.name)
+                ?? NSImage(systemSymbolName: "square.grid.2x2", accessibilityDescription: group.name)
+            image?.isTemplate = true
+            item.button?.image = image
+            item.button?.toolTip = group.name
+            item.button?.setAccessibilityLabel(group.name)
+        }
+    }
+
+    /// Where a group's icon is, in Cocoa coordinates, for placing its Shelf.
+    func groupIconFrame(_ id: UUID) -> NSRect? {
+        guard let frame = groupItems[id]?.button?.window?.frame, frame.width > 0 else { return nil }
+        return frame
+    }
+
+    private func makeGroupItem(for group: ItemGroup) -> NSStatusItem {
+        let name = Name.group(group.id)
+        // A new group's icon starts next to the Meno icon, on its visible side.
+        if Self.preferredPosition(of: name) == nil, let base = Self.preferredPosition(of: Name.toggle) {
+            let width = Double(toggle?.button?.window?.frame.width ?? 20)
+            UserDefaults.standard.set(base + max(width, 12) + Double(groupItems.count) * 4, forKey: Self.positionKey(name))
+        }
+        return makeItem(name: name, action: #selector(groupClicked(_:)))
+    }
+
+    @objc private func groupClicked(_ sender: Any?) {
+        guard let button = sender as? NSStatusBarButton,
+              let entry = groupItems.first(where: { $0.value.button === button }) else { return }
+        if clickIsSecondary {
+            entry.value.menu = groupMenu(entry.key)
+            button.performClick(nil)
+            entry.value.menu = nil
+            return
+        }
+        model.shelf.toggle(group: entry.key)
+    }
+
+    /// The group's items, to open one without the Shelf.
+    private func groupMenu(_ id: UUID) -> NSMenu {
+        let menu = NSMenu()
+        let group = model.settings.groups.first { $0.id == id }
+        for key in group?.items ?? [] {
+            guard let item = model.inventory.item(for: key) else { continue }
+            let handler = MenuActionHandler { [weak model = self.model] in
+                Task { await model?.activator.open(item, source: .shelf) }
+            }
+            let entry = NSMenuItem(title: item.displayName, action: #selector(MenuActionHandler.invoke), keyEquivalent: "")
+            entry.target = handler
+            entry.representedObject = handler
+            menu.addItem(entry)
+        }
+        if !menu.items.isEmpty {
+            menu.addItem(.separator())
+        }
+        let handler = MenuActionHandler { [weak model = self.model] in
+            model?.openSettings(.layout)
+        }
+        let edit = NSMenuItem(title: String(localized: "Edit Groups…"), action: #selector(MenuActionHandler.invoke), keyEquivalent: "")
+        edit.target = handler
+        edit.representedObject = handler
+        menu.addItem(edit)
+        return menu
+    }
+
     func uninstall() {
         applyTask?.cancel()
         for group in SpacerGroup.allCases { removeSpacers(group) }
-        for item in [toggle, hiddenDivider, stashDivider].compactMap({ $0 }) {
+        for item in [toggle, hiddenDivider, stashDivider].compactMap({ $0 }) + Array(groupItems.values) {
             NSStatusBar.system.removeStatusItem(item)
         }
+        groupItems = [:]
         toggle = nil
         hiddenDivider = nil
         stashDivider = nil
@@ -408,7 +494,7 @@ final class StatusBarController: NSObject {
 
     /// All of Meno's own status item frames.
     var ownFrames: [CGRect] {
-        var items = [toggle, hiddenDivider, stashDivider].compactMap { $0 }
+        var items = [toggle, hiddenDivider, stashDivider].compactMap { $0 } + Array(groupItems.values)
         for group in SpacerGroup.allCases { items += spacers[group] ?? [] }
         return items.compactMap { frame(of: $0) }
     }

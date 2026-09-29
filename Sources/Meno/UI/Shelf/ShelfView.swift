@@ -10,30 +10,12 @@ struct ShelfView: View {
     private var settings: ShelfSettings { model.settings.shelf }
 
     var body: some View {
-        let crowded = shelf.crowdedItems
-        let hidden = inventory.items(in: .hidden)
-        let stash = shelf.includesStash && model.settings.general.stashEnabled ? inventory.items(in: .stash) : []
-
         GlassGroup(spacing: 10) {
             HStack(spacing: 8) {
-                if crowded.isEmpty && hidden.isEmpty && stash.isEmpty {
-                    emptyState
+                if let groupID = shelf.groupID {
+                    groupContent(groupID)
                 } else {
-                    ForEach(crowded) { item in
-                        ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
-                    }
-                    if !crowded.isEmpty && !hidden.isEmpty {
-                        separator.help(Text("Items on the left do not fit into the menu bar"))
-                    }
-                    ForEach(hidden) { item in
-                        ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
-                    }
-                    if !stash.isEmpty {
-                        separator.help(Text("Stash"))
-                        ForEach(stash) { item in
-                            ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
-                        }
-                    }
+                    sectionContent
                 }
                 toolButtons
             }
@@ -47,6 +29,53 @@ struct ShelfView: View {
         }
         .padding(14)
         .fixedSize()
+    }
+
+    /// The items of one group, in the group's order.
+    @ViewBuilder
+    private func groupContent(_ id: UUID) -> some View {
+        let group = model.settings.groups.first { $0.id == id }
+        let items = (group?.items ?? []).compactMap { inventory.item(for: $0) }
+        if items.isEmpty {
+            HStack(spacing: 8) {
+                Image(systemName: group?.symbol ?? "square.grid.2x2")
+                    .foregroundStyle(.secondary)
+                Text("Nothing in this group yet. Add items from their menu in the layout editor.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 6)
+        } else {
+            ForEach(items) { item in
+                ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sectionContent: some View {
+        let crowded = shelf.crowdedItems
+        let hidden = inventory.items(in: .hidden)
+        let stash = shelf.includesStash && model.settings.general.stashEnabled ? inventory.items(in: .stash) : []
+        if crowded.isEmpty && hidden.isEmpty && stash.isEmpty {
+            emptyState
+        } else {
+            ForEach(crowded) { item in
+                ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
+            }
+            if !crowded.isEmpty && !hidden.isEmpty {
+                separator.help(Text("Items on the left do not fit into the menu bar"))
+            }
+            ForEach(hidden) { item in
+                ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
+            }
+            if !stash.isEmpty {
+                separator.help(Text("Stash"))
+                ForEach(stash) { item in
+                    ShelfItemButton(item: item, image: images.image(for: item), settings: settings, shelf: shelf)
+                }
+            }
+        }
     }
 
     private var separator: some View {
@@ -141,6 +170,11 @@ private struct ShelfItemButton: View {
                 Button("Move to Stash") {
                     shelf.hide()
                     shelf.model.move(item.key, to: .stash)
+                }
+            }
+            if let group = shelf.model.settings.groups.group(containing: item.key) {
+                Button("Remove from “\(group.name)”") {
+                    shelf.model.removeItemFromGroups(item.key)
                 }
             }
             if item.section != .visible {

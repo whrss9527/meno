@@ -19,6 +19,9 @@ struct LayoutPane: View {
     @State private var isRenaming = false
     @State private var renamingKey: MenuItemKey?
     @State private var newName = ""
+    @State private var isNamingGroup = false
+    @State private var groupDraftKey: MenuItemKey?
+    @State private var groupName = ""
 
     private var sections: [ItemSection] {
         model.settings.general.stashEnabled ? [.visible, .hidden, .stash] : [.visible, .hidden]
@@ -49,6 +52,7 @@ struct LayoutPane: View {
             ForEach(sections, id: \.self) { section in
                 lane(for: section)
             }
+            groupsCard
             SettingsCard("Good to know", symbol: "lightbulb") {
                 tip("cursorarrow.click", "Click an item to choose where it goes: another section, or one step to the left or right.")
                 tip("hand.draw", "Or drag it onto a section, or onto another item. A line shows on which side it will land.")
@@ -85,6 +89,16 @@ struct LayoutPane: View {
         } message: {
             Text("A scene remembers which items are visible, hidden or stashed.")
         }
+        .alert("New Group", isPresented: $isNamingGroup) {
+            TextField("Name", text: $groupName)
+            Button("Create") {
+                model.createGroup(named: groupName, with: groupDraftKey)
+                groupDraftKey = nil
+            }
+            Button("Cancel", role: .cancel) { groupDraftKey = nil }
+        } message: {
+            Text("A group gets its own icon in the menu bar that shows its items. Visible items move to the Stash.")
+        }
         .alert("Rename Item", isPresented: $isRenaming) {
             TextField("Name", text: $newName)
             Button("Rename") {
@@ -96,6 +110,37 @@ struct LayoutPane: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Meno shows this name in the Shelf, Quick Open, hotkeys and rules. The menu bar itself does not change.")
+        }
+    }
+
+    private var groupsCard: some View {
+        SettingsCard(
+            "Groups",
+            symbol: "square.grid.2x2",
+            footnote: "Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items with Group in their menu. Hold ⌘ and drag a group's icon to move it."
+        ) {
+            if model.settings.groups.isEmpty {
+                Text("No groups yet.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+            ForEach($model.settings.groups) { $group in
+                GroupRow(
+                    group: $group,
+                    items: group.items.compactMap { inventory.item(for: $0) },
+                    images: images,
+                    onRemoveItem: { model.removeItemFromGroups($0) },
+                    onDelete: { model.deleteGroup(group.id) }
+                )
+            }
+            Button {
+                groupName = ""
+                groupDraftKey = nil
+                isNamingGroup = true
+            } label: {
+                Label("New Group", systemImage: "plus")
+            }
+            .menoGlassButtonStyle()
         }
     }
 
@@ -188,6 +233,20 @@ struct LayoutPane: View {
                             addHotkey: {
                                 model.hotkeyDraftItem = item.key
                                 model.openSettings(.hotkeys)
+                            },
+                            groups: model.settings.groups,
+                            groupID: model.settings.groups.group(containing: item.key)?.id,
+                            setGroup: { id in
+                                if let id {
+                                    model.addItem(item.key, toGroup: id)
+                                } else {
+                                    model.removeItemFromGroups(item.key)
+                                }
+                            },
+                            newGroup: {
+                                groupName = ""
+                                groupDraftKey = item.key
+                                isNamingGroup = true
                             }
                         )
                     }
@@ -277,6 +336,12 @@ private struct LayoutChip: View {
     let setShowsOnChange: (Bool) -> Void
     let copyLink: () -> Void
     let addHotkey: () -> Void
+    /// All groups, and the one the item is in.
+    let groups: [ItemGroup]
+    let groupID: UUID?
+    /// Puts the item in a group, or takes it out with `nil`.
+    let setGroup: (UUID?) -> Void
+    let newGroup: () -> Void
 
     @State private var dropEdge: HorizontalEdge?
     @State private var isHovering = false
@@ -342,10 +407,18 @@ private struct LayoutChip: View {
         }
         let copyLinkCommand = MoveCommand(title: String(localized: "Copy Link"), symbol: "link", action: copyLink)
         let hotkeyCommand = MoveCommand(title: String(localized: "Add Shortcut…"), symbol: "keyboard", action: addHotkey)
+        var groupEntries = groups.map { group in
+            MoveCommand(title: group.name, symbol: group.symbol, isChecked: group.id == groupID) {
+                setGroup(group.id == groupID ? nil : group.id)
+            }
+        }
+        groupEntries.append(MoveCommand(title: String(localized: "New Group…"), symbol: "plus", startsGroup: true, action: newGroup))
+        let groupCommand = MoveCommand(title: String(localized: "Group"), symbol: "square.grid.2x2", children: groupEntries)
         guard item.isMovable else {
             return [
                 MoveCommand(title: String(localized: "macOS keeps this item in place"), symbol: "lock.fill", isEnabled: false) {},
                 renameCommand(),
+                groupCommand,
                 hotkeyCommand,
                 copyLinkCommand,
             ]
@@ -370,6 +443,7 @@ private struct LayoutChip: View {
         } else {
             result.append(renameCommand())
         }
+        result.append(groupCommand)
         result.append(hotkeyCommand)
         result.append(copyLinkCommand)
         return result
@@ -377,22 +451,7 @@ private struct LayoutChip: View {
 
     /// The commands as a menu, shown on click and on right-click.
     private func makeMenu() -> NSMenu {
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-        for command in commands {
-            if command.startsGroup {
-                menu.addItem(.separator())
-            }
-            let handler = MenuActionHandler(command.action)
-            let entry = NSMenuItem(title: command.title, action: #selector(MenuActionHandler.invoke), keyEquivalent: "")
-            entry.target = handler
-            entry.representedObject = handler
-            entry.image = NSImage(systemSymbolName: command.symbol, accessibilityDescription: nil)
-            entry.isEnabled = command.isEnabled
-            entry.state = command.isChecked ? .on : .off
-            menu.addItem(entry)
-        }
-        return menu
+        MoveCommand.menu(from: commands)
     }
 }
 
@@ -404,9 +463,36 @@ private struct MoveCommand: Identifiable {
     var isChecked = false
     /// Whether a separator comes before this entry.
     var startsGroup = false
-    let action: () -> Void
+    /// Entries of a submenu, instead of an action.
+    var children: [MoveCommand] = []
+    var action: () -> Void = {}
 
     var id: String { title }
+
+    static func menu(from commands: [MoveCommand]) -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        for command in commands {
+            if command.startsGroup, !menu.items.isEmpty {
+                menu.addItem(.separator())
+            }
+            let entry: NSMenuItem
+            if command.children.isEmpty {
+                let handler = MenuActionHandler(command.action)
+                entry = NSMenuItem(title: command.title, action: #selector(MenuActionHandler.invoke), keyEquivalent: "")
+                entry.target = handler
+                entry.representedObject = handler
+            } else {
+                entry = NSMenuItem(title: command.title, action: nil, keyEquivalent: "")
+                entry.submenu = Self.menu(from: command.children)
+            }
+            entry.image = NSImage(systemSymbolName: command.symbol, accessibilityDescription: nil)
+            entry.isEnabled = command.isEnabled
+            entry.state = command.isChecked ? .on : .off
+            menu.addItem(entry)
+        }
+        return menu
+    }
 }
 
 /// Takes the mouse over an item in the layout editor.
@@ -612,6 +698,82 @@ private final class ChipMouseView: NSView, NSDraggingSource {
             NSColor.labelColor.set()
             rect.fill(using: .sourceAtop)
             return true
+        }
+    }
+}
+
+
+/// A group in the layout editor: its icon, name and items.
+private struct GroupRow: View {
+    @Binding var group: ItemGroup
+    let items: [MenuBarItem]
+    @ObservedObject var images: ItemImageCache
+    let onRemoveItem: (MenuItemKey) -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Menu {
+                    ForEach(ItemGroup.symbols, id: \.self) { symbol in
+                        Button {
+                            group.symbol = symbol
+                        } label: {
+                            Image(systemName: symbol)
+                        }
+                    }
+                } label: {
+                    Image(systemName: group.symbol)
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .help(Text("Icon"))
+                TextField("Name", text: $group.name)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 220)
+                Spacer()
+                Button(role: .destructive, action: onDelete) {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help(Text("Delete Group"))
+            }
+            if items.isEmpty {
+                Text("Empty. Choose Group in an item's menu to add it.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            } else {
+                FlowLayout(spacing: 6, lineSpacing: 6) {
+                    ForEach(items) { item in
+                        HStack(spacing: 5) {
+                            Image(menuItemImage: images.image(for: item))
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 14, height: 14)
+                            Text(verbatim: item.displayName)
+                                .font(.system(size: 11))
+                                .lineLimit(1)
+                            Button {
+                                onRemoveItem(item.key)
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                            .help(Text("Remove from Group"))
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background { Capsule().fill(Color.primary.opacity(0.07)) }
+                    }
+                }
+            }
+        }
+        .padding(10)
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.primary.opacity(0.04))
         }
     }
 }
