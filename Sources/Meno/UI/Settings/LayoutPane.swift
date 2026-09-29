@@ -188,8 +188,8 @@ struct LayoutPane: View {
             }
             .menoGlassButtonStyle()
             .keyboardShortcut("z", modifiers: .command)
-            .disabled(mover.undoLayout == nil || mover.isMoving)
-            .help(Text("Puts the items back where they were before the last change"))
+            .disabled(mover.undoStack.isEmpty || mover.isMoving)
+            .help(Text("Puts the items back where they were before the last change. Undo again to go further back."))
 
             Spacer()
             if let date = inventory.lastRefresh {

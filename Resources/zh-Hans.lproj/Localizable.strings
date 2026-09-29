@@ -328,7 +328,7 @@
 "Private usage stats with suggestions for a tidier bar." = "私密的使用统计，并给出整理菜单栏的建议。";
 "Put it in the Stash" = "放入暗格";
 "Put items that belong together into a group with an icon of its own, from an item's menu in Settings › Layout." = "在“设置 › 布局”的项目菜单里，可以把相关的项目放进一个拥有独立图标的分组。";
-"Puts the items back where they were before the last change" = "把项目放回上一次更改之前的位置";
+"Puts the items back where they were before the last change. Undo again to go further back." = "把项目放回上一次更改之前的位置。再次撤销可以继续往前退。";
 "Quick Open" = "快速打开";
 "Quick Open…" = "快速打开…";
 "Quiet menu bar in the evening" = "晚间保持菜单栏安静";

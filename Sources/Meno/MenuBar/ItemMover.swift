@@ -67,8 +67,14 @@ final class ItemMover: ObservableObject {
 
     @Published private(set) var isMoving = false
     @Published private(set) var progress: (done: Int, total: Int)?
+    /// The arrangements before the latest changes the person made through
+    /// Meno, oldest first.
+    @Published private(set) var undoStack: [SceneLayout] = []
+    /// How many changes can be undone.
+    static let undoLimit = 20
+
     /// The arrangement before the last change the person made through Meno.
-    @Published private(set) var undoLayout: SceneLayout?
+    var undoLayout: SceneLayout? { undoStack.last }
 
     init(model: AppModel) {
         self.model = model
@@ -90,7 +96,8 @@ final class ItemMover: ObservableObject {
         try await perform(.layout(layout), automatic: automatic)
     }
 
-    /// Puts the items back where they were before the last change.
+    /// Puts the items back where they were before the last change. Undoing
+    /// again goes back one more change.
     func undo() async throws {
         guard let layout = undoLayout else { return }
         try await perform(.layout(layout), automatic: false, isUndo: true)
@@ -125,8 +132,8 @@ final class ItemMover: ObservableObject {
                 }
             }
             progress = (moves.count, moves.count)
-            if isUndo {
-                undoLayout = nil
+            if isUndo, !undoStack.isEmpty {
+                undoStack.removeLast()
             }
         } catch {
             finish(before: before, moved: moved, automatic: automatic, isUndo: isUndo)
@@ -139,7 +146,10 @@ final class ItemMover: ObservableObject {
         // Rules undo their own changes, so only changes made by the person
         // can be undone here, including the part of one that failed midway.
         if moved, !automatic, !isUndo, let before {
-            undoLayout = before
+            undoStack.append(before)
+            if undoStack.count > Self.undoLimit {
+                undoStack.removeFirst(undoStack.count - Self.undoLimit)
+            }
         }
         model.reveal.endLayoutSession()
         model.inventory.scheduleRefresh(after: 0.5)
