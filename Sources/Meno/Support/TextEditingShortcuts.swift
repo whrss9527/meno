@@ -7,6 +7,8 @@ import AppKit
 @MainActor
 enum TextEditingShortcuts {
     private static var monitor: LocalEventMonitor?
+    /// Set while a shortcut is being recorded, which needs every key.
+    static var isSuspended = false
 
     static func install() {
         guard monitor == nil else { return }
@@ -18,6 +20,7 @@ enum TextEditingShortcuts {
     }
 
     private static func handle(_ event: NSEvent) -> Bool {
+        guard !isSuspended else { return false }
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         guard flags.contains(.command), flags.isDisjoint(with: [.control, .option]),
               NSApp.keyWindow?.firstResponder is NSTextView,

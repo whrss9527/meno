@@ -48,6 +48,7 @@ struct ShortcutRecorder: View {
     private func start() {
         isRecording = true
         rejected = false
+        TextEditingShortcuts.isSuspended = true
         model.hotkeys.unregisterAll()
         let monitor = LocalEventMonitor(mask: [.keyDown]) { event in
             handle(event)
@@ -62,6 +63,7 @@ struct ShortcutRecorder: View {
         monitor = nil
         guard isRecording else { return }
         isRecording = false
+        TextEditingShortcuts.isSuspended = false
         model.registerHotkeys()
     }
 
