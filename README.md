@@ -54,9 +54,11 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 
 Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/releases/latest), unzip it and move Meno.app to *Applications*. The app is universal (Apple silicon and Intel) and signed ad hoc, so macOS asks for confirmation on first launch: right-click Meno.app and choose *Open*, or run `xattr -dr com.apple.quarantine /Applications/Meno.app`.
 
+Meno installs updates itself: when a check finds a newer release, choose *Install and Relaunch* in the notice, in *Settings › About* or in Meno's menu. Meno downloads the release from GitHub, checks its checksum, version and code signature, replaces itself and opens again. When Meno runs from a folder it cannot write to, it offers the download instead.
+
 New versions are published by pushing a `v*` tag or by running the *Release* workflow with a version number.
 
-After an update, macOS may keep an entry for the previous build in the Accessibility list that no longer counts. Meno then opens *Settings › Permissions*, where *Reset and Grant Again* replaces the entry. To keep the permission across updates altogether, sign releases with a fixed certificate: run `scripts/create-signing-certificate.sh` once and add the two secrets it prints, `MACOS_CERTIFICATE_P12` and `MACOS_CERTIFICATE_PASSWORD`, to the repository. The *Release* workflow then signs with it.
+After an update, macOS may keep an entry for the previous build in the Accessibility list that no longer counts. Meno then opens *Settings › Permissions*, replaces the entry and macOS asks again; *Reset and Grant Again* does the same by hand. To keep the permission across updates altogether, sign releases with a fixed certificate: run `scripts/create-signing-certificate.sh` once and add the two secrets it prints, `MACOS_CERTIFICATE_P12` and `MACOS_CERTIFICATE_PASSWORD`, to the repository. The *Release* workflow then signs with it.
 
 ## Build and run
 
@@ -85,7 +87,7 @@ Rules about a microphone or camera in use only ask macOS whether a device is run
 
 A rule condition that runs a command runs exactly the command you typed, every 10 seconds with zsh, and only while the rule is on. Rules with commands are turned off when you import settings, so a settings file cannot run anything before you have looked at it.
 
-Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*. Settings and statistics live in `~/Library/Application Support/Meno`.
+Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*; and to download a release you chose to install. Settings and statistics live in `~/Library/Application Support/Meno`.
 
 ## Links
 

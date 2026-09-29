@@ -54,9 +54,11 @@ Meno 会把你不常用的菜单栏图标收起来，需要时点按、悬停、
 
 从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.zip`，解压后把 Meno.app 移到“应用程序”文件夹。该版本为通用二进制（支持 Apple 芯片与 Intel），使用临时签名，首次打开时 macOS 会要求确认：右键点按 Meno.app 并选择“打开”，或运行 `xattr -dr com.apple.quarantine /Applications/Meno.app`。
 
+Meno 可以自己安装更新：检查到新版本后，在提示、“设置 › 关于”或 Meno 的菜单里选择“安装并重新打开”即可。Meno 会从 GitHub 下载新版本，核对校验和、版本号与代码签名，替换自身后重新打开。如果 Meno 所在的文件夹不可写入，则会改为提供下载链接。
+
 发布新版本时，推送 `v*` 标签，或在 *Release* 工作流中填写版本号手动运行即可。
 
-更新后，系统设置的“辅助功能”列表里可能还留着上一个版本的记录，它对新版本不生效。这时 Meno 会打开“设置 › 权限”，点“清除并重新授权”即可换成新版本的记录。想让更新后不再需要重新授权，可以用固定的证书给发布包签名：运行一次 `scripts/create-signing-certificate.sh`，把它最后打印的两项 `MACOS_CERTIFICATE_P12` 和 `MACOS_CERTIFICATE_PASSWORD` 添加到仓库的 Secrets 里，之后 *Release* 工作流会用这张证书签名。
+更新后，系统设置的“辅助功能”列表里可能还留着上一个版本的记录，它对新版本不生效。这时 Meno 会打开“设置 › 权限”，自动换成新版本的记录，macOS 随后会再次请求授权；也可以手动点“清除并重新授权”。想让更新后不再需要重新授权，可以用固定的证书给发布包签名：运行一次 `scripts/create-signing-certificate.sh`，把它最后打印的两项 `MACOS_CERTIFICATE_P12` 和 `MACOS_CERTIFICATE_PASSWORD` 添加到仓库的 Secrets 里，之后 *Release* 工作流会用这张证书签名。
 
 ## 构建与运行
 
@@ -85,7 +87,7 @@ make test       # 运行单元测试
 
 带命令的规则条件只会运行你输入的那条命令：每 10 秒用 zsh 运行一次，且只在规则开启时运行。导入设置时，带命令的规则会被关闭，因此设置文件在你检查之前无法运行任何东西。
 
-Meno 没有数据分析或账户。它只会在检查更新时联网，向 GitHub 查询最新版本：在“设置 › 关于”里点“检查更新”时，或在“通用”里开启每日检查后每天一次。设置与统计数据保存在 `~/Library/Application Support/Meno`。
+Meno 没有数据分析或账户。它只会在检查更新时联网，向 GitHub 查询最新版本：在“设置 › 关于”里点“检查更新”时，或在“通用”里开启每日检查后每天一次；此外只在下载你选择安装的新版本时联网。设置与统计数据保存在 `~/Library/Application Support/Meno`。
 
 ## 链接
 

@@ -103,25 +103,39 @@ final class AppModel: ObservableObject {
             automation.start()
             temporary.schedule()
         }
+        let updated = recordLaunchedVersion()
         if !settings.onboardingCompleted {
             onboarding.show()
         } else if !permissions.accessibility {
             // Most often right after an update, when macOS no longer counts
             // the entry of the previous build.
             openSettings(.permissions)
+            // An ad hoc signed build gets an entry of its own, so the old one
+            // is replaced right away and macOS asks again.
+            if updated, CodeSigning.isAdHoc, permissions.needsAccessibilityAgain {
+                resetAccessibility()
+            }
         }
         usage.prune(keepingDays: 90)
-        announceUpdateIfNeeded()
+        if updated {
+            announceUpdate()
+        }
     }
 
-    /// After an update, offers the release notes once.
-    private func announceUpdateIfNeeded() {
+    /// Remembers this version and returns whether it is newer than the one
+    /// that ran before.
+    private func recordLaunchedVersion() -> Bool {
         let key = "LastLaunchedVersion"
         let defaults = UserDefaults.standard
         let previous = defaults.string(forKey: key)
+        defaults.set(AppInfo.version, forKey: key)
+        guard let previous, let old = AppVersion(previous), let new = AppVersion(AppInfo.version) else { return false }
+        return old < new
+    }
+
+    /// After an update, offers the release notes once.
+    private func announceUpdate() {
         let current = AppInfo.version
-        defaults.set(current, forKey: key)
-        guard let previous, let old = AppVersion(previous), let new = AppVersion(current), old < new else { return }
         let notes = AppInfo.repositoryURL.appendingPathComponent("releases/tag/v\(current)")
         toasts.show(
             String(localized: "Meno was updated to \(current)."),
