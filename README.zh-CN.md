@@ -7,7 +7,7 @@
     <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white">
     <img alt="Swift" src="https://img.shields.io/badge/Swift-5.10%2B-F05138?logo=swift&logoColor=white">
     <img alt="Liquid Glass" src="https://img.shields.io/badge/UI-Liquid%20Glass-7C6CFF">
-    <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2563EB"></a>
+    <a href="LICENSE"><img alt="GPL-3.0 License" src="https://img.shields.io/badge/license-GPL--3.0-2563EB"></a>
   </p>
   <p><a href="README.md">English</a></p>
 </div>
@@ -113,4 +113,12 @@ scripts            打包 App、生成图标、检查本地化
 
 ## 许可协议
 
-Meno 以 [MIT 许可协议](LICENSE) 发布。
+Copyright © 2026 whrss9527
+
+Meno 是自由软件，以 [GNU 通用公共许可证第 3 版（GPL-3.0）](LICENSE) 发布：可以自由使用、研究、修改和分享；分发 Meno 或修改后的版本时，需要以同样的许可证提供源代码。
+
+「Meno」这个名字和 Meno 的图标不在 GPL 授权范围内（GPL-3.0 第 7 条 e 项）。介绍 Meno、分享未经修改的副本时可以使用；分发修改后的版本时，请换用自己的名字和图标。
+
+贡献需接受 [CONTRIBUTING.md](CONTRIBUTING.md) 中的贡献者协议。
+
+Meno 0.1.0 以 MIT 许可协议发布，这个版本仍然适用 MIT 许可协议。

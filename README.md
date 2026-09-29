@@ -7,7 +7,7 @@
     <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white">
     <img alt="Swift" src="https://img.shields.io/badge/Swift-5.10%2B-F05138?logo=swift&logoColor=white">
     <img alt="Liquid Glass" src="https://img.shields.io/badge/UI-Liquid%20Glass-7C6CFF">
-    <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2563EB"></a>
+    <a href="LICENSE"><img alt="GPL-3.0 License" src="https://img.shields.io/badge/license-GPL--3.0-2563EB"></a>
   </p>
   <p><a href="README.zh-CN.md">简体中文</a></p>
 </div>
@@ -113,4 +113,12 @@ scripts            App bundling, icon generation, localization check
 
 ## License
 
-Meno is available under the [MIT License](LICENSE).
+Copyright © 2026 whrss9527
+
+Meno is free software, released under the [GNU General Public License v3.0](LICENSE). You may use, study, change and share it. If you distribute Meno or a modified version, you must make its source code available under the same license.
+
+The name "Meno" and the Meno icon are not licensed under the GPL (section 7(e)). You may use them to refer to Meno and when sharing unmodified copies, but a modified version you distribute needs its own name and icon.
+
+Contributions are accepted under the contributor license agreement in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Meno 0.1.0 was released under the MIT License, and that version stays available under it.
