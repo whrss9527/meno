@@ -182,6 +182,7 @@
 "Markers are small items you add to the menu bar to group other items: some space, a thin line, a dot, a symbol or a short label such as “Work”." = "标记是你添加到菜单栏中、用来给其他项目分组的小元素：一段空白、一条细线、一个圆点、一个符号，或像“工作”这样的简短标签。";
 "Meno adds a few small dividers to your menu bar. Everything left of a divider belongs to that section." = "Meno 会在菜单栏中添加几个小小的分隔符。分隔符左侧的一切都属于对应的分区。";
 "Meno could not find where to drop the item." = "Meno 找不到放置项目的位置。";
+"Meno did not rearrange the menu bar because the mouse and keyboard were in use the whole time." = "鼠标和键盘一直在使用，Meno 没有调整菜单栏。";
 "Meno icon" = "Meno 图标";
 "Meno is running outside an app bundle, so macOS attributes permissions to the program that started it. Use “make run” for an app bundle." = "Meno 当前未以 App 包的形式运行，macOS 会把权限归到启动它的程序上。请使用“make run”构建 App 包。";
 "Meno keeps your menu bar calm. Hide the icons you rarely need, bring them back in a click, and keep everything reachable from the keyboard." = "Meno 让你的菜单栏保持安静。隐藏不常用的图标，一键唤回，并且一切都能用键盘直达。";

@@ -138,23 +138,23 @@ final class AutomationController: ObservableObject {
         case .applyScene(let id):
             guard let scene = model.settings.scenes.first(where: { $0.id == id }) else { return }
             let previous = model.inventory.currentLayout()
-            Task { await model.applyScene(scene) }
+            Task { await model.applyScene(scene, automatic: true) }
             undo[rule.id] = Undo(revert: { [weak model = self.model] in
-                Task { try? await model?.mover.apply(previous) }
+                Task { try? await model?.mover.apply(previous, automatic: true) }
             })
         case .showItem(let key), .hideItem(let key), .stashItem(let key):
             guard let target = rule.action.targetSection else { return }
             let original = model.inventory.item(for: key)?.section
             Task { [weak model = self.model] in
                 do {
-                    try await model?.mover.move(key, to: target)
+                    try await model?.mover.move(key, to: target, automatic: true)
                 } catch {
                     Log.rules.error("Rule move failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
             if let original, original != target {
                 undo[rule.id] = Undo(revert: { [weak model = self.model] in
-                    Task { try? await model?.mover.move(key, to: original) }
+                    Task { try? await model?.mover.move(key, to: original, automatic: true) }
                 })
             }
         }

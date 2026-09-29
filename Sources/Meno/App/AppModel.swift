@@ -292,10 +292,11 @@ final class AppModel: ObservableObject {
     }
 
     /// Moves an item into a section, reporting problems as a toast.
-    func move(_ key: MenuItemKey, to section: ItemSection) {
+    /// Automatic moves wait until the mouse and keyboard are idle.
+    func move(_ key: MenuItemKey, to section: ItemSection, automatic: Bool = false) {
         Task {
             do {
-                try await mover.move(key, to: section)
+                try await mover.move(key, to: section, automatic: automatic)
             } catch {
                 toasts.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
             }
@@ -337,11 +338,11 @@ final class AppModel: ObservableObject {
             toasts.show(String(localized: "New in the menu bar: \(item.displayName)"), symbol: "sparkles", actions: actions)
         case .hide:
             if item.section == .visible {
-                move(item.key, to: .hidden)
+                move(item.key, to: .hidden, automatic: true)
             }
         case .stash:
             if item.section != .stash, settings.general.stashEnabled {
-                move(item.key, to: .stash)
+                move(item.key, to: .stash, automatic: true)
             }
         }
     }
@@ -370,9 +371,9 @@ final class AppModel: ObservableObject {
     }
 
     @discardableResult
-    func applyScene(_ scene: LayoutScene, announce: Bool = true) async -> Bool {
+    func applyScene(_ scene: LayoutScene, announce: Bool = true, automatic: Bool = false) async -> Bool {
         do {
-            try await mover.apply(scene.layout)
+            try await mover.apply(scene.layout, automatic: automatic)
             activeSceneID = scene.id
             if announce {
                 toasts.show(String(localized: "Scene “\(scene.name)” applied."), symbol: scene.symbol)

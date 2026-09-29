@@ -13,6 +13,7 @@ final class ItemMover: ObservableObject {
         case offScreen(String)
         case didNotMove(String)
         case plan
+        case personBusy
 
         var errorDescription: String? {
             switch self {
@@ -32,6 +33,8 @@ final class ItemMover: ObservableObject {
                 return String(localized: "\(name) did not move. Try dragging it with ⌘ held down.")
             case .plan:
                 return String(localized: "The layout could not be planned.")
+            case .personBusy:
+                return String(localized: "Meno did not rearrange the menu bar because the mouse and keyboard were in use the whole time.")
             }
         }
     }
@@ -45,26 +48,31 @@ final class ItemMover: ObservableObject {
         self.model = model
     }
 
-    func move(_ key: MenuItemKey, to section: ItemSection) async throws {
+    /// Moves an item into a section. Automatic moves (from rules and for new
+    /// items) wait until the mouse and keyboard are idle.
+    func move(_ key: MenuItemKey, to section: ItemSection, automatic: Bool = false) async throws {
         let placement = LayoutPlanner.placement(for: section, includesStash: model.settings.general.stashEnabled)
-        try await perform([MoveStep(item: key, placement: placement)])
+        try await perform([MoveStep(item: key, placement: placement)], layout: nil, automatic: automatic)
     }
 
     func move(_ key: MenuItemKey, placement: Placement) async throws {
-        try await perform([MoveStep(item: key, placement: placement)])
+        try await perform([MoveStep(item: key, placement: placement)], layout: nil, automatic: false)
     }
 
     /// Arranges the menu bar like `layout`.
-    func apply(_ layout: SceneLayout) async throws {
-        try await perform(nil, layout: layout)
+    func apply(_ layout: SceneLayout, automatic: Bool = false) async throws {
+        try await perform(nil, layout: layout, automatic: automatic)
     }
 
     func perform(_ steps: [MoveStep]) async throws {
-        try await perform(steps, layout: nil)
+        try await perform(steps, layout: nil, automatic: false)
     }
 
-    private func perform(_ plannedSteps: [MoveStep]?, layout: SceneLayout?) async throws {
+    private func perform(_ plannedSteps: [MoveStep]?, layout: SceneLayout?, automatic: Bool) async throws {
         guard model.permissions.accessibility else { throw MoveError.noPermission }
+        if automatic {
+            try await waitForIdleInput(duringMove: false)
+        }
         guard !isMoving else { throw MoveError.busy }
         isMoving = true
         model.reveal.beginLayoutSession()
@@ -86,6 +94,9 @@ final class ItemMover: ObservableObject {
             }
             for (index, step) in steps.enumerated() {
                 progress = (index, steps.count)
+                if automatic && index > 0 {
+                    try await waitForIdleInput(duringMove: true)
+                }
                 try await execute(step)
             }
             progress = (steps.count, steps.count)
@@ -116,6 +127,32 @@ final class ItemMover: ObservableObject {
         }
         let name = model.inventory.item(for: step.item)?.displayName ?? step.item.owner
         throw MoveError.didNotMove(name)
+    }
+
+    /// Waits for a pause in mouse and keyboard use, so an automatic move
+    /// never takes the pointer mid-gesture or turns typing into ⌘ shortcuts.
+    /// Before a move starts it also waits for other moves to finish. Gives
+    /// up after five minutes.
+    private func waitForIdleInput(duringMove: Bool) async throws {
+        let deadline = Date().addingTimeInterval(300)
+        while Date() < deadline {
+            try Task.checkCancellation()
+            let idle = Self.secondsSinceInput >= 1.5
+                && NSEvent.pressedMouseButtons == 0
+                && NSEvent.modifierFlags.isDisjoint(with: [.command, .option, .control, .shift])
+            if idle && (duringMove || !isMoving) {
+                return
+            }
+            try await Task.sleep(nanoseconds: 400_000_000)
+        }
+        throw MoveError.personBusy
+    }
+
+    /// Seconds since the person last used a mouse, trackpad or keyboard.
+    /// Meno's own synthesized events do not count.
+    private static var secondsSinceInput: TimeInterval {
+        let types: [CGEventType] = [.mouseMoved, .leftMouseDown, .leftMouseDragged, .rightMouseDown, .otherMouseDown, .scrollWheel, .keyDown, .flagsChanged]
+        return types.map { CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: $0) }.min() ?? .greatestFiniteMagnitude
     }
 
     private func isSatisfied(_ step: MoveStep) -> Bool {
