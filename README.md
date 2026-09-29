@@ -43,7 +43,7 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 - **Insights:** private, on-device statistics — how often you reveal, your most used items, and suggestions such as "you opened this 12 times this week while it was hidden — keep it visible?".
 - **New arrivals:** when an app adds a new icon, Meno can ask you, hide it or stash it.
 - **Appearance:** choose the Meno icon, divider style, Shelf glass and tint, a menu bar tint with gradient, border, shadow and split "island" shapes (experimental), and system-wide icon spacing (beta).
-- English and Simplified Chinese.
+- English, Simplified Chinese and Traditional Chinese.
 
 ## Requirements
 

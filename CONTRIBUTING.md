@@ -5,7 +5,7 @@ Issues and pull requests are welcome.
 Before you open a pull request:
 
 - Run `swift test`.
-- Run `python3 scripts/check-localization.py`, and add a Simplified Chinese translation for every new user-facing string to `Resources/zh-Hans.lproj/Localizable.strings`.
+- Run `python3 scripts/check-localization.py`, and add a Simplified and a Traditional Chinese translation for every new user-facing string to `Resources/zh-Hans.lproj/Localizable.strings` and `Resources/zh-Hant.lproj/Localizable.strings`. The Traditional Chinese strings follow the wording of macOS in Taiwan (選單列, 輔助使用, 快速鍵, 按一下).
 
 ## Contributor license agreement
 
