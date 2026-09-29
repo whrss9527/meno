@@ -32,6 +32,8 @@ struct AboutPane: View {
                 Feature(symbol: "wand.and.stars", title: "Rules and Scenes", text: "The menu bar adapts to apps, displays, power and time.")
                 Feature(symbol: "leaf", title: "Zen", text: "One shortcut clears the menu bar for recordings and talks.")
                 Feature(symbol: "chart.bar.xaxis", title: "Insights", text: "Private usage stats with suggestions for a tidier bar.")
+                Feature(symbol: "square.grid.2x2", title: "Groups", text: "Items that belong together, behind one icon of their own.")
+                Feature(symbol: "bell", title: "Show When It Changes", text: "Hidden items appear for a moment when something happens.")
             }
 
             SettingsCard("This Mac", symbol: "desktopcomputer") {

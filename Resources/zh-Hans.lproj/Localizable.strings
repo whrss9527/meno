@@ -151,6 +151,7 @@
 "Groups" = "分组";
 "Hidden" = "隐藏";
 "Hidden and Stash" = "隐藏与暗格";
+"Hidden items appear for a moment when something happens." = "隐藏的项目有变化时会短暂出现。";
 "Hidden items cannot be shown" = "隐藏的项目无法显示";
 "Hidden section divider" = "隐藏分区分隔符";
 "Hide" = "隐藏";
@@ -187,6 +188,7 @@
 "Items left of this divider are hidden" = "此分隔符左侧的项目会被隐藏";
 "Items left of this divider go to the Stash" = "此分隔符左侧的项目会放入暗格";
 "Items on the left do not fit into the menu bar" = "左侧是菜单栏里放不下的项目";
+"Items that belong together, behind one icon of their own." = "把相关的项目收进一个单独的图标。";
 "Items to the right of the Meno icon stay visible." = "Meno 图标右侧的项目会保持显示。";
 "keep %@ visible" = "让 %@ 保持显示";
 "Keep an item visible" = "让某个项目保持显示";
