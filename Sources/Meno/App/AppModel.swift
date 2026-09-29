@@ -89,6 +89,24 @@ final class AppModel: ObservableObject {
             openSettings(.permissions)
         }
         usage.prune(keepingDays: 90)
+        announceUpdateIfNeeded()
+    }
+
+    /// After an update, offers the release notes once.
+    private func announceUpdateIfNeeded() {
+        let key = "LastLaunchedVersion"
+        let defaults = UserDefaults.standard
+        let previous = defaults.string(forKey: key)
+        let current = AppInfo.version
+        defaults.set(current, forKey: key)
+        guard let previous, let old = AppVersion(previous), let new = AppVersion(current), old < new else { return }
+        let notes = AppInfo.repositoryURL.appendingPathComponent("releases/tag/v\(current)")
+        toasts.show(
+            String(localized: "Meno was updated to \(current)."),
+            symbol: "sparkles",
+            actions: [ToastCenter.Action(title: String(localized: "What's New")) { NSWorkspace.shared.open(notes) }],
+            duration: 10
+        )
     }
 
     func prepareForTermination() {

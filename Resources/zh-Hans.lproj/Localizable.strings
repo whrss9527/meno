@@ -217,6 +217,7 @@
 "Meno reads and moves menu bar items through Accessibility." = "Meno 通过辅助功能读取和移动菜单栏项目。";
 "Meno Settings" = "Meno 设置";
 "Meno shows this name in the Shelf, Quick Open, hotkeys and rules. The menu bar itself does not change." = "Meno 会在托盘、快速打开、快捷键和规则中使用这个名字，菜单栏本身不会改变。";
+"Meno was updated to %@." = "Meno 已更新到 %@。";
 "Meno works entirely on your Mac. It has no network features, no analytics and no accounts. Usage statistics and settings are stored in ~/Library/Application Support/Meno." = "Meno 完全在你的 Mac 上运行：没有联网功能，没有数据分析，也没有账户。使用统计和设置保存在 ~/Library/Application Support/Meno 中。";
 "Meno — click to show or hide items, ⌥-click to include the Stash, right-click for more" = "Meno — 点按显示或隐藏项目，按住 ⌥ 点按包含暗格，右键点按查看更多";
 "Menu" = "菜单";
@@ -435,6 +436,7 @@
 "Visible" = "常显";
 "Welcome to Meno" = "欢迎使用 Meno";
 "What Meno needs, and why." = "Meno 需要什么，以及为什么。";
+"What's New" = "新功能";
 "When %@: %@." = "当%@时，%@。";
 "When a new item appears" = "出现新项目时";
 "When all of these are true" = "当以下条件全部满足时";
