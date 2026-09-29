@@ -17,6 +17,7 @@ final class PermissionCenter: ObservableObject {
     @Published private(set) var accessibilityWasGranted = UserDefaults.standard.bool(forKey: PermissionCenter.grantedKey)
 
     private var pollTask: Task<Void, Never>?
+    private var activeObserver: NSObjectProtocol?
     private let grantedAtLaunch = CGPreflightScreenCaptureAccess()
     private static let grantedKey = "AccessibilityWasGranted"
 
@@ -35,7 +36,23 @@ final class PermissionCenter: ObservableObject {
             while !Task.isCancelled {
                 guard let self else { return }
                 self.refresh()
-                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                // Quick while Accessibility is missing, so that granting it
+                // takes effect at once. Otherwise this only notices changes
+                // made in System Settings, which also show when Meno comes
+                // to the front.
+                let seconds: UInt64 = self.accessibility ? 10 : 1
+                try? await Task.sleep(nanoseconds: seconds * 1_000_000_000 + 500_000_000)
+            }
+        }
+        if activeObserver == nil {
+            activeObserver = NotificationCenter.default.addObserver(
+                forName: NSApplication.didBecomeActiveNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.refresh()
+                }
             }
         }
     }

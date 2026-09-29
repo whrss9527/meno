@@ -5,6 +5,7 @@
 "%@ changed." = "%@ 有变化。";
 "%@ could not be opened." = "无法打开 %@。";
 "%@ did not move. Try dragging it with ⌘ held down." = "%@ 没有移动。请按住 ⌘ 手动拖移试试。";
+"%@ did not quit." = "%@ 没有退出。";
 "%@ is in front" = "%@ 在前台";
 "%@ is not visible, so it cannot be dragged. Make room in the menu bar and try again." = "%@ 当前不可见，无法拖移。请在菜单栏腾出空间后再试。";
 "%@ is running" = "%@ 正在运行";
@@ -157,6 +158,7 @@
 "Find and open any item from the keyboard, pinyin included." = "用键盘查找并打开任意项目，支持拼音。";
 "Finder" = "访达";
 "Floating" = "悬浮";
+"Force Quit" = "强制退出";
 "Full width" = "通栏";
 "General" = "通用";
 "Glass" = "玻璃";
@@ -353,6 +355,7 @@
 "Quick Open" = "快速打开";
 "Quick Open…" = "快速打开…";
 "Quiet menu bar in the evening" = "晚间保持菜单栏安静";
+"Quit %@" = "退出 %@";
 "Quit Meno" = "退出 Meno";
 "Record Shortcut" = "录制快捷键";
 "Record usage statistics" = "记录使用统计";
@@ -437,6 +440,7 @@
 "show hidden items" = "显示隐藏项目";
 "Show hidden items while offline" = "离线时显示隐藏项目";
 "Show how many items are hidden next to the Meno icon" = "在 Meno 图标旁显示隐藏项目的数量";
+"Show in Finder" = "在访达中显示";
 "Show in menu bar" = "在菜单栏中显示";
 "Show names under the icons" = "在图标下方显示名称";
 "Show or hide everything, including the Stash" = "显示或隐藏全部（包含暗格）";

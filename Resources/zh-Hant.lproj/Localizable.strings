@@ -5,6 +5,7 @@
 "%@ changed." = "%@ 有變化。";
 "%@ could not be opened." = "無法開啟 %@。";
 "%@ did not move. Try dragging it with ⌘ held down." = "%@ 沒有移動。請按住 ⌘ 手動拖移試試。";
+"%@ did not quit." = "%@ 沒有結束。";
 "%@ is in front" = "%@ 在最前方";
 "%@ is not visible, so it cannot be dragged. Make room in the menu bar and try again." = "%@ 目前不可見，無法拖移。請在選單列騰出空間後再試。";
 "%@ is running" = "%@ 正在執行";
@@ -157,6 +158,7 @@
 "Find and open any item from the keyboard, pinyin included." = "用鍵盤尋找並開啟任意項目，支援拼音。";
 "Finder" = "Finder";
 "Floating" = "浮動";
+"Force Quit" = "強制結束";
 "Full width" = "全寬";
 "General" = "一般";
 "Glass" = "玻璃";
@@ -353,6 +355,7 @@
 "Quick Open" = "快速開啟";
 "Quick Open…" = "快速開啟…";
 "Quiet menu bar in the evening" = "晚間保持選單列安靜";
+"Quit %@" = "結束 %@";
 "Quit Meno" = "結束 Meno";
 "Record Shortcut" = "錄製快速鍵";
 "Record usage statistics" = "記錄使用統計";
@@ -437,6 +440,7 @@
 "show hidden items" = "顯示隱藏項目";
 "Show hidden items while offline" = "離線時顯示隱藏項目";
 "Show how many items are hidden next to the Meno icon" = "在 Meno 圖示旁顯示隱藏項目的數量";
+"Show in Finder" = "在 Finder 中顯示";
 "Show in menu bar" = "在選單列中顯示";
 "Show names under the icons" = "在圖示下方顯示名稱";
 "Show or hide everything, including the Stash" = "顯示或隱藏全部（包含暗格）";

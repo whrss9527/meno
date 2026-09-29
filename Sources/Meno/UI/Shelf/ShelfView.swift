@@ -212,6 +212,20 @@ private struct ShelfItemButton: View {
                     set: { shelf.model.setShowsOnChange(item.key, $0) }
                 ))
             }
+            // Many menu bar apps have no Dock icon to quit them from.
+            if item.kind == .app, let app = item.runningApplication {
+                Divider()
+                if let url = app.bundleURL {
+                    Button("Show in Finder") {
+                        shelf.hide()
+                        NSWorkspace.shared.activateFileViewerSelecting([url])
+                    }
+                }
+                Button("Quit \(item.appName)") {
+                    shelf.hide()
+                    shelf.model.quitApp(of: item)
+                }
+            }
         }
         .help(Text(verbatim: item.displayName))
         .accessibilityElement(children: .ignore)

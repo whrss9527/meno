@@ -213,7 +213,10 @@ final class AppModel: ObservableObject {
         periodicTask?.cancel()
         periodicTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 20_000_000_000)
+                // Changes are mostly noticed as they happen; this only catches
+                // what slipped through, so Low Power Mode can wait longer.
+                let seconds: UInt64 = ProcessInfo.processInfo.isLowPowerModeEnabled ? 60 : 20
+                try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
                 guard let self else { return }
                 guard !self.isAway else { continue }
                 await self.inventory.refresh()
@@ -473,6 +476,23 @@ final class AppModel: ObservableObject {
             } catch {
                 toasts.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
             }
+        }
+    }
+
+    /// Quits the app that shows an item, and offers to force it when it is
+    /// still running a few seconds later.
+    func quitApp(of item: MenuBarItem) {
+        guard item.kind == .app, let app = item.runningApplication, !app.isTerminated else { return }
+        let name = item.appName
+        app.terminate()
+        Task {
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard !app.isTerminated else { return }
+            toasts.show(
+                String(localized: "\(name) did not quit."),
+                symbol: "exclamationmark.triangle.fill",
+                actions: [ToastCenter.Action(title: String(localized: "Force Quit")) { app.forceTerminate() }]
+            )
         }
     }
 

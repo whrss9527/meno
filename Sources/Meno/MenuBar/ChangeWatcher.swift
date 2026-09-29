@@ -30,7 +30,9 @@ final class ChangeWatcher: ObservableObject {
         if watching, loop == nil {
             loop = Task { [weak self] in
                 while !Task.isCancelled {
-                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    // Low Power Mode asks apps to do less in the background.
+                    let seconds: UInt64 = ProcessInfo.processInfo.isLowPowerModeEnabled ? 10 : 3
+                    try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
                     await self?.check()
                 }
             }
