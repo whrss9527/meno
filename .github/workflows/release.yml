@@ -4,8 +4,14 @@ on:
   push:
     tags:
       - "v*"
-  # Builds the release zip without publishing, to check a release build.
+  # Run manually to publish a version (the tag is created at the selected
+  # commit) or, without a version, to only build and check a release.
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish, for example 0.1.0. Leave empty to only build."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -18,15 +24,33 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Resolve version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            tag="$GITHUB_REF_NAME"
+          elif [[ -n "$INPUT_VERSION" ]]; then
+            tag="v${INPUT_VERSION#v}"
+          else
+            tag=""
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          echo "Release tag: ${tag:-none (build only)}"
+
       - name: Toolchain
         run: |
           xcodebuild -version
           swift --version
 
       - name: Build universal app
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            export VERSION="${GITHUB_REF_NAME#v}"
+          if [[ -n "$RELEASE_VERSION" ]]; then
+            export VERSION="$RELEASE_VERSION"
           fi
           UNIVERSAL=1 make zip
 
@@ -46,17 +70,16 @@ jobs:
           if-no-files-found: error
 
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.version.outputs.tag != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
-          notes=".github/releases/${GITHUB_REF_NAME}.md"
+          notes=".github/releases/${TAG}.md"
+          args=(--title "Meno ${TAG#v}" --target "$GITHUB_SHA")
           if [[ -f "$notes" ]]; then
-            gh release create "$GITHUB_REF_NAME" build/Meno.zip \
-              --title "Meno ${GITHUB_REF_NAME#v}" \
-              --notes-file "$notes"
+            args+=(--notes-file "$notes")
           else
-            gh release create "$GITHUB_REF_NAME" build/Meno.zip \
-              --title "Meno ${GITHUB_REF_NAME#v}" \
-              --generate-notes
+            args+=(--generate-notes)
           fi
+          gh release create "$TAG" build/Meno.zip "${args[@]}"
