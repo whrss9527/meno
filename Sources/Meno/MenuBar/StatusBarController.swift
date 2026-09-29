@@ -1,0 +1,419 @@
+import AppKit
+import MenoCore
+
+/// Which dividers are grown.
+struct BarState: Equatable {
+    /// Items left of the Hidden divider are pushed away.
+    var hiddenCollapsed = false
+    /// Items left of the Stash divider are pushed away.
+    var stashCollapsed = false
+    /// Zen: everything left of the Meno icon is pushed away.
+    var zen = false
+}
+
+/// Owns Meno's status items: the Meno icon, the section dividers and the
+/// helper spacers of the stepped engine.
+///
+/// Dividers hide the items to their left by growing. With the wide engine a
+/// single divider grows far past the screen edge. With the stepped engine
+/// (macOS 27 and later) the divider and a few spacers next to it each grow to
+/// just under half of the narrowest display, in small steps, because larger
+/// items are dropped from the menu bar there.
+@MainActor
+final class StatusBarController: NSObject {
+    enum Name {
+        static let toggle = "meno.toggle"
+        static let hiddenDivider = "meno.divider.hidden"
+        static let stashDivider = "meno.divider.stash"
+
+        static func spacer(_ group: SpacerGroup, _ index: Int) -> String {
+            "meno.spacer.\(group.rawValue).\(index)"
+        }
+    }
+
+    enum SpacerGroup: String, CaseIterable {
+        case hidden
+        case stash
+        case zen
+    }
+
+    unowned let model: AppModel
+
+    private(set) var toggle: NSStatusItem?
+    private(set) var hiddenDivider: NSStatusItem?
+    private(set) var stashDivider: NSStatusItem?
+    private var spacers: [SpacerGroup: [NSStatusItem]] = [:]
+    private(set) var state = BarState()
+    private var applyTask: Task<Void, Never>?
+    private var zenGlyphView: NSImageView?
+    private var dividersForcedVisible = false
+
+    init(model: AppModel) {
+        self.model = model
+        super.init()
+    }
+
+    var engine: ResolvedHidingEngine {
+        model.settings.general.hidingEngine.resolved(osMajorVersion: AppInfo.osMajorVersion)
+    }
+
+    // MARK: - Setup
+
+    func install() {
+        // On the very first launch macOS inserts new items at the left end of
+        // the status area, so creating the icon first puts the dividers to
+        // its left.
+        toggle = makeItem(name: Name.toggle, action: #selector(toggleClicked(_:)))
+        hiddenDivider = makeItem(name: Name.hiddenDivider, action: #selector(dividerClicked(_:)))
+        syncStashDivider()
+        toggle?.button?.setAccessibilityLabel("Meno")
+        hiddenDivider?.button?.setAccessibilityLabel(String(localized: "Hidden section divider"))
+        refreshAppearance()
+    }
+
+    /// Adds or removes the Stash divider to match the settings.
+    func syncStashDivider() {
+        if model.settings.general.stashEnabled {
+            guard stashDivider == nil else { return }
+            stashDivider = makeItem(name: Name.stashDivider, action: #selector(dividerClicked(_:)))
+            stashDivider?.button?.setAccessibilityLabel(String(localized: "Stash section divider"))
+        } else if let divider = stashDivider {
+            removeSpacers(.stash)
+            NSStatusBar.system.removeStatusItem(divider)
+            stashDivider = nil
+        }
+        apply(state)
+    }
+
+    func uninstall() {
+        applyTask?.cancel()
+        for group in SpacerGroup.allCases { removeSpacers(group) }
+        for item in [toggle, hiddenDivider, stashDivider].compactMap({ $0 }) {
+            NSStatusBar.system.removeStatusItem(item)
+        }
+        toggle = nil
+        hiddenDivider = nil
+        stashDivider = nil
+    }
+
+    private func makeItem(name: String, action: Selector) -> NSStatusItem {
+        UserDefaults.standard.removeObject(forKey: Self.visibilityKey(name))
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        item.autosaveName = name
+        item.isVisible = true
+        if let button = item.button {
+            button.target = self
+            button.action = action
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            button.imagePosition = .imageOnly
+        }
+        return item
+    }
+
+    // MARK: - State
+
+    func apply(_ newState: BarState) {
+        state = newState
+        applyTask?.cancel()
+        applyTask = nil
+        switch engine {
+        case .wide:
+            applyWide()
+        case .stepped:
+            applyTask = Task { [weak self] in
+                await self?.applyStepped()
+            }
+        }
+        refreshAppearance()
+    }
+
+    /// Re-applies the current state, for example after the screens changed.
+    func reapply() {
+        apply(state)
+    }
+
+    /// Shows the dividers even if the user hid them, so that items can be
+    /// dropped next to them while moving.
+    func setDividersForcedVisible(_ visible: Bool) {
+        guard dividersForcedVisible != visible else { return }
+        dividersForcedVisible = visible
+        apply(state)
+    }
+
+    private var expandedDividerLength: CGFloat {
+        model.settings.appearance.showsDividers || dividersForcedVisible ? NSStatusItem.variableLength : 0
+    }
+
+    private var zenPushesVisibleItems: Bool {
+        state.zen && model.settings.zen.hidesVisibleItems
+    }
+
+    private func applyWide() {
+        for group in SpacerGroup.allCases { removeSpacers(group) }
+        let wide = CGFloat(CollapseMetrics.wideLength(screenWidths: ScreenGeometry.screenWidths))
+        hiddenDivider?.length = state.hiddenCollapsed ? wide : expandedDividerLength
+        stashDivider?.length = state.stashCollapsed ? wide : expandedDividerLength
+        toggle?.length = zenPushesVisibleItems ? wide : NSStatusItem.variableLength
+    }
+
+    private func applyStepped() async {
+        let widths = ScreenGeometry.screenWidths
+        let unit = CGFloat(CollapseMetrics.steppedUnit(screenWidths: widths))
+        let count = CollapseMetrics.steppedSpacerCount(screenWidths: widths)
+
+        // Shrinking is instant.
+        if !state.hiddenCollapsed {
+            removeSpacers(.hidden)
+            hiddenDivider?.length = expandedDividerLength
+        }
+        if !state.stashCollapsed {
+            removeSpacers(.stash)
+            stashDivider?.length = expandedDividerLength
+        }
+        if !zenPushesVisibleItems {
+            removeSpacers(.zen)
+            toggle?.length = NSStatusItem.variableLength
+        }
+
+        // Growing happens in small steps so the neighbours are carried along.
+        var growing: [NSStatusItem] = []
+        if state.hiddenCollapsed, let divider = hiddenDivider {
+            growing.append(divider)
+            growing += ensureSpacers(.hidden, count: count, next: Name.hiddenDivider, item: divider, onLeft: false)
+        }
+        if state.stashCollapsed, let divider = stashDivider {
+            growing.append(divider)
+            growing += ensureSpacers(.stash, count: count, next: Name.stashDivider, item: divider, onLeft: false)
+        }
+        if zenPushesVisibleItems, let toggle {
+            growing.append(toggle)
+            growing += ensureSpacers(.zen, count: count, next: Name.toggle, item: toggle, onLeft: true)
+        }
+        await ramp(growing, to: unit)
+    }
+
+    private func ramp(_ items: [NSStatusItem], to target: CGFloat) async {
+        guard !items.isEmpty else { return }
+        var lengths = items.map { max($0.length, 0) }
+        let increment = CGFloat(CollapseMetrics.steppedIncrement)
+        while lengths.contains(where: { $0 < target }) {
+            if Task.isCancelled { return }
+            for index in items.indices where lengths[index] < target {
+                lengths[index] = min(lengths[index] + increment, target)
+                items[index].length = lengths[index]
+            }
+            try? await Task.sleep(nanoseconds: 12_000_000)
+        }
+    }
+
+    /// Creates helper spacers right next to `name`: on its right for
+    /// dividers (between the divider and the items that stay visible) or on
+    /// its left for the Meno icon (Zen).
+    private func ensureSpacers(
+        _ group: SpacerGroup,
+        count: Int,
+        next name: String,
+        item: NSStatusItem,
+        onLeft: Bool
+    ) -> [NSStatusItem] {
+        if let existing = spacers[group], existing.count == count {
+            return existing
+        }
+        removeSpacers(group)
+        let base = Self.preferredPosition(of: name) ?? estimatedPosition(of: item)
+        let positions: [Double]
+        if onLeft {
+            positions = (1...max(count, 1)).map { base + 0.3 * Double($0) }
+        } else {
+            positions = CollapseMetrics.positionsRight(of: base, count: count)
+        }
+        var created: [NSStatusItem] = []
+        for (index, position) in positions.enumerated() {
+            let spacerName = Name.spacer(group, index)
+            UserDefaults.standard.set(position, forKey: Self.positionKey(spacerName))
+            UserDefaults.standard.removeObject(forKey: Self.visibilityKey(spacerName))
+            let spacer = NSStatusBar.system.statusItem(withLength: 0)
+            spacer.autosaveName = spacerName
+            spacer.isVisible = true
+            if let button = spacer.button {
+                button.target = self
+                button.action = #selector(dividerClicked(_:))
+                button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+                button.image = nil
+                button.title = ""
+            }
+            created.append(spacer)
+        }
+        spacers[group] = created
+        return created
+    }
+
+    private func removeSpacers(_ group: SpacerGroup) {
+        guard let items = spacers[group] else { return }
+        for item in items {
+            NSStatusBar.system.removeStatusItem(item)
+        }
+        spacers[group] = nil
+    }
+
+    // MARK: - Appearance
+
+    func refreshAppearance() {
+        let appearance = model.settings.appearance
+        if let button = toggle?.button {
+            if state.zen {
+                button.image = zenPushesVisibleItems ? nil : MenoIconRenderer.zenGlyph()
+            } else {
+                button.image = MenoIconRenderer.toggleImage(for: appearance.icon, revealed: !state.hiddenCollapsed)
+            }
+            updateBadge(on: button)
+            button.toolTip = state.zen
+                ? String(localized: "Zen is on. Click to leave Zen.")
+                : String(localized: "Meno — click to show or hide items, ⌥-click to include the Stash, right-click for more")
+        }
+        updateZenGlyph()
+        if let button = hiddenDivider?.button {
+            button.image = state.hiddenCollapsed ? nil : MenoIconRenderer.dividerImage(appearance.dividerGlyph, double: false)
+            button.toolTip = String(localized: "Items left of this divider are hidden")
+        }
+        if let button = stashDivider?.button {
+            button.image = state.stashCollapsed ? nil : MenoIconRenderer.dividerImage(appearance.dividerGlyph, double: true)
+            button.toolTip = String(localized: "Items left of this divider go to the Stash")
+        }
+    }
+
+    private func updateBadge(on button: NSStatusBarButton) {
+        let count = model.inventory.items(in: .hidden).count
+        if model.settings.general.showsHiddenCount, state.hiddenCollapsed, !state.zen, count > 0 {
+            button.title = "\(count)"
+            button.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
+            button.imagePosition = .imageLeading
+        } else {
+            button.title = ""
+            button.imagePosition = .imageOnly
+        }
+    }
+
+    /// While Zen grows the Meno icon, its glyph is pinned to the right edge
+    /// so it stays visible next to the system items.
+    private func updateZenGlyph() {
+        guard let button = toggle?.button else { return }
+        guard zenPushesVisibleItems else {
+            zenGlyphView?.removeFromSuperview()
+            zenGlyphView = nil
+            return
+        }
+        let view = zenGlyphView ?? NSImageView()
+        view.image = MenoIconRenderer.zenGlyph()
+        view.imageScaling = .scaleNone
+        view.autoresizingMask = [.minXMargin, .height]
+        let width: CGFloat = 24
+        view.frame = NSRect(x: max(button.bounds.width - width, 0), y: 0, width: width, height: button.bounds.height)
+        if view.superview == nil {
+            button.addSubview(view)
+        }
+        zenGlyphView = view
+    }
+
+    // MARK: - Geometry
+
+    /// The frame of a status item in Quartz coordinates.
+    func frame(of item: NSStatusItem?) -> CGRect? {
+        guard let window = item?.button?.window, window.frame.width > 0 else { return nil }
+        return ScreenGeometry.quartzRect(fromCocoa: window.frame)
+    }
+
+    var toggleFrame: CGRect? { frame(of: toggle) }
+    var hiddenDividerFrame: CGRect? { frame(of: hiddenDivider) }
+    var stashDividerFrame: CGRect? { frame(of: stashDivider) }
+
+    /// The screen that shows Meno's items.
+    var screen: NSScreen? {
+        toggle?.button?.window?.screen ?? ScreenGeometry.primaryScreen
+    }
+
+    var dividerLayout: DividerLayout? {
+        guard let hidden = hiddenDividerFrame else { return nil }
+        let stash = stashDividerFrame.map { HorizontalSpan(minX: Double($0.minX), maxX: Double($0.maxX)) }
+        return DividerLayout(hidden: HorizontalSpan(minX: Double(hidden.minX), maxX: Double(hidden.maxX)), stash: stash)
+    }
+
+    /// Parts of the menu bar that belong to grown dividers and spacers. They
+    /// look empty, so pointing at or clicking them counts as the empty area.
+    var emptyAreaFrames: [CGRect] {
+        var items: [NSStatusItem] = []
+        if state.hiddenCollapsed, let hiddenDivider { items.append(hiddenDivider) }
+        items += spacers[.hidden] ?? []
+        if zenPushesVisibleItems, let toggle { items.append(toggle) }
+        items += spacers[.zen] ?? []
+        return items.compactMap { frame(of: $0) }
+    }
+
+    /// All of Meno's own status item frames.
+    var ownFrames: [CGRect] {
+        var items = [toggle, hiddenDivider, stashDivider].compactMap { $0 }
+        for group in SpacerGroup.allCases { items += spacers[group] ?? [] }
+        return items.compactMap { frame(of: $0) }
+    }
+
+    private func estimatedPosition(of item: NSStatusItem) -> Double {
+        guard let window = item.button?.window else { return 0 }
+        let screenMaxX = (window.screen ?? ScreenGeometry.primaryScreen)?.frame.maxX ?? window.frame.maxX
+        return max(Double(screenMaxX - window.frame.maxX), 0)
+    }
+
+    static func positionKey(_ name: String) -> String {
+        "NSStatusItem Preferred Position \(name)"
+    }
+
+    static func visibilityKey(_ name: String) -> String {
+        "NSStatusItem Visible \(name)"
+    }
+
+    static func preferredPosition(of name: String) -> Double? {
+        (UserDefaults.standard.object(forKey: positionKey(name)) as? NSNumber)?.doubleValue
+    }
+
+    // MARK: - Clicks
+
+    private var clickIsSecondary: Bool {
+        guard let event = NSApp.currentEvent else { return false }
+        return event.type == .rightMouseUp || event.modifierFlags.contains(.control)
+    }
+
+    @objc private func toggleClicked(_ sender: Any?) {
+        if clickIsSecondary {
+            showMenu()
+            return
+        }
+        if state.zen {
+            model.setZen(false)
+            return
+        }
+        if NSApp.currentEvent?.modifierFlags.contains(.option) == true {
+            model.reveal.toggleAll(trigger: .click)
+        } else {
+            model.reveal.primaryClick()
+        }
+    }
+
+    @objc private func dividerClicked(_ sender: Any?) {
+        if clickIsSecondary {
+            showMenu()
+            return
+        }
+        if state.zen {
+            model.setZen(false)
+            return
+        }
+        model.reveal.emptyAreaClicked()
+    }
+
+    /// Shows Meno's menu below the Meno icon.
+    func showMenu() {
+        guard let toggle else { return }
+        toggle.menu = model.makeStatusMenu()
+        toggle.button?.performClick(nil)
+        toggle.menu = nil
+    }
+}

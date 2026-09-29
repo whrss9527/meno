@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: macOS ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Current SDK: Liquid Glass code paths are compiled.
+          - name: "26 / Xcode 26"
+            runner: macos-26
+          # Previous SDK: the material fallbacks are compiled instead.
+          - name: "15 / Xcode 16"
+            runner: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Localization
+        run: |
+          python3 scripts/check-localization.py
+          for file in Resources/*.lproj/*.strings; do plutil -lint "$file"; done
+
+      - name: Unit tests
+        run: swift test
+
+      - name: Build app bundle
+        run: make zip
+
+      - name: Upload app
+        if: matrix.runner == 'macos-26'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Meno
+          path: build/Meno.zip
+          if-no-files-found: error

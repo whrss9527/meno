@@ -1,0 +1,134 @@
+import AppKit
+import SwiftUI
+
+/// Short glass notifications below the menu bar.
+@MainActor
+final class ToastCenter: ObservableObject {
+    struct Action: Identifiable {
+        let id = UUID()
+        let title: String
+        let handler: () -> Void
+    }
+
+    struct Toast: Identifiable {
+        let id = UUID()
+        let message: String
+        let symbol: String
+        let actions: [Action]
+    }
+
+    @Published private(set) var current: Toast?
+
+    private var panel: FloatingPanel?
+    private var hostingView: NSHostingView<ToastView>?
+    private var dismissTask: Task<Void, Never>?
+
+    /// Where toasts appear; set by the app model.
+    var screenProvider: () -> NSScreen? = { NSScreen.main }
+
+    func show(_ message: String, symbol: String = "info.circle.fill", actions: [Action] = [], duration: TimeInterval? = nil) {
+        current = Toast(message: message, symbol: symbol, actions: actions)
+        let panel = self.panel ?? makePanel()
+        panel.ignoresMouseEvents = actions.isEmpty
+        layout()
+        if !panel.isVisible {
+            panel.alphaValue = 0
+            panel.orderFrontRegardless()
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.18
+            panel.animator().alphaValue = 1
+        }
+        dismissTask?.cancel()
+        let seconds = duration ?? (actions.isEmpty ? 2.6 : 8)
+        dismissTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.dismiss()
+        }
+    }
+
+    func dismiss() {
+        dismissTask?.cancel()
+        guard let panel else { return }
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.2
+            panel.animator().alphaValue = 0
+        }, completionHandler: {
+            MainActor.assumeIsolated {
+                if panel.alphaValue == 0 {
+                    panel.orderOut(nil)
+                    self.current = nil
+                }
+            }
+        })
+    }
+
+    func perform(_ action: Action) {
+        dismiss()
+        action.handler()
+    }
+
+    private func makePanel() -> FloatingPanel {
+        let panel = FloatingPanel(level: .statusBar)
+        let view = NSHostingView(rootView: ToastView(center: self))
+        panel.contentView = view
+        self.panel = panel
+        hostingView = view
+        return panel
+    }
+
+    private func layout() {
+        guard let panel, let hostingView else { return }
+        hostingView.layoutSubtreeIfNeeded()
+        let size = hostingView.fittingSize
+        let screen = screenProvider() ?? NSScreen.screens[0]
+        let top = screen.frame.maxY - ScreenGeometry.menuBarHeight(on: screen) - 8
+        panel.setFrame(
+            NSRect(x: screen.frame.midX - size.width / 2, y: top - size.height, width: size.width, height: size.height),
+            display: true
+        )
+    }
+}
+
+struct ToastView: View {
+    @ObservedObject var center: ToastCenter
+
+    var body: some View {
+        if let toast = center.current {
+            HStack(spacing: 10) {
+                Image(systemName: toast.symbol)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                Text(verbatim: toast.message)
+                    .font(.system(size: 13, weight: .medium))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 420, alignment: .leading)
+                ForEach(toast.actions) { action in
+                    Button(action.title) {
+                        center.perform(action)
+                    }
+                    .controlSize(.small)
+                    .menoGlassButtonStyle(prominent: action.id == toast.actions.first?.id)
+                }
+                if !toast.actions.isEmpty {
+                    Button {
+                        center.dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .menoGlass(in: Capsule())
+            .padding(16)
+            .fixedSize()
+        } else {
+            Color.clear.frame(width: 1, height: 1)
+        }
+    }
+}
