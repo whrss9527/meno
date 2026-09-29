@@ -202,7 +202,7 @@ final class ItemInventory: ObservableObject {
             })
             for (entry, token) in zip(sorted, tokens) {
                 let key = MenuItemKey(owner: owner, token: token)
-                if isLeftoverSlot(entry.frame, key: key, reliable: reliable) {
+                if isLeftoverSlot(entry.frame, reliable: reliable) {
                     skipped.empty[owner, default: 0] += 1
                     continue
                 }
@@ -265,12 +265,12 @@ final class ItemInventory: ObservableObject {
         menoFrames.contains { $0.minX < frame.midX && frame.midX < $0.maxX }
     }
 
-    /// An element without width is left over from an item that is gone
-    /// (for example after its app crashed). While positions are unreliable,
-    /// only items that were seen with a width before are kept.
-    private func isLeftoverSlot(_ frame: CGRect, key: MenuItemKey, reliable: Bool) -> Bool {
-        guard frame.width < 1 else { return false }
-        guard reliable else { return cachedSections[key] == nil }
+    /// An element without width on the screen is left over from an item that
+    /// is gone (for example after its app crashed). While positions are
+    /// unreliable, items the stepped engine pushed into the system overflow
+    /// may have no width either, so nothing is left out then.
+    private func isLeftoverSlot(_ frame: CGRect, reliable: Bool) -> Bool {
+        guard frame.width < 1, reliable else { return false }
         return NSScreen.screens.contains { screen in
             let bounds = ScreenGeometry.quartzRect(fromCocoa: screen.frame)
             return bounds.minX <= frame.midX && frame.midX <= bounds.maxX
