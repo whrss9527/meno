@@ -81,6 +81,16 @@ helper_on_screen() {
   grep '^E2E_ITEM ' "$HELPER_LOG" | tail -1 | grep -q "on_screen=$1"
 }
 
+# Asks Meno for its report and prints it once it is there.
+meno_report() {
+  local before
+  before="$(grep -c '^MENO_DIAG report' "$LOG" || true)"
+  kill -USR1 "$meno"
+  wait_for 20 test "$(grep -c '^MENO_DIAG report' "$LOG" || true)" -gt "$before" || return 1
+  # The last report runs up to the next line of Meno's own.
+  awk '/^MENO_DIAG report/ { report = ""; inside = 1; next } /^MENO_DIAG / { inside = 0 } inside { report = report $0 "\n" } END { printf "%s", report }' "$LOG"
+}
+
 # Past the welcome window, and showing items in the menu bar rather than in
 # the Shelf, so that where the item is tells whether it shows.
 mkdir -p "$SUPPORT"
@@ -104,6 +114,19 @@ helper=$!
 wait_for 15 grep -q '^E2E_ITEM ' "$HELPER_LOG" || fail "The helper item did not start"
 wait_for 15 helper_on_screen 0 || fail "The new item is not hidden"
 
+echo "==> Showing the Hidden section"
+open "meno://show"
+shown=0
+for _ in $(seq 1 15); do
+  if meno_report | grep -q 'hidden shown · stash collapsed'; then
+    shown=1
+    break
+  fi
+  sleep 1
+done
+[[ "$shown" == 1 ]] || fail "meno://show did not show the Hidden section"
+wait_for 3 helper_on_screen 0 || fail "Showing the Hidden section showed the Stash too"
+
 echo "==> Showing all items"
 open "meno://show/all"
 wait_for 15 helper_on_screen 1 || fail "Showing all items did not bring the new item on the screen"
@@ -113,9 +136,7 @@ open "meno://hide"
 wait_for 15 helper_on_screen 0 || fail "Hiding did not take the new item off the screen"
 
 echo "==> Asking Meno what it sees"
-kill -USR1 "$meno"
-wait_for 20 log_has '^MENO_DIAG report' || fail "Meno did not report"
-report="$(sed -n '/^MENO_DIAG report/,$p' "$LOG")"
+report="$(meno_report)" || fail "Meno did not report"
 printf '%s\n' "$report" | grep -E '^  stash +x=.*E2E' >/dev/null || fail "Meno does not list the new item in the Stash"
 
 echo "Hiding works on macOS $(sw_vers -productVersion)."
