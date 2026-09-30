@@ -76,3 +76,29 @@ enum Diagnostics {
         return "x=\(Int(frame.minX)) w=\(Int(frame.width))"
     }
 }
+
+extension Diagnostics {
+    /// Whether Meno prints what it does to standard error, for a script that
+    /// measures it, as CI does. Set `MENO_DIAG=1` in its environment.
+    static let printsEvents = ProcessInfo.processInfo.environment["MENO_DIAG"] == "1"
+
+    /// Prints a line starting with `MENO_DIAG` to standard error when
+    /// `printsEvents`.
+    static func event(_ line: @autoclosure () -> String) {
+        guard printsEvents else { return }
+        FileHandle.standardError.write(Data("MENO_DIAG \(line())\n".utf8))
+    }
+
+    /// The memory Meno takes up, in kilobytes, as Activity Monitor counts it.
+    static var physicalFootprint: UInt64? {
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<natural_t>.size)
+        let result = withUnsafeMutablePointer(to: &info) { pointer in
+            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+            }
+        }
+        guard result == KERN_SUCCESS else { return nil }
+        return info.phys_footprint / 1024
+    }
+}

@@ -122,6 +122,7 @@ final class ItemInventory: ObservableObject {
     private func performRefresh() async {
         guard model.permissions.accessibility else {
             if !items.isEmpty { items = model.markers.inventoryItems(sections: [:]) }
+            Diagnostics.event("scan accessibility=missing footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
             return
         }
         isRefreshing = true
@@ -146,6 +147,8 @@ final class ItemInventory: ObservableObject {
         if model.showsItemArtwork {
             model.images.refresh(for: items, captureAllowed: model.permissions.canCapture)
         }
+        Diagnostics.event("scan items=\(items.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))"
+            + " footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
     }
 
     /// Whether the last scan could tell the item's section from its
