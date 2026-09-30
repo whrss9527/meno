@@ -62,9 +62,28 @@ public struct WallpaperPalette: Equatable, Sendable {
             self.init(average: average.color, leading: average.color, trailing: average.color)
             return
         }
+        let smaller = min(members[0].count, members[1].count)
+        if Double(smaller) < Double(pixels.count) * Self.smallestShare {
+            // A small patch, such as the moon in a night sky, would light up
+            // one end: the main color covers both.
+            let main = members[0].count >= members[1].count ? first : second
+            self.init(average: average.color, leading: main.color, trailing: main.color)
+            return
+        }
+        if abs(first.x - second.x) < Self.smallestSeparation {
+            // Two colors mixed throughout, such as stripes, have no sides.
+            self.init(average: average.color, leading: average.color, trailing: average.color)
+            return
+        }
         let (leading, trailing) = first.x <= second.x ? (first, second) : (second, first)
         self.init(average: average.color, leading: leading.color, trailing: trailing.color)
     }
+
+    /// The share of the pixels a color needs to become an end of a gradient.
+    static let smallestShare = 0.2
+    /// How far apart across the image, as a share of its width, two colors
+    /// have to lie on average to count as its left and its right side.
+    static let smallestSeparation = 0.15
 
     private struct Pixel: Equatable {
         var red: Double
@@ -99,23 +118,78 @@ public struct WallpaperPalette: Equatable, Sendable {
     }
 }
 
+/// How a wallpaper is laid out on a screen.
+public enum WallpaperPlacement: Sendable {
+    /// Scaled to cover the screen and centered, the default.
+    case fill
+    /// Scaled to fit inside the screen and centered, with a color around it.
+    case fit
+    /// Scaled to the screen's width and height separately.
+    case stretch
+}
+
 extension WallpaperPalette {
     /// The part of an image that a screen shows under its menu bar, in the
-    /// image's pixels from its top left corner, when the image fills the
-    /// screen as wallpapers do by default: scaled to cover it and centered.
+    /// image's pixels from its top left corner. `nil` when the image does
+    /// not reach the menu bar, as when it fits a screen of another shape.
     public static func menuBarStrip(
         imageWidth: Double,
         imageHeight: Double,
         screenWidth: Double,
         screenHeight: Double,
-        menuBarHeight: Double
+        menuBarHeight: Double,
+        placement: WallpaperPlacement = .fill
     ) -> (x: Double, y: Double, width: Double, height: Double)? {
         guard imageWidth > 0, imageHeight > 0, screenWidth > 0, screenHeight > 0, menuBarHeight > 0 else { return nil }
-        let scale = max(screenWidth / imageWidth, screenHeight / imageHeight)
-        let x = (imageWidth * scale - screenWidth) / 2 / scale
-        let y = (imageHeight * scale - screenHeight) / 2 / scale
-        let width = screenWidth / scale
-        let height = max(min(menuBarHeight, screenHeight) / scale, 1)
-        return (x, y, width, min(height, imageHeight - y))
+        let bar = min(menuBarHeight, screenHeight)
+        switch placement {
+        case .fill:
+            let scale = max(screenWidth / imageWidth, screenHeight / imageHeight)
+            let x = (imageWidth * scale - screenWidth) / 2 / scale
+            let y = (imageHeight * scale - screenHeight) / 2 / scale
+            let height = max(bar / scale, 1)
+            return (x, y, screenWidth / scale, min(height, imageHeight - y))
+        case .fit:
+            let scale = min(screenWidth / imageWidth, screenHeight / imageHeight)
+            // The color around the image lies above it, too.
+            let top = (screenHeight - imageHeight * scale) / 2
+            guard top < bar else { return nil }
+            let height = max((bar - top) / scale, 1)
+            return (0, 0, imageWidth, min(height, imageHeight))
+        case .stretch:
+            let height = max(bar * imageHeight / screenHeight, 1)
+            return (0, 0, imageWidth, min(height, imageHeight))
+        }
+    }
+}
+
+/// Wallpapers with a light and a dark version, as macOS's own are, keep
+/// which of their images is which in their `apple_desktop` metadata.
+public enum DynamicWallpaper {
+    /// The image to use in Dark Mode or not, from the metadata values
+    /// `apr` (light and dark), `h24` (time of day) or `solar` (sun), each
+    /// a Base64 property list. `nil` without a light and a dark version.
+    public static func imageIndex(dark: Bool, apr: String?, h24: String?, solar: String?) -> Int? {
+        if let appearance = propertyList(apr) {
+            return index(in: appearance, dark: dark)
+        }
+        for value in [h24, solar] {
+            if let appearance = propertyList(value)?["ap"] as? [String: Any] {
+                return index(in: appearance, dark: dark)
+            }
+        }
+        return nil
+    }
+
+    private static func propertyList(_ base64: String?) -> [String: Any]? {
+        guard let base64, let data = Data(base64Encoded: base64.trimmingCharacters(in: .whitespacesAndNewlines)) else { return nil }
+        return (try? PropertyListSerialization.propertyList(from: data, options: [], format: nil)) as? [String: Any]
+    }
+
+    private static func index(in appearance: [String: Any], dark: Bool) -> Int? {
+        guard let value = appearance[dark ? "d" : "l"] else { return nil }
+        if let number = value as? Int { return number >= 0 ? number : nil }
+        if let number = value as? NSNumber { return number.intValue >= 0 ? number.intValue : nil }
+        return nil
     }
 }

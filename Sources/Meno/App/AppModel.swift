@@ -210,7 +210,7 @@ final class AppModel: ObservableObject {
 
     private func systemLayoutChanged() {
         statusBar.reapply()
-        tint.update()
+        tint.screensChanged()
         inventory.scheduleRefresh(after: 0.8)
         automation.evaluate()
     }

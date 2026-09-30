@@ -513,7 +513,7 @@
 "Text" = "文字";
 "That file does not contain Meno settings." = "该文件不包含 Meno 设置。";
 "That item is not in the menu bar right now." = "该项目目前不在菜单栏中。";
-"The colors of the wallpaper under the menu bar, which keep it as easy to read as the wallpaper. A moving wallpaper gets your own colors." = "采用菜单栏下方墙纸的颜色，菜单栏会和墙纸本身一样易读。会动的墙纸则使用你自己设定的颜色。";
+"The colors of the wallpaper under the menu bar, which keep it as easy to read as the wallpaper. A moving wallpaper, or one in a folder that macOS protects such as Downloads, gets your own colors." = "采用菜单栏下方墙纸的颜色，菜单栏会和墙纸本身一样易读。会动的墙纸，或放在“下载”等受 macOS 保护的文件夹里的墙纸，会使用你自己设定的颜色。";
 "The command failed or took too long." = "命令执行失败或耗时过长。";
 "The command succeeded." = "命令执行成功。";
 "The conditions are met now." = "当前已满足条件。";

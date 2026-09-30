@@ -149,7 +149,7 @@ struct AppearancePane: View {
                 SettingRow(
                     "Colors",
                     subtitle: model.settings.tint.colorSource == .wallpaper
-                        ? "The colors of the wallpaper under the menu bar, which keep it as easy to read as the wallpaper. A moving wallpaper gets your own colors."
+                        ? "The colors of the wallpaper under the menu bar, which keep it as easy to read as the wallpaper. A moving wallpaper, or one in a folder that macOS protects such as Downloads, gets your own colors."
                         : nil
                 ) {
                     EnumPicker(selection: $model.settings.tint.colorSource, title: \.title, width: 240, segmented: true)

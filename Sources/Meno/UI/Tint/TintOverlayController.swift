@@ -18,9 +18,19 @@ final class TintOverlayController {
     /// Looks at the wallpapers again while the tint takes their colors.
     private var wallpaperWatch: Task<Void, Never>?
     private var spaceObserver: NSObjectProtocol?
+    private var appearanceObservation: NSKeyValueObservation?
 
     init(model: AppModel) {
         self.model = model
+    }
+
+    /// Draws the tint again after the screens changed, or the Mac woke,
+    /// and looks at their wallpapers again.
+    func screensChanged() {
+        update()
+        if wallpaperWatch != nil {
+            refreshWallpaper()
+        }
     }
 
     func update() {
@@ -72,9 +82,10 @@ final class TintOverlayController {
         panels.removeAll()
     }
 
-    /// Reads the wallpapers that changed, and while the tint takes their
-    /// colors, looks again when the Space changes and every few minutes,
-    /// since a wallpaper can change without notice.
+    /// While the tint takes the wallpapers' colors, reads them when that
+    /// begins, and again when the Space or the appearance changes and every
+    /// few minutes, since a wallpaper can change without notice. Screens
+    /// that change call ``screensChanged()``.
     private func watchWallpaper(_ watches: Bool) {
         guard watches else {
             wallpaperWatch?.cancel()
@@ -83,9 +94,9 @@ final class TintOverlayController {
                 NSWorkspace.shared.notificationCenter.removeObserver(spaceObserver)
             }
             spaceObserver = nil
+            appearanceObservation = nil
             return
         }
-        refreshWallpaper()
         guard wallpaperWatch == nil else { return }
         spaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.activeSpaceDidChangeNotification,
@@ -96,12 +107,21 @@ final class TintOverlayController {
                 self?.refreshWallpaper()
             }
         }
+        // Wallpapers with a light and a dark version change with it.
+        appearanceObservation = NSApp.observe(\.effectiveAppearance) { [weak self] _, _ in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    self?.refreshWallpaper()
+                }
+            }
+        }
         wallpaperWatch = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 300 * 1_000_000_000)
                 self?.refreshWallpaper()
             }
         }
+        refreshWallpaper()
     }
 
     private func refreshWallpaper() {
