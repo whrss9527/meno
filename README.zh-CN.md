@@ -53,13 +53,13 @@ Meno 会把你不常用的菜单栏图标收起来，需要时点按、悬停、
 
 ## 下载
 
-从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.zip`，解压后把 Meno.app 移到“应用程序”文件夹。该版本为通用二进制（支持 Apple 芯片与 Intel），使用临时签名，首次打开时 macOS 会要求确认：右键点按 Meno.app 并选择“打开”，或运行 `xattr -dr com.apple.quarantine /Applications/Meno.app`。
+从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.zip`，解压后把 Meno.app 移到“应用程序”文件夹。该版本为通用二进制（支持 Apple 芯片与 Intel）。从 0.10.0 起用 Developer ID 签名并经过苹果公证，双击就能打开。0.10.0 之前的版本使用临时签名，首次打开时请右键点按 Meno.app 并选择“打开”，或运行 `xattr -dr com.apple.quarantine /Applications/Meno.app`。
 
 Meno 可以自己安装更新：检查到新版本后，在提示、“设置 › 关于”或 Meno 的菜单里选择“安装并重新打开”即可。Meno 会从 GitHub 下载新版本，核对校验和、版本号与代码签名，替换自身后重新打开。如果 Meno 所在的文件夹不可写入，则会改为提供下载链接。
 
-发布新版本时，推送 `v*` 标签，或在 *Release* 工作流中填写版本号手动运行即可。
+发布新版本时，推送 `v*` 标签，或在 *Release* 工作流中填写版本号手动运行即可。工作流用的是 [Frit](https://github.com/whrss9527/frit) 里共用的发布流程：配好 Developer ID 的 Secrets 后（见 Frit 的 [docs/release.md](https://github.com/whrss9527/frit/blob/main/docs/release.md)），会签名、公证并钉上票据。发布说明取自 `.github/releases/<标签>.md`。
 
-更新后，系统设置的“辅助功能”列表里可能还留着上一个版本的记录，它对新版本不生效。这时 Meno 会打开“设置 › 权限”，自动换成新版本的记录，macOS 随后会再次请求授权；也可以手动点“清除并重新授权”。想让更新后不再需要重新授权，可以用固定的证书给发布包签名：运行一次 `scripts/create-signing-certificate.sh`，把它最后打印的两项 `MACOS_CERTIFICATE_P12` 和 `MACOS_CERTIFICATE_PASSWORD` 添加到仓库的 Secrets 里，之后 *Release* 工作流会用这张证书签名。
+更新后，系统设置的“辅助功能”列表里可能还留着上一个版本的记录，它对新版本不生效。这时 Meno 会打开“设置 › 权限”，自动换成新版本的记录，macOS 随后会再次请求授权；也可以手动点“清除并重新授权”。从 0.10.0 起，发布包都用同一张 Developer ID 证书签名，之后的更新会保留授权；只有从临时签名的旧版本更新过来时会再请求一次。
 
 ## 构建与运行
 

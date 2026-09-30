@@ -53,13 +53,13 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 
 ## Download
 
-Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/releases/latest), unzip it and move Meno.app to *Applications*. The app is universal (Apple silicon and Intel) and signed ad hoc, so macOS asks for confirmation on first launch: right-click Meno.app and choose *Open*, or run `xattr -dr com.apple.quarantine /Applications/Meno.app`.
+Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/releases/latest), unzip it and move Meno.app to *Applications*. The app is universal (Apple silicon and Intel). From 0.10.0 on it is signed with a Developer ID and notarized by Apple, so it opens with a double-click. Versions before 0.10.0 are signed ad hoc: right-click Meno.app and choose *Open*, or run `xattr -dr com.apple.quarantine /Applications/Meno.app`.
 
 Meno installs updates itself: when a check finds a newer release, choose *Install and Relaunch* in the notice, in *Settings › About* or in Meno's menu. Meno downloads the release from GitHub, checks its checksum, version and code signature, replaces itself and opens again. When Meno runs from a folder it cannot write to, it offers the download instead.
 
-New versions are published by pushing a `v*` tag or by running the *Release* workflow with a version number.
+New versions are published by pushing a `v*` tag or by running the *Release* workflow with a version number. The workflow uses the shared release workflow in [Frit](https://github.com/whrss9527/frit): with the Developer ID secrets set (see Frit's [docs/release.md](https://github.com/whrss9527/frit/blob/main/docs/release.md)) it signs, notarizes and staples the app. The notes come from `.github/releases/<tag>.md`.
 
-After an update, macOS may keep an entry for the previous build in the Accessibility list that no longer counts. Meno then opens *Settings › Permissions*, replaces the entry and macOS asks again; *Reset and Grant Again* does the same by hand. To keep the permission across updates altogether, sign releases with a fixed certificate: run `scripts/create-signing-certificate.sh` once and add the two secrets it prints, `MACOS_CERTIFICATE_P12` and `MACOS_CERTIFICATE_PASSWORD`, to the repository. The *Release* workflow then signs with it.
+After an update, macOS may keep an entry for the previous build in the Accessibility list that no longer counts. Meno then opens *Settings › Permissions*, replaces the entry and macOS asks again; *Reset and Grant Again* does the same by hand. Releases from 0.10.0 on are signed with the same Developer ID certificate, so later updates keep the permission; only the update from an ad hoc version asks once more.
 
 ## Build and run
 
