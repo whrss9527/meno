@@ -476,6 +476,7 @@
 "Show Hidden Items" = "顯示隱藏項目";
 "Show hidden items" = "顯示隱藏項目";
 "show hidden items" = "顯示隱藏項目";
+"Show hidden items on an external display" = "在外接顯示器上顯示隱藏項目";
 "Show hidden items while offline" = "離線時顯示隱藏項目";
 "Show how many items are hidden next to the Meno icon" = "在 Meno 圖示旁顯示隱藏項目的數量";
 "Show in Finder" = "在 Finder 中顯示";
@@ -540,6 +541,10 @@
 "The Meno icon is hidden and no other way to show items is on. Turn one on below, or show the icon again." = "Meno 圖示已隱藏，也沒有開啟其他顯示項目的方式。請在下方開啟一種，或重新顯示圖示。";
 "The Meno icon, the Shelf and the look of the menu bar." = "Meno 圖示、托盤以及選單列的外觀。";
 "The menu bar adapts to apps, displays, power and time." = "選單列會隨 App、顯示器、電源和時間自動調整。";
+"The menu bar is on a specific display" = "選單列在指定的顯示器上";
+"The menu bar is on an external display" = "選單列在外接顯示器上";
+"the menu bar is on an external display" = "選單列在外接顯示器上";
+"the menu bar is on “%@”" = "選單列在「%@」上";
 "The move was called off." = "移動已取消。";
 "The release has no app to install." = "這個版本沒有可以安裝的 App。";
 "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing." = "當選單列放不下時（例如瀏海附近），托盤能讓項目依然觸手可及。";

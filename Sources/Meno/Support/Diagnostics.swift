@@ -36,11 +36,14 @@ enum Diagnostics {
                 "\(group.name) (\(group.items.count) items, icon \(describe(model.statusBar.groupIconFrame(group.id).map(ScreenGeometry.quartzRect(fromCocoa:)))))"
             }.joined(separator: ", "))
         }
+        let itemsDisplay = model.statusBar.screen.flatMap(ScreenGeometry.displayID(of:))
         for screen in NSScreen.screens {
             let frame = screen.frame
             let menuBarHeight = Int(frame.maxY - screen.visibleFrame.maxY)
             let notch = screen.safeAreaInsets.top > 0 ? "notch" : "no notch"
-            lines.append("Screen: \(Int(frame.width))×\(Int(frame.height)) @\(screen.backingScaleFactor)x · menu bar \(menuBarHeight) pt · \(notch)")
+            let items = ScreenGeometry.displayID(of: screen) == itemsDisplay ? " · items here" : ""
+            lines.append("Screen: \(Int(frame.width))×\(Int(frame.height)) @\(screen.backingScaleFactor)x · menu bar \(menuBarHeight) pt · \(notch)"
+                + (ScreenGeometry.isBuiltIn(screen) ? " · built in" : "") + items)
         }
         lines.append("Meno icon \(describe(model.statusBar.toggleFrame))"
             + " · hidden divider \(describe(model.statusBar.hiddenDividerFrame))"

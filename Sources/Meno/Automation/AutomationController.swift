@@ -272,7 +272,7 @@ final class AutomationController: ObservableObject {
             return nil
         case .appRunning(let id):
             if id.isEmpty { return nil }
-        case .displayConnected(let name):
+        case .displayConnected(let name), .menuBarOnDisplay(let name):
             if name.isEmpty { return nil }
         case .weekdays(let days):
             if days.isEmpty { return nil }
@@ -290,7 +290,13 @@ final class AutomationController: ObservableObject {
 
     func evaluate() {
         guard isStarted else { return }
-        context = SystemSignals.snapshot(isOnline: isOnline, capture: capture, succeededCommands: succeededCommands, routers: routers)
+        context = SystemSignals.snapshot(
+            isOnline: isOnline,
+            capture: capture,
+            succeededCommands: succeededCommands,
+            routers: routers,
+            menuBarScreen: model.statusBar.screen
+        )
         let transitions = evaluator.update(rules: model.settings.effectiveRules, context: context)
         activeRuleIDs = evaluator.activeRuleIDs
         for transition in transitions {

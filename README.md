@@ -66,7 +66,7 @@ After an update, macOS may keep an entry for the previous build in the Accessibi
 
 ### Make it yours
 
-- **Rules:** "When a microphone is in use, turn on Zen." Conditions include the frontmost or running app, a microphone or camera in use, battery, power and Low Power Mode, external or specific displays, the time of day and the day of the week, the network the Mac is on (recognized by its router, without Location Services), being offline and a shell command of your own that succeeds; a rule can need all of its conditions or any one of them. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically. Moves wait until you are not using the mouse and keyboard. *Pause Rules* in Meno's menu, or a shortcut of its own, stops them all for a while.
+- **Rules:** "When a microphone is in use, turn on Zen." Conditions include the frontmost or running app, a microphone or camera in use, battery, power and Low Power Mode, external or specific displays and the display whose menu bar is in use, the time of day and the day of the week, the network the Mac is on (recognized by its router, without Location Services), being offline and a shell command of your own that succeeds; a rule can need all of its conditions or any one of them. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically. Moves wait until you are not using the mouse and keyboard. *Pause Rules* in Meno's menu, or a shortcut of its own, stops them all for a while.
 - **Scenes:** save arrangements such as *Work*, *Home* or *Presenting* and switch between them from the menu, with a rule or with a shortcut of their own.
 - **Zen:** one shortcut clears every app icon, leaving only system status. Great for screenshots, recordings and talks.
 - **Item shortcuts:** open a specific item (Wi-Fi, a VPN, a timer…) from anywhere, even while it is hidden.
@@ -133,6 +133,7 @@ Meno has no analytics or accounts. It only goes online to ask GitHub for the lat
 - Moving items simulates ⌘-drags, so Meno briefly takes over the pointer and puts it back afterwards. Items that are not currently on screen cannot be dragged; reveal them first. The clock and the Control Center icon cannot be moved.
 - Icon spacing uses the `NSStatusItemSpacing` and `NSStatusItemSelectionPadding` preferences, which apps read at launch. Applying it relaunches apps that own menu bar items.
 - The menu bar tint is drawn behind the menu bar and is most visible with the transparent menu bar of macOS 26 and later.
+- With several displays, every menu bar shows the same items in the same order: macOS keeps them on the menu bar of the display you are using and shows them on the others as well. Meno hides and shows them alike on all displays. For more room on a large display, add the rule *Show hidden items on an external display*, or use the condition *The menu bar is on a specific display*.
 
 ## Development
 
