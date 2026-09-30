@@ -15,6 +15,9 @@ enum Diagnostics {
                 + " · stash \(state.stashCollapsed ? "collapsed" : "shown") · zen \(state.zen ? "on" : "off")",
             "Accessibility: \(model.permissions.accessibility ? "granted" : "missing")"
                 + " · Screen Recording: \(model.permissions.screenRecording ? "granted" : "missing")",
+            "Reveal: \(model.settings.general.revealStyle.rawValue)"
+                + " · keeps sections \(model.settings.general.keepsSections ? "on" : "off")"
+                + " · tint \(model.settings.tint.enabled ? model.settings.tint.colorSource.rawValue : "off")",
         ]
         let automation = model.automation
         var rules = "Rules: \(model.settings.rules.count), \(automation.activeRuleIDs.count) active"

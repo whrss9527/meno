@@ -338,8 +338,12 @@ final class QuickOpenController: ObservableObject {
 
     /// Opens the actions menu of the selected item below its row.
     func showActions() {
-        guard results.indices.contains(selection), case .item(let item) = results[selection],
-              let hostingView, !isShowingActions else { return }
+        guard !isShowingActions else { return }
+        guard results.indices.contains(selection), case .item(let item) = results[selection], let hostingView else {
+            // Meno's own actions have nothing more to offer.
+            NSSound.beep()
+            return
+        }
         let menu = MoveCommand.menu(from: actions(for: item))
         let bounds = hostingView.bounds
         let row = selectedRowFrame ?? CGRect(x: bounds.midX, y: bounds.midY, width: 0, height: 0)
