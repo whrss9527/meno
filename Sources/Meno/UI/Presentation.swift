@@ -277,6 +277,12 @@ extension RuleCondition.Kind {
         case .network: return "network"
         }
     }
+
+    /// A new condition of this kind, with the working days where the Mac
+    /// is set up.
+    var startingCondition: RuleCondition {
+        self == .weekdays ? .weekdays(days: Formatters.workdays()) : defaultCondition
+    }
 }
 
 extension RuleAction.Kind {
@@ -362,7 +368,7 @@ enum Formatters {
     static func weekdays(_ days: [Int]) -> String {
         let calendar = Calendar.current
         let set = Set(days.filter { (1...7).contains($0) })
-        if set.count == 7 { return String(localized: "every day") }
+        if set.count == 7 { return String(localized: "on any day") }
         if set.isEmpty { return String(localized: "on no day") }
         let weekend = weekendDays(in: calendar)
         if !weekend.isEmpty, weekend.count < 7 {
@@ -373,6 +379,14 @@ enum Formatters {
             calendar.weekdaySymbols[$0 - 1]
         }
         return String(localized: "on \(ListFormatter.localizedString(byJoining: names))")
+    }
+
+    /// The days that are not weekend days where the Mac is set up, usually
+    /// Monday to Friday.
+    static func workdays(in calendar: Calendar = .current) -> [Int] {
+        let weekend = weekendDays(in: calendar)
+        guard !weekend.isEmpty, weekend.count < 7 else { return Weekdays.mondayToFriday }
+        return Weekdays.normalized(Array(Set(1...7).subtracting(weekend)))
     }
 
     /// The days of the weekend where the Mac is set up, usually Saturday

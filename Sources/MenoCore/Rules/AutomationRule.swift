@@ -75,8 +75,9 @@ public enum RuleCondition: Codable, Hashable, Sendable {
     /// wraps around midnight when `startMinute > endMinute`.
     case timeWindow(startMinute: Int, endMinute: Int)
     /// On one of these days of the week, numbered as in `Calendar`: 1 is
-    /// Sunday and 7 is Saturday. The day is the one on the Mac's clock, so
-    /// a time window that wraps around midnight ends on the next day.
+    /// Sunday and 7 is Saturday. In a rule that needs all its conditions,
+    /// the part of a time window after midnight belongs to the day the
+    /// window started on; see `AutomationRule.context(_:for:requiresAll:)`.
     case weekdays(days: [Int])
     case offline
     case microphoneInUse
@@ -307,9 +308,29 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
 
     public func matches(_ context: RuleContext) -> Bool {
         guard isEnabled, !conditions.isEmpty else { return false }
+        let context = Self.context(context, for: conditions, requiresAll: requiresAll)
         return requiresAll
             ? conditions.allSatisfy { $0.isSatisfied(by: context) }
             : conditions.contains { $0.isSatisfied(by: context) }
+    }
+
+    /// The state that conditions are checked against together. After
+    /// midnight, within a time window of the conditions that started the
+    /// day before, the day of the week is that day, so that "on Friday,
+    /// between 22:00 and 2:00" lasts until 2:00 on Saturday. Only a rule
+    /// that needs all its conditions combines them this way; for one that
+    /// needs any, the time window holds on its own.
+    public static func context(_ context: RuleContext, for conditions: [RuleCondition], requiresAll: Bool) -> RuleContext {
+        guard requiresAll, (1...7).contains(context.weekday),
+              conditions.contains(where: { $0.kind == .weekdays }),
+              conditions.contains(where: { condition in
+                  guard case .timeWindow(let start, let end) = condition else { return false }
+                  return start > end && context.minuteOfDay < end
+              })
+        else { return context }
+        var previousDay = context
+        previousDay.weekday = context.weekday == 1 ? 7 : context.weekday - 1
+        return previousDay
     }
 
     /// Whether conditions hold together when only some of them are known,

@@ -259,10 +259,11 @@ final class AutomationController: ObservableObject {
         captureActivity.watch(microphones: microphones, cameras: cameras)
     }
 
-    /// Whether a condition holds now, or `nil` when Meno does not know:
-    /// for an incomplete condition, and for microphones, cameras, commands
-    /// and networks that no enabled rule has Meno watch.
-    func holdsNow(_ condition: RuleCondition) -> Bool? {
+    /// Whether a condition of a rule with `conditions` holds now, or `nil`
+    /// when Meno does not know: for an incomplete condition, and for
+    /// microphones, cameras, commands and networks that no enabled rule has
+    /// Meno watch.
+    func holdsNow(_ condition: RuleCondition, in conditions: [RuleCondition], requiresAll: Bool) -> Bool? {
         guard isStarted else { return nil }
         let rules = model.settings.effectiveRules
         switch condition {
@@ -284,7 +285,7 @@ final class AutomationController: ObservableObject {
         default:
             break
         }
-        return condition.isSatisfied(by: context)
+        return condition.isSatisfied(by: AutomationRule.context(context, for: conditions, requiresAll: requiresAll))
     }
 
     func evaluate() {

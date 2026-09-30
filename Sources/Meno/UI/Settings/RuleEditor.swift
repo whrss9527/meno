@@ -71,7 +71,7 @@ struct RuleEditor: View {
                         Spacer(minLength: 0)
                         // Network conditions and commands show their own.
                         if entry.condition.kind != .network, entry.condition.kind != .commandSucceeds,
-                           let holds = automation.holdsNow(entry.condition) {
+                           let holds = automation.holdsNow(entry.condition, in: conditions.map(\.condition), requiresAll: requiresAll) {
                             ConditionStatus(holds: holds)
                         }
                         Button {
@@ -95,7 +95,7 @@ struct RuleEditor: View {
                     Menu {
                         ForEach(RuleCondition.Kind.allCases, id: \.self) { kind in
                             Button(kind.title) {
-                                conditions.append(EditableCondition(condition: kind.defaultCondition))
+                                conditions.append(EditableCondition(condition: kind.startingCondition))
                             }
                         }
                     } label: {
@@ -175,7 +175,11 @@ struct RuleEditor: View {
 
     /// Whether the conditions hold now, when Meno knows.
     private var conditionsMet: Bool? {
-        AutomationRule.conditionsHold(conditions.map { automation.holdsNow($0.condition) }, requiresAll: requiresAll)
+        let all = conditions.map(\.condition)
+        return AutomationRule.conditionsHold(
+            all.map { automation.holdsNow($0, in: all, requiresAll: requiresAll) },
+            requiresAll: requiresAll
+        )
     }
 
     private var isValid: Bool {
@@ -227,7 +231,7 @@ private struct ConditionEditor: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Picker("", selection: Binding(get: { condition.kind }, set: { condition = $0.defaultCondition })) {
+            Picker("", selection: Binding(get: { condition.kind }, set: { condition = $0.startingCondition })) {
                 ForEach(RuleCondition.Kind.allCases, id: \.self) { kind in
                     Label(kind.title, systemImage: kind.symbol).tag(kind)
                 }

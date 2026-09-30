@@ -15,11 +15,11 @@ final class LayoutKeeper {
     private var keeper: SectionKeeper
     /// Items found elsewhere while Zen kept the menu bar still, by key.
     private var waiting: [MenuItemKey: SectionKeeper.Misplacement] = [:]
-    /// When the last scan was taken in.
-    private var lastScan: Date?
-    /// When the person last ⌘-dragged in the menu bar, and where the drag
-    /// that is going on started.
-    private var personDragged: Date?
+    /// When the scan taken in last began.
+    private var lastScanStart: Date?
+    /// Where the person's recent ⌘-drags in the menu bar ended, in Quartz
+    /// coordinates, and where the drag that is going on started.
+    private var drops: [(point: CGPoint, date: Date)] = []
     private var dragStart: NSPoint?
     private lazy var dragMonitor = GlobalEventMonitor(mask: [.leftMouseDown, .leftMouseUp]) { [weak self] event in
         self?.mouse(event)
@@ -32,11 +32,17 @@ final class LayoutKeeper {
     /// How long after Meno started scans are not taken in, while its
     /// dividers settle. Moves Meno makes meanwhile are still recorded.
     private static let settling: TimeInterval = 5
+    /// How far from where it was let go of a dragged item can land.
+    private static let dropReach: CGFloat = 16
 
     init(model: AppModel) {
         self.model = model
         keeper = SectionKeeper(memory: model.storage.loadSectionMemory())
         keeper.forget(notSeenSince: Date().addingTimeInterval(-Self.memorySpan))
+        // Drags made while Meno starts count too.
+        if model.settings.general.keepsSections {
+            dragMonitor.start()
+        }
     }
 
     /// Whether items may be put back right now.
@@ -51,11 +57,17 @@ final class LayoutKeeper {
         // as moved on purpose.
         guard now.timeIntervalSince(model.startedAt) >= Self.settling else { return }
         defer { saveIfNeeded() }
-        let previousScan = lastScan
-        lastScan = now
-        let misplaced = keeper.observe(observations, at: now, includesStash: model.settings.general.stashEnabled)
+        // The scan read the menu bar from when it began, so a drag that
+        // ended after the previous scan began may not be in that one.
+        let since = lastScanStart ?? model.startedAt
+        let scanStart = model.inventory.scannedAt ?? now
+        lastScanStart = scanStart
+        let recentDrops = drops.filter { $0.date >= since }
+        drops.removeAll { $0.date < scanStart }
+        var misplaced = keeper.observe(observations, at: now, includesStash: model.settings.general.stashEnabled)
         guard model.settings.general.keepsSections else {
             dragMonitor.stop()
+            drops = []
             keeper.accept(misplaced + Array(waiting.values), at: now)
             waiting = [:]
             return
@@ -63,10 +75,15 @@ final class LayoutKeeper {
         dragMonitor.start()
         // An item the person dragged right after its app put it in the
         // menu bar, before a scan saw it, only looks as if its app put it
-        // where it is now.
-        if let personDragged, let previousScan, personDragged >= previousScan {
-            keeper.accept(misplaced, at: now)
-            return
+        // where it is now. It lies where the drag ended.
+        let dragged = misplaced.filter { isDropped($0.key, among: recentDrops) }
+        if !dragged.isEmpty {
+            keeper.accept(dragged, at: now)
+            let keys = Set(dragged.map(\.key))
+            misplaced.removeAll { keys.contains($0.key) }
+            for key in keys {
+                waiting[key] = nil
+            }
         }
         for misplacement in misplaced {
             waiting[misplacement.key] = misplacement
@@ -101,8 +118,15 @@ final class LayoutKeeper {
         saveIfNeeded()
     }
 
-    /// Notices ⌘-drags in the menu bar. Meno's own drags are recorded as
-    /// it makes them.
+    /// Whether one of `drops` ended on the item, as the last scan found it.
+    private func isDropped(_ key: MenuItemKey, among drops: [(point: CGPoint, date: Date)]) -> Bool {
+        guard !drops.isEmpty, let frame = model.inventory.item(for: key)?.frame, frame.width > 0 else { return false }
+        let reach = frame.insetBy(dx: -Self.dropReach, dy: -Self.dropReach)
+        return drops.contains { reach.contains($0.point) }
+    }
+
+    /// Notices ⌘-drags that end in the menu bar. Meno's own drags are
+    /// recorded as it makes them.
     private func mouse(_ event: NSEvent) {
         let location = NSEvent.mouseLocation
         switch event.type {
@@ -113,9 +137,12 @@ final class LayoutKeeper {
         case .leftMouseUp:
             guard let start = dragStart else { return }
             dragStart = nil
-            if abs(location.x - start.x) > 2 || abs(location.y - start.y) > 2 {
-                personDragged = Date()
-            }
+            let moved = abs(location.x - start.x) > 2 || abs(location.y - start.y) > 2
+            guard moved, ScreenGeometry.isInMenuBar(cocoa: location) else { return }
+            let now = Date()
+            // Drags a scan has taken in long ago no longer matter.
+            drops.removeAll { now.timeIntervalSince($0.date) > 300 }
+            drops.append((point: ScreenGeometry.quartzPoint(fromCocoa: location), date: now))
         default:
             break
         }

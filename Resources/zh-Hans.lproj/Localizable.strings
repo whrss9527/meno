@@ -159,7 +159,6 @@
 "Edit…" = "编辑…";
 "Empty menu bar" = "菜单栏空白处";
 "Empty. Drag items here, or choose Group in an item's menu." = "还是空的。把项目拖到这里，或在项目菜单的“分组”里加入。";
-"every day" = "每天";
 "Experimental" = "实验性";
 "Export Settings…" = "导出设置…";
 "Eye" = "眼睛";
@@ -338,6 +337,7 @@
 "Nothing to suggest right now. Your menu bar looks well arranged." = "暂时没有建议，你的菜单栏看起来井井有条。";
 "offline" = "离线";
 "on %@" = "在%@";
+"on any day" = "在任何一天";
 "on battery" = "使用电池供电";
 "on no day" = "不在任何一天";
 "on the network “%@”" = "位于网络“%@”";

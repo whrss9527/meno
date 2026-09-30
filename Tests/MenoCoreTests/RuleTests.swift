@@ -188,6 +188,38 @@ final class RuleTests: XCTestCase {
         XCTAssertFalse(fridayNight.matches(RuleContext(minuteOfDay: 9 * 60, weekday: 6)))
     }
 
+    func testOvernightWindowsBelongToTheDayTheyStart() {
+        // Friday, 22:00 to 2:00.
+        let friday = AutomationRule(
+            name: "Friday night",
+            conditions: [.weekdays(days: [6]), .timeWindow(startMinute: 22 * 60, endMinute: 2 * 60)],
+            action: .zen
+        )
+        XCTAssertTrue(friday.matches(RuleContext(minuteOfDay: 23 * 60, weekday: 6)))
+        // Saturday 1:00 is still Friday night; Friday 1:00 is Thursday's.
+        XCTAssertTrue(friday.matches(RuleContext(minuteOfDay: 60, weekday: 7)))
+        XCTAssertFalse(friday.matches(RuleContext(minuteOfDay: 60, weekday: 6)))
+        XCTAssertFalse(friday.matches(RuleContext(minuteOfDay: 3 * 60, weekday: 7)))
+
+        // Weeknights from Sunday to Thursday, 21:00 to 7:00, wrapping the week.
+        let weeknights = AutomationRule(
+            name: "Weeknights",
+            conditions: [.timeWindow(startMinute: 21 * 60, endMinute: 7 * 60), .weekdays(days: [1, 2, 3, 4, 5])],
+            action: .zen
+        )
+        XCTAssertTrue(weeknights.matches(RuleContext(minuteOfDay: 6 * 60, weekday: 2)))
+        XCTAssertTrue(weeknights.matches(RuleContext(minuteOfDay: 22 * 60, weekday: 1)))
+        XCTAssertFalse(weeknights.matches(RuleContext(minuteOfDay: 6 * 60, weekday: 1)))
+        XCTAssertTrue(weeknights.matches(RuleContext(minuteOfDay: 6 * 60, weekday: 6)))
+        XCTAssertFalse(weeknights.matches(RuleContext(minuteOfDay: 22 * 60, weekday: 6)))
+
+        // A rule that needs any condition keeps the day of the clock.
+        var either = friday
+        either.requiresAll = false
+        XCTAssertEqual(AutomationRule.context(RuleContext(minuteOfDay: 60, weekday: 7), for: either.conditions, requiresAll: false).weekday, 7)
+        XCTAssertTrue(either.matches(RuleContext(minuteOfDay: 60, weekday: 1)))
+    }
+
     func testConditionsHoldWithUnknowns() {
         XCTAssertEqual(AutomationRule.conditionsHold([true, true], requiresAll: true), true)
         XCTAssertEqual(AutomationRule.conditionsHold([true, nil], requiresAll: true), nil)

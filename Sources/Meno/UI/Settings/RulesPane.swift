@@ -271,7 +271,7 @@ enum RulePreset: CaseIterable {
             let action: RuleAction = model.settings.scenes.first.map { RuleAction.applyScene(id: $0.id) } ?? RuleAction.revealHidden
             return AutomationRule(
                 name: title,
-                conditions: [.weekdays(days: Weekdays.mondayToFriday), .timeWindow(startMinute: 9 * 60, endMinute: 18 * 60)],
+                conditions: [.weekdays(days: Formatters.workdays()), .timeWindow(startMinute: 9 * 60, endMinute: 18 * 60)],
                 action: action
             )
         case .offline:

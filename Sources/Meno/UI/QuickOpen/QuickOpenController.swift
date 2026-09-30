@@ -60,8 +60,12 @@ final class QuickOpenController: ObservableObject {
 
     private var panel: FloatingPanel?
     private var shownAt = Date.distantPast
-    /// The actions menu of a result is open.
-    private var isShowingActions = false
+    /// Menus open over the palette, such as a result's actions or its
+    /// context menu. They take the keys, and the palette stays meanwhile.
+    private var openMenus = 0
+    /// The actions menu is up, whether or not macOS reports its tracking.
+    private var isPoppingUpActions = false
+    private var isShowingActions: Bool { openMenus > 0 || isPoppingUpActions }
     private var hostingView: NSHostingView<QuickOpenView>?
     private var subscriptions: Set<AnyCancellable> = []
     private lazy var keyMonitor = LocalEventMonitor(mask: [.keyDown]) { [weak self] event in
@@ -88,6 +92,7 @@ final class QuickOpenController: ObservableObject {
 
     func show() {
         model.shelf.hide()
+        openMenus = 0
         query = ""
         selection = 0
         recompute(keepingSelection: false)
@@ -112,6 +117,7 @@ final class QuickOpenController: ObservableObject {
     func hide() {
         guard isVisible else { return }
         isVisible = false
+        openMenus = 0
         keyMonitor.stop()
         outsideClickMonitor.stop()
         panel?.orderOut(nil)
@@ -337,12 +343,36 @@ final class QuickOpenController: ObservableObject {
         let menu = MoveCommand.menu(from: actions(for: item))
         let bounds = hostingView.bounds
         let row = selectedRowFrame ?? CGRect(x: bounds.midX, y: bounds.midY, width: 0, height: 0)
-        let x = row.minX + row.width * 0.55
-        // SwiftUI measures from the top.
+        // SwiftUI measures from the top. A row scrolled out of sight still
+        // gets its menu on the palette.
         let y = hostingView.isFlipped ? row.maxY : bounds.height - row.maxY
-        isShowingActions = true
-        menu.popUp(positioning: nil, at: NSPoint(x: x, y: y), in: hostingView)
-        isShowingActions = false
+        let glass = bounds.insetBy(dx: 24, dy: 24)
+        let point = NSPoint(
+            x: min(max(row.minX + row.width * 0.55, glass.minX), glass.maxX),
+            y: min(max(y, glass.minY), glass.maxY)
+        )
+        isPoppingUpActions = true
+        menu.popUp(positioning: nil, at: point, in: hostingView)
+        isPoppingUpActions = false
+        // Another app may have taken the keyboard while the menu was open.
+        if isVisible, openMenus == 0, panel?.isKeyWindow != true {
+            hide()
+        }
+    }
+
+    /// Counts the menus open over the palette. Once the last one closes,
+    /// the palette goes away if another app took the keyboard meanwhile.
+    private func menuTracking(began: Bool) {
+        guard isVisible else {
+            openMenus = 0
+            return
+        }
+        openMenus = began ? openMenus + 1 : max(openMenus - 1, 0)
+        guard !began, openMenus == 0 else { return }
+        Task { @MainActor [weak self] in
+            guard let self, self.isVisible, !self.isShowingActions, self.panel?.isKeyWindow != true else { return }
+            self.hide()
+        }
     }
 
     /// Shows the item's section in the menu bar without opening it.
@@ -426,6 +456,15 @@ final class QuickOpenController: ObservableObject {
                 }
             }
             .store(in: &subscriptions)
+        for (name, began) in [(NSMenu.didBeginTrackingNotification, true), (NSMenu.didEndTrackingNotification, false)] {
+            NotificationCenter.default.publisher(for: name)
+                .sink { [weak self] _ in
+                    MainActor.assumeIsolated {
+                        self?.menuTracking(began: began)
+                    }
+                }
+                .store(in: &subscriptions)
+        }
         // The palette goes away when another app or window takes the
         // keyboard, for example after ⌘-Tab.
         NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification, object: panel)

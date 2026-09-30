@@ -159,7 +159,6 @@
 "Edit…" = "編輯…";
 "Empty menu bar" = "選單列空白處";
 "Empty. Drag items here, or choose Group in an item's menu." = "還是空的。把項目拖到這裡，或在項目選單的「群組」裡加入。";
-"every day" = "每天";
 "Experimental" = "實驗性";
 "Export Settings…" = "匯出設定…";
 "Eye" = "眼睛";
@@ -338,6 +337,7 @@
 "Nothing to suggest right now. Your menu bar looks well arranged." = "暫時沒有建議，你的選單列看起來井井有條。";
 "offline" = "離線";
 "on %@" = "在%@";
+"on any day" = "在任何一天";
 "on battery" = "使用電池供電";
 "on no day" = "不在任何一天";
 "on the network “%@”" = "位於網路「%@」";
