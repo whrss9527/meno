@@ -49,6 +49,10 @@ jobs:
         timeout-minutes: 5
         run: scripts/measure-footprint.sh build/Meno.app
 
+      - name: Hiding end to end
+        timeout-minutes: 5
+        run: scripts/check-hiding.sh build/Meno.app
+
       - name: Upload app
         if: matrix.runner == 'macos-26'
         uses: actions/upload-artifact@v4

@@ -109,6 +109,7 @@ final class AppModel: ObservableObject {
             automation.start()
             temporary.schedule()
             Diagnostics.event("ready\n" + Diagnostics.report(for: self))
+            Diagnostics.printReportsOnSignal(for: self)
         }
         let updated = recordLaunchedVersion()
         // The previous copy stays until this one has run for a few seconds,

@@ -104,6 +104,23 @@ To hide a section, its divider grows until the items to its left no longer fit:
 
 Menu bar items are read through each app's accessibility tree, which works on every supported macOS version, including the single-window menu bar of macOS 27.
 
+## Footprint
+
+Left alone, Meno uses about a tenth of a percent of one CPU core and 11 MB of memory, as Activity Monitor counts it. CI measures this after every change: `scripts/measure-footprint.sh` starts the app, leaves it alone for a minute and adds the numbers to the run's summary.
+
+| Idle for a minute | macOS 26, Apple silicon |
+| --- | --- |
+| CPU | 0.10 % of one core |
+| Memory | 10.6 MB |
+| Wake-ups | 0.1 per second |
+| One look over the menu bar | 16–39 ms |
+
+- Meno hears about most changes as they happen, such as apps starting and quitting, and looks over the whole menu bar only every 20 seconds (every minute in Low Power Mode) to catch what slipped through. It does not look while the displays sleep or another user's session is in front.
+- Nothing is captured from the screen in the background.
+- Rules that run a command or depend on the network only do that work while such a rule is on.
+
+The measurements run on GitHub's virtual Macs, which have only macOS's own menu bar items; with more items, each look at the menu bar takes a little longer.
+
 ## Permissions and privacy
 
 | Permission | Needed for |
@@ -170,6 +187,7 @@ scripts            App bundling, icon generation, localization check
 - `swift test` runs the MenoCore tests (they also run on Linux).
 - `scripts/check-localization.py` lists user-facing strings and checks the translations in `Resources/*.lproj`.
 - `scripts/generate-icon.py` renders `Resources/AppIcon.icns` (needs Pillow and numpy).
+- `scripts/measure-footprint.sh` measures what the built app costs while idle, and `scripts/check-hiding.sh` checks with a menu bar item of its own that hiding and showing work. CI runs both on macOS 15 and 26; they need a Mac where Meno has not been set up, and Accessibility for the app that runs them. With `MENO_DIAG=1` in its environment Meno prints its scans and its diagnostic report to standard error, and the report again on `SIGUSR1`.
 
 ### Releases
 

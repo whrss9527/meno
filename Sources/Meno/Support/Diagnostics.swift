@@ -92,6 +92,27 @@ extension Diagnostics {
         FileHandle.standardError.write(Data("MENO_DIAG \(line())\n".utf8))
     }
 
+    private static var reportSignal: DispatchSourceSignal?
+
+    /// With `printsEvents`, prints the report again on SIGUSR1, after a
+    /// fresh scan, for scripts that check what Meno sees.
+    static func printReportsOnSignal(for model: AppModel) {
+        guard printsEvents, reportSignal == nil else { return }
+        signal(SIGUSR1, SIG_IGN)
+        let source = DispatchSource.makeSignalSource(signal: SIGUSR1, queue: .main)
+        source.setEventHandler { [weak model] in
+            MainActor.assumeIsolated {
+                guard let model else { return }
+                Task {
+                    await model.inventory.refresh()
+                    event("report\n" + report(for: model))
+                }
+            }
+        }
+        source.resume()
+        reportSignal = source
+    }
+
     /// The memory Meno takes up, in kilobytes, as Activity Monitor counts it.
     static var physicalFootprint: UInt64? {
         var info = task_vm_info_data_t()

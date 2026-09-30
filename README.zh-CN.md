@@ -104,6 +104,23 @@ Meno 会在菜单栏中添加小小的分隔符：单箭头是“隐藏”分区
 
 菜单栏项目通过各个 App 的辅助功能树读取，适用于所有支持的 macOS 版本，包括 macOS 27 的单窗口菜单栏。
 
+## 占用
+
+放着不动时，Meno 大约占用单个 CPU 核心的千分之一和 11 MB 内存（按“活动监视器”的算法）。每次改动后 CI 都会测一遍：`scripts/measure-footprint.sh` 启动 App，放着不动一分钟，把数字写进这次运行的摘要。
+
+| 放着不动一分钟 | macOS 26，Apple 芯片 |
+| --- | --- |
+| CPU | 单核的 0.10% |
+| 内存 | 10.6 MB |
+| 唤醒 | 每秒 0.1 次 |
+| 查看一遍菜单栏 | 16–39 毫秒 |
+
+- 大多数变化会即时通知 Meno，比如 App 启动或退出；Meno 只是每 20 秒（低电量模式下每分钟）把整个菜单栏查看一遍，补上漏掉的变化。显示器休眠或其他用户的会话在前台时不查看。
+- 不在后台截取屏幕。
+- 会运行命令或依赖网络的规则，只在这类规则开着时才做这些事。
+
+测量在 GitHub 的 macOS 虚拟机上进行，机器上只有 macOS 自带的菜单栏项目；项目更多时，每次查看会稍久一点。
+
 ## 权限与隐私
 
 | 权限 | 用途 |
@@ -170,6 +187,7 @@ scripts            打包 App、生成图标、检查本地化
 - `swift test` 运行 MenoCore 测试（也可在 Linux 上运行）。
 - `scripts/check-localization.py` 列出界面文字并检查 `Resources/*.lproj` 中的翻译是否完整。
 - `scripts/generate-icon.py` 生成 `Resources/AppIcon.icns`（需要 Pillow 和 numpy）。
+- `scripts/measure-footprint.sh` 测量打包好的 App 空闲时的占用，`scripts/check-hiding.sh` 用自己添加的菜单栏项目检查隐藏和显示是否正常。CI 在 macOS 15 和 26 上都会运行这两个脚本；它们需要一台没有设置过 Meno 的 Mac，并且运行脚本的 App 有辅助功能权限。环境变量里有 `MENO_DIAG=1` 时，Meno 会把每次扫描和诊断报告输出到标准错误，收到 `SIGUSR1` 时再输出一次报告。
 
 ### 发布新版本
 
