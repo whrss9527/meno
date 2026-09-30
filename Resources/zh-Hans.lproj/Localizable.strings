@@ -327,6 +327,7 @@
 "No scenes yet." = "还没有场景。";
 "Not available, using frosted glass" = "不可用，改用磨砂玻璃";
 "Not connected now" = "当前未连接";
+"Not true now" = "当前不满足";
 "Not used for %lld days." = "已有 %lld 天未使用。";
 "Nothing in this group yet. Add items from their menu in the layout editor." = "这个分组还是空的。可以在布局编辑器的项目菜单里加入项目。";
 "Nothing is hidden" = "没有隐藏的项目";
@@ -505,6 +506,8 @@
 "That item is not in the menu bar right now." = "该项目目前不在菜单栏中。";
 "The command failed or took too long." = "命令执行失败或耗时过长。";
 "The command succeeded." = "命令执行成功。";
+"The conditions are met now." = "当前已满足条件。";
+"The conditions are not met now." = "当前未满足条件。";
 "The divider and a few helper spacers grow in small steps, each below the width limit of the macOS 27 menu bar. Pushed items move into the system overflow." = "分隔符和几个辅助占位项以小步逐渐加宽，每个都低于 macOS 27 菜单栏的宽度上限。被推开的项目会进入系统的溢出菜单。";
 "The download failed." = "下载失败。";
 "The download is incomplete or damaged." = "下载的文件不完整或已损坏。";
@@ -537,6 +540,7 @@
 "Tint color" = "着色颜色";
 "Tint the menu bar" = "为菜单栏着色";
 "to" = "至";
+"True now" = "当前满足";
 "Turn On" = "开启";
 "Turn on Zen" = "开启禅模式";
 "turn on Zen" = "开启禅模式";

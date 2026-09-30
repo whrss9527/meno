@@ -259,6 +259,34 @@ final class AutomationController: ObservableObject {
         captureActivity.watch(microphones: microphones, cameras: cameras)
     }
 
+    /// Whether a condition holds now, or `nil` when Meno does not know:
+    /// for an incomplete condition, and for microphones, cameras, commands
+    /// and networks that no enabled rule has Meno watch.
+    func holdsNow(_ condition: RuleCondition) -> Bool? {
+        guard isStarted else { return nil }
+        let rules = model.settings.effectiveRules
+        switch condition {
+        case .appFrontmost:
+            // Meno is in front while the rule is edited.
+            return nil
+        case .appRunning(let id):
+            if id.isEmpty { return nil }
+        case .displayConnected(let name):
+            if name.isEmpty { return nil }
+        case .weekdays(let days):
+            if days.isEmpty { return nil }
+        case .microphoneInUse, .cameraInUse:
+            guard rules.filter(\.isEnabled).flatMap(\.conditions).contains(condition) else { return nil }
+        case .commandSucceeds:
+            guard let command = condition.command, rules.commands.contains(command) else { return nil }
+        case .network(let router, _):
+            guard !router.isEmpty, rules.watchesNetworks else { return nil }
+        default:
+            break
+        }
+        return condition.isSatisfied(by: context)
+    }
+
     func evaluate() {
         guard isStarted else { return }
         context = SystemSignals.snapshot(isOnline: isOnline, capture: capture, succeededCommands: succeededCommands, routers: routers)

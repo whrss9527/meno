@@ -16,6 +16,8 @@ struct RuleEditor: View {
     let isNew: Bool
     let scenes: [LayoutScene]
     let items: [MenuBarItem]
+    /// Tells which conditions hold now.
+    @ObservedObject var automation: AutomationController
     let onSave: (AutomationRule) -> Void
 
     struct EditableCondition: Identifiable {
@@ -23,7 +25,14 @@ struct RuleEditor: View {
         var condition: RuleCondition
     }
 
-    init(draft: AutomationRule, isNew: Bool, scenes: [LayoutScene], items: [MenuBarItem], onSave: @escaping (AutomationRule) -> Void) {
+    init(
+        draft: AutomationRule,
+        isNew: Bool,
+        scenes: [LayoutScene],
+        items: [MenuBarItem],
+        automation: AutomationController,
+        onSave: @escaping (AutomationRule) -> Void
+    ) {
         _name = State(initialValue: draft.name)
         _conditions = State(initialValue: draft.conditions.map { EditableCondition(condition: $0) })
         _action = State(initialValue: draft.action)
@@ -34,6 +43,7 @@ struct RuleEditor: View {
         self.isNew = isNew
         self.scenes = scenes
         self.items = items
+        self.automation = automation
         self.onSave = onSave
     }
 
@@ -59,6 +69,11 @@ struct RuleEditor: View {
                     HStack(spacing: 8) {
                         ConditionEditor(condition: $entry.condition)
                         Spacer(minLength: 0)
+                        // Network conditions and commands show their own.
+                        if entry.condition.kind != .network, entry.condition.kind != .commandSucceeds,
+                           let holds = automation.holdsNow(entry.condition) {
+                            ConditionStatus(holds: holds)
+                        }
                         Button {
                             conditions.removeAll { $0.id == entry.id }
                         } label: {
@@ -76,16 +91,27 @@ struct RuleEditor: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Menu {
-                    ForEach(RuleCondition.Kind.allCases, id: \.self) { kind in
-                        Button(kind.title) {
-                            conditions.append(EditableCondition(condition: kind.defaultCondition))
+                HStack(spacing: 8) {
+                    Menu {
+                        ForEach(RuleCondition.Kind.allCases, id: \.self) { kind in
+                            Button(kind.title) {
+                                conditions.append(EditableCondition(condition: kind.defaultCondition))
+                            }
                         }
+                    } label: {
+                        Label("Add Condition", systemImage: "plus")
                     }
-                } label: {
-                    Label("Add Condition", systemImage: "plus")
+                    .fixedSize()
+                    Spacer(minLength: 8)
+                    if let met = conditionsMet {
+                        Label(
+                            met ? String(localized: "The conditions are met now.") : String(localized: "The conditions are not met now."),
+                            systemImage: met ? "checkmark.circle.fill" : "circle.dashed"
+                        )
+                        .font(.system(size: 11))
+                        .foregroundStyle(met ? Color.green : Color.secondary)
+                    }
                 }
-                .fixedSize()
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -145,6 +171,11 @@ struct RuleEditor: View {
             rule.name = RuleDescriber.describe(action, scenes: scenes, items: items).capitalizedFirstLetter
         }
         return rule
+    }
+
+    /// Whether the conditions hold now, when Meno knows.
+    private var conditionsMet: Bool? {
+        AutomationRule.conditionsHold(conditions.map { automation.holdsNow($0.condition) }, requiresAll: requiresAll)
     }
 
     private var isValid: Bool {
@@ -409,13 +440,26 @@ private struct ActionEditor: View {
     }
 }
 
+/// Marks whether a condition holds now.
+private struct ConditionStatus: View {
+    let holds: Bool
+
+    var body: some View {
+        let label = holds ? String(localized: "True now") : String(localized: "Not true now")
+        Image(systemName: holds ? "checkmark.circle.fill" : "circle.dashed")
+            .foregroundStyle(holds ? Color.green : Color.secondary)
+            .help(label)
+            .accessibilityLabel(label)
+    }
+}
+
 /// Picks days of the week, shown in the order of the person's week.
 struct WeekdayPicker: View {
     @Binding var days: [Int]
 
     var body: some View {
         let calendar = Calendar.current
-        HStack(spacing: 3) {
+        HStack(spacing: 2) {
             ForEach(Weekdays.ordered(startingOn: calendar.firstWeekday), id: \.self) { day in
                 let selected = days.contains(day)
                 let name = calendar.standaloneWeekdaySymbols[day - 1]
@@ -425,7 +469,7 @@ struct WeekdayPicker: View {
                     Text(verbatim: calendar.shortStandaloneWeekdaySymbols[day - 1])
                         .font(.system(size: 11, weight: selected ? .semibold : .regular))
                         .lineLimit(1)
-                        .frame(minWidth: 24)
+                        .frame(minWidth: 22)
                         .padding(.horizontal, 2)
                         .padding(.vertical, 4)
                         .foregroundStyle(selected ? Color.white : Color.primary)

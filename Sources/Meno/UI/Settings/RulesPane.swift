@@ -76,7 +76,8 @@ struct RulesPane: View {
                 draft: state.rule,
                 isNew: state.isNew,
                 scenes: model.settings.scenes,
-                items: inventory.items.filter { $0.kind != .marker }
+                items: inventory.items.filter { $0.kind != .marker },
+                automation: automation
             ) { saved in
                 if let index = model.settings.rules.firstIndex(where: { $0.id == saved.id }) {
                     model.settings.rules[index] = saved

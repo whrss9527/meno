@@ -188,6 +188,17 @@ final class RuleTests: XCTestCase {
         XCTAssertFalse(fridayNight.matches(RuleContext(minuteOfDay: 9 * 60, weekday: 6)))
     }
 
+    func testConditionsHoldWithUnknowns() {
+        XCTAssertEqual(AutomationRule.conditionsHold([true, true], requiresAll: true), true)
+        XCTAssertEqual(AutomationRule.conditionsHold([true, nil], requiresAll: true), nil)
+        XCTAssertEqual(AutomationRule.conditionsHold([nil, false], requiresAll: true), false)
+        XCTAssertEqual(AutomationRule.conditionsHold([], requiresAll: true), false)
+        XCTAssertEqual(AutomationRule.conditionsHold([false, nil], requiresAll: false), nil)
+        XCTAssertEqual(AutomationRule.conditionsHold([nil, true], requiresAll: false), true)
+        XCTAssertEqual(AutomationRule.conditionsHold([false, false], requiresAll: false), false)
+        XCTAssertEqual(AutomationRule.conditionsHold([], requiresAll: false), false)
+    }
+
     func testWeekdayOrder() {
         XCTAssertEqual(Weekdays.ordered(startingOn: 1), [1, 2, 3, 4, 5, 6, 7])
         XCTAssertEqual(Weekdays.ordered(startingOn: 2), [2, 3, 4, 5, 6, 7, 1])

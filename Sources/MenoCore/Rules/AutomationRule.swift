@@ -312,6 +312,18 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
             : conditions.contains { $0.isSatisfied(by: context) }
     }
 
+    /// Whether conditions hold together when only some of them are known,
+    /// with `nil` for each one that is not. Returns `nil` when the unknown
+    /// ones decide.
+    public static func conditionsHold(_ states: [Bool?], requiresAll: Bool) -> Bool? {
+        if requiresAll {
+            if states.contains(false) { return false }
+            return states.contains(nil) ? nil : !states.isEmpty
+        }
+        if states.contains(true) { return true }
+        return states.contains(nil) ? nil : false
+    }
+
     /// Whether a condition of the rule runs a shell command.
     public var runsCommands: Bool {
         conditions.contains { $0.command != nil }
