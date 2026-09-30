@@ -18,6 +18,9 @@ final class ShelfController: ObservableObject {
     /// The item picked with the arrow keys, when the Shelf was opened with
     /// a hotkey.
     @Published private(set) var keyboardSelection: MenuItemKey?
+    /// What was typed to pick an item by name, and when last.
+    private var typed = ""
+    private var lastTyped = Date.distantPast
     /// How wide a row of items may be before the Shelf wraps it, so the
     /// Shelf always fits on its screen.
     @Published private(set) var maxContentWidth: CGFloat = 1200
@@ -194,7 +197,8 @@ final class ShelfController: ObservableObject {
     }
 
     /// Escape closes the Shelf; while it has the keyboard, the arrow keys
-    /// pick an item and Return opens it (⌘Return for its secondary menu).
+    /// and Tab pick an item, typing the start of its name picks it too, and
+    /// Return opens it (⌘Return for its secondary menu).
     private func handleKey(_ event: NSEvent) -> Bool {
         // Keys typed into Settings or Quick Open are not for the Shelf.
         guard isVisible, let panel, event.window === panel else { return false }
@@ -204,13 +208,42 @@ final class ShelfController: ObservableObject {
         case 0x7B, 0x7C: // left, right
             guard keyboardSelection != nil else { return false }
             moveSelection(by: event.keyCode == 0x7B ? -1 : 1)
+        case 0x30: // tab
+            guard keyboardSelection != nil else { return false }
+            moveSelection(by: event.modifierFlags.contains(.shift) ? -1 : 1)
         case 0x24, 0x4C: // return, enter
             guard let key = keyboardSelection, let item = model.inventory.item(for: key) else { return false }
             open(item, secondary: event.modifierFlags.contains(.command))
         default:
-            return false
+            guard keyboardSelection != nil,
+                  event.modifierFlags.intersection([.command, .control, .option]).isEmpty,
+                  let characters = event.characters, !characters.isEmpty,
+                  characters.unicodeScalars.allSatisfy(CharacterSet.alphanumerics.contains)
+            else { return false }
+            let now = Date()
+            typed = now.timeIntervalSince(lastTyped) > 1 ? characters : typed + characters
+            lastTyped = now
+            selectItem(startingWith: typed)
         }
         return true
+    }
+
+    /// Picks the first item whose name, app or pinyin starts with `text`,
+    /// or else the one that matches it best.
+    private func selectItem(startingWith text: String) {
+        let items = shownItems
+        let prefix = text.lowercased()
+        let match = items.first { item in
+            item.searchFields.contains { $0.lowercased().hasPrefix(prefix) }
+        } ?? items
+            .compactMap { item in FuzzyMatcher.bestScore(text, fields: item.searchFields).map { (item, $0) } }
+            .max { $0.1 < $1.1 }?
+            .0
+        if let match {
+            keyboardSelection = match.key
+        } else {
+            NSSound.beep()
+        }
     }
 
     private func moveSelection(by delta: Int) {
