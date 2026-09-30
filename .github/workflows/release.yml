@@ -32,7 +32,7 @@ permissions:
 jobs:
   release:
     # Frit is pinned to a commit; change the @ below and frit-ref together.
-    uses: whrss9527/frit/.github/workflows/release-app.yml@b89083e92d0142abeaa35660cbdff47073435091
+    uses: whrss9527/frit/.github/workflows/release-app.yml@6f27e71aab8831a9b007e6ee5b022cf19cadb0a8
     with:
       app-name: Meno
       tag: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', inputs.version) }}
@@ -45,6 +45,7 @@ jobs:
         lipo -archs build/Meno.app/Contents/MacOS/Meno | grep -q x86_64
       archives: build/Meno.zip
       notes-command: scripts/release-notes.sh
-      frit-ref: b89083e92d0142abeaa35660cbdff47073435091
+      require-notarization: true
+      frit-ref: 6f27e71aab8831a9b007e6ee5b022cf19cadb0a8
       runner: macos-26
     secrets: inherit
