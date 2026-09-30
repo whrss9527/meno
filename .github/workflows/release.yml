@@ -1,99 +1,51 @@
 name: Release
 
+# Publishes a version with the shared release workflow in whrss9527/frit:
+# builds the universal app, signs it with the Developer ID certificate and
+# has Apple notarize it when the repository secrets are set (see Frit's
+# docs/release.md), staples the ticket, and uploads Meno.zip and
+# SHA256SUMS.txt. The notes come from .github/releases/<tag>.md.
+#
+# Push a v* tag, or run this workflow with a version; the tag is then
+# created at the selected commit. Tick "dry run" to only build and check.
 on:
   push:
     tags:
       - "v*"
-  # Run manually to publish a version (the tag is created at the selected
-  # commit) or, without a version, to only build and check a release.
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to publish, for example 0.1.0. Leave empty to only build."
-        required: false
-        default: ""
+        description: "Version to publish, for example 0.10.0"
+        required: true
+      overwrite:
+        description: "Rebuild an existing version and replace its files"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Only build, sign and notarize; do not tag or publish"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
   release:
-    runs-on: macos-26
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Resolve version
-        id: version
-        env:
-          INPUT_VERSION: ${{ inputs.version }}
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            tag="$GITHUB_REF_NAME"
-          elif [[ -n "$INPUT_VERSION" ]]; then
-            tag="v${INPUT_VERSION#v}"
-          else
-            tag=""
-          fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
-          echo "Release tag: ${tag:-none (build only)}"
-
-      - name: Toolchain
-        run: |
-          xcodebuild -version
-          swift --version
-
-      # A fixed certificate keeps the app's identity across releases, so
-      # Accessibility survives updates. Without one the build is ad hoc signed.
-      - name: Import signing certificate
-        env:
-          CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12 }}
-          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-        run: |
-          if [[ -z "$CERTIFICATE_P12_BASE64" ]]; then
-            echo "::warning::MACOS_CERTIFICATE_P12 is not set, so this build is signed ad hoc and updates need Accessibility again. See scripts/create-signing-certificate.sh."
-            exit 0
-          fi
-          scripts/import-signing-certificate.sh
-
-      - name: Build universal app
-        env:
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          if [[ -n "$RELEASE_VERSION" ]]; then
-            export VERSION="$RELEASE_VERSION"
-          fi
-          UNIVERSAL=1 make zip
-
-      - name: Verify bundle
-        run: |
-          lipo -archs build/Meno.app/Contents/MacOS/Meno
-          lipo -archs build/Meno.app/Contents/MacOS/Meno | grep -q arm64
-          lipo -archs build/Meno.app/Contents/MacOS/Meno | grep -q x86_64
-          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" build/Meno.app/Contents/Info.plist
-          codesign --verify --strict build/Meno.app
-          codesign -dvv build/Meno.app 2>&1 | grep -E "^(Identifier|Authority|Signature|Timestamp)=" || true
-
-      - name: Upload app
-        uses: actions/upload-artifact@v4
-        with:
-          name: Meno-universal
-          path: build/Meno.zip
-          if-no-files-found: error
-
-      - name: Publish release
-        if: steps.version.outputs.tag != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          notes=".github/releases/${TAG}.md"
-          args=(--title "Meno ${TAG#v}" --target "$GITHUB_SHA")
-          if [[ -f "$notes" ]]; then
-            args+=(--notes-file "$notes")
-          else
-            args+=(--generate-notes)
-          fi
-          gh release create "$TAG" build/Meno.zip "${args[@]}"
+    # Frit is pinned to a commit; change the @ below and frit-ref together.
+    uses: whrss9527/frit/.github/workflows/release-app.yml@6f27e71aab8831a9b007e6ee5b022cf19cadb0a8
+    with:
+      app-name: Meno
+      tag: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', inputs.version) }}
+      # A pushed tag already exists, so build at the tag.
+      overwrite: ${{ github.ref_type == 'tag' || inputs.overwrite }}
+      dry-run: ${{ github.ref_type != 'tag' && inputs.dry_run }}
+      build-command: >-
+        SIGN_IDENTITY="${CODESIGN_IDENTITY:--}" SIGN_KEYCHAIN="${CODESIGN_KEYCHAIN:-}" UNIVERSAL=1 make zip &&
+        lipo -archs build/Meno.app/Contents/MacOS/Meno | grep -q arm64 &&
+        lipo -archs build/Meno.app/Contents/MacOS/Meno | grep -q x86_64
+      archives: build/Meno.zip
+      notes-command: scripts/release-notes.sh
+      require-notarization: true
+      frit-ref: 6f27e71aab8831a9b007e6ee5b022cf19cadb0a8
+      runner: macos-26
+    secrets: inherit
