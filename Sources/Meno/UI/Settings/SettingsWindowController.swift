@@ -69,11 +69,24 @@ final class SettingsWindowController: NSObject, ObservableObject, NSWindowDelega
     @Published var pane: SettingsPane = .general
 
     private var window: NSWindow?
+    /// The app to bring back when Settings closes: the one used last.
     private var previousApp: NSRunningApplication?
+    private var activationObserver: NSObjectProtocol?
 
     init(model: AppModel) {
         self.model = model
         super.init()
+        activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                  app.processIdentifier != AppInfo.ownPID else { return }
+            MainActor.assumeIsolated {
+                self?.previousApp = app
+            }
+        }
     }
 
     var isVisible: Bool {

@@ -30,6 +30,12 @@ final class PermissionCenter: ObservableObject {
 
     var onAccessibilityGranted: (() -> Void)?
 
+    /// Whether captures work now: Screen Recording is granted and was
+    /// already when Meno started. Before a relaunch they come back empty.
+    var canCapture: Bool {
+        screenRecording && !screenRecordingNeedsRelaunch
+    }
+
     func startMonitoring() {
         pollTask?.cancel()
         pollTask = Task { [weak self] in
@@ -71,7 +77,12 @@ final class PermissionCenter: ObservableObject {
         if capture != screenRecording {
             screenRecording = capture
         }
-        screenRecordingNeedsRelaunch = capture && !grantedAtLaunch
+        let needsRelaunch = capture && !grantedAtLaunch
+        // Published only on change, so that the panes showing it do not
+        // draw again on every check.
+        if needsRelaunch != screenRecordingNeedsRelaunch {
+            screenRecordingNeedsRelaunch = needsRelaunch
+        }
     }
 
     func requestAccessibility() {

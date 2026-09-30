@@ -34,26 +34,35 @@ final class ToastCenter: ObservableObject {
         let panel = self.panel ?? makePanel()
         hostingView?.rootView = ToastView(toast: toast, center: self)
         panel.ignoresMouseEvents = actions.isEmpty
+        // With VoiceOver, a notice with actions takes the focus, so that its
+        // buttons can be reached, and stays until it is dealt with.
+        let reachable = !actions.isEmpty && NSWorkspace.shared.isVoiceOverEnabled
+        panel.allowsKey = reachable
         layout()
         if !panel.isVisible {
             panel.alphaValue = 0
             panel.orderFrontRegardless()
         }
+        if reachable {
+            panel.makeKey()
+        }
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.18
             panel.animator().alphaValue = 1
         }
-        // VoiceOver reads the notice; the panel never takes focus.
+        let announcement = actions.isEmpty
+            ? message
+            : String(localized: "\(message) Actions: \(ListFormatter.localizedString(byJoining: actions.map(\.title))).")
         NSAccessibility.post(
             element: NSApp as Any,
             notification: .announcementRequested,
             userInfo: [
-                .announcement: message,
+                .announcement: announcement,
                 .priority: NSAccessibilityPriorityLevel.high.rawValue,
             ]
         )
         dismissTask?.cancel()
-        let seconds = duration ?? (actions.isEmpty ? 2.6 : 8)
+        let seconds = reachable ? max(duration ?? 0, 60) : duration ?? (actions.isEmpty ? 2.6 : 8)
         dismissTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             guard !Task.isCancelled else { return }
@@ -134,10 +143,13 @@ struct ToastView: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Close"))
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 11)
+            // Escape dismisses a notice that took the focus.
+            .onExitCommand { center.dismiss() }
             .menoGlass(in: Capsule())
             .padding(16)
             .fixedSize()

@@ -86,6 +86,18 @@ enum MenuBarScanner {
     }
 
     /// Reads the current frame of a single element.
+    /// The current frames of elements, read off the main thread.
+    static func frames(of elements: [AXUIElement]) async -> [CGRect?] {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(returning: elements.map { element in
+                    AX.setTimeout(element, seconds: 0.3)
+                    return AX.frame(of: element)
+                })
+            }
+        }
+    }
+
     static func frame(of element: AXUIElement) async -> CGRect? {
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {

@@ -75,8 +75,14 @@ final class ChangeWatcher: ObservableObject {
         }
         let texts = await MenuBarScanner.texts(of: items.compactMap(\.element))
         var glyphs: [MenuItemKey: GlyphSignature] = [:]
-        if model.permissions.screenRecording, ItemImageCache.captureIsSupported {
-            let requests = items.filter { $0.frame.width > 0 }.map { WindowCapture.Request(key: $0.key, frame: $0.frame) }
+        if model.permissions.canCapture, ItemImageCache.captureIsSupported {
+            // Item windows are found by their frames. Those of the last scan
+            // can be old, and items move when others appear or go.
+            let frames = await MenuBarScanner.frames(of: items.compactMap(\.element))
+            let requests = zip(items, frames).compactMap { item, frame -> WindowCapture.Request? in
+                let current = frame ?? item.frame
+                return current.width > 0 ? WindowCapture.Request(key: item.key, frame: current) : nil
+            }
             for (key, image) in await WindowCapture.captureItems(requests) {
                 glyphs[key] = WindowCapture.signature(of: image)
             }

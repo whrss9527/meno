@@ -672,6 +672,11 @@ final class AppModel: ObservableObject {
         settingsWindow.isVisible || onboarding.isVisible
     }
 
+    /// Whether a window that shows the artwork of items is open.
+    var showsItemArtwork: Bool {
+        shelf.isVisible || quickOpen.isVisible || settingsWindow.isVisible
+    }
+
     func makeStatusMenu() -> NSMenu {
         // Permissions are checked only every few seconds once granted.
         permissions.refresh()

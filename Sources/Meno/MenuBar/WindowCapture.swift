@@ -64,9 +64,10 @@ enum WindowCapture {
         return windowList(onScreenOnly: true).contains { window in
             guard window.pid == pid, window.layer >= floating else { return false }
             // Skip the status item windows themselves. They can sit beyond
-            // the screen edges, so only their height and top are compared.
+            // the screen edges, and above the screen while the menu bar hides
+            // itself, as in full screen, so only their height counts.
             let isStatusItem = window.layer == statusLevel && menuBarStrips.contains { strip in
-                abs(window.bounds.minY - strip.minY) <= 1 && window.bounds.height <= strip.height + 2
+                window.bounds.height <= strip.height + 2
             }
             return !isStatusItem && window.bounds.width > 4 && window.bounds.height > 4
         }

@@ -140,7 +140,12 @@ final class ItemInventory: ObservableObject {
         model.statusBar.refreshGroupTooltips()
         detectNewArrivals()
         model.keeper.scanned(keeperObservations())
-        model.images.refresh(for: items, captureAllowed: model.permissions.screenRecording)
+        // Artwork is only captured for what shows it, so that macOS's
+        // reminders about capturing the screen come up while Meno is in use
+        // rather than at a random moment.
+        if model.showsItemArtwork {
+            model.images.refresh(for: items, captureAllowed: model.permissions.canCapture)
+        }
     }
 
     /// Whether the last scan could tell the item's section from its
