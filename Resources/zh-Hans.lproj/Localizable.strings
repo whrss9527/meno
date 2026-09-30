@@ -366,6 +366,7 @@
 "Other colors in Dark Mode" = "深色模式使用其他颜色";
 "Passing over the menu bar without it shows nothing." = "不按住这个键时，指针经过菜单栏不会显示任何项目。";
 "Pause All Rules" = "暂停所有规则";
+"Pause or resume rules" = "暂停或恢复规则";
 "Pause Rules" = "暂停规则";
 "Permissions" = "权限";
 "Please leave the mouse alone for a moment." = "请暂时不要移动鼠标。";
@@ -420,8 +421,10 @@
 "Right-click it for Quick Open, Zen, Scenes and Settings." = "右键点按它可使用快速打开、禅模式、场景和设置。";
 "Rules" = "规则";
 "Rules and Scenes" = "规则与场景";
+"Rules apply again." = "规则已恢复。";
 "Rules are checked when apps switch, displays change, power or network changes, a microphone or camera starts or stops, and every 30 seconds." = "在切换 App、显示器变化、电源或网络变化、麦克风或摄像头开始或停止使用时，以及每 30 秒检查一次规则。";
 "Rules are paused" = "规则已暂停";
+"Rules are paused." = "规则已暂停。";
 "Running on battery" = "使用电池供电";
 "Save" = "存储";
 "Save a scene first" = "请先存储一个场景";

@@ -421,6 +421,13 @@ final class AppModel: ObservableObject {
         case .quickOpen: quickOpen.toggle()
         case .toggleShelf: shelf.toggle(trigger: .hotkey)
         case .toggleZen: setZen(!isZenActive)
+        case .pauseRules:
+            settings.rulesPaused.toggle()
+            // Nothing else shows that the shortcut did something.
+            toasts.show(
+                settings.rulesPaused ? String(localized: "Rules are paused.") : String(localized: "Rules apply again."),
+                symbol: settings.rulesPaused ? "pause.circle.fill" : "play.circle.fill"
+            )
         case .arrangeMenuBar: openSettings(.layout)
         case .openSettings: openSettings()
         }

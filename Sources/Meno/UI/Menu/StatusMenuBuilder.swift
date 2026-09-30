@@ -36,7 +36,7 @@ struct StatusMenuBuilder {
         zen.state = model.isZenActive ? .on : .off
         menu.addItem(zen)
         if !model.settings.rules.isEmpty {
-            let pause = item(String(localized: "Pause Rules"), symbol: "pause.circle") {
+            let pause = item(String(localized: "Pause Rules"), symbol: "pause.circle", hotkey: .pauseRules) {
                 model.settings.rulesPaused.toggle()
             }
             pause.state = model.settings.rulesPaused ? .on : .off

@@ -131,6 +131,8 @@ public enum HotkeyAction: String, Codable, CaseIterable, Sendable {
     case quickOpen
     case toggleShelf
     case toggleZen
+    /// Pauses all rules, or lets them apply again.
+    case pauseRules
     case arrangeMenuBar
     case openSettings
 }
