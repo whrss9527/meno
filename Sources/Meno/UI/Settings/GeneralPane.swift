@@ -5,6 +5,7 @@ import SwiftUI
 struct GeneralPane: View {
     @EnvironmentObject private var model: AppModel
     @State private var confirmingReset = false
+    @State private var language = InterfaceLanguageSetting.current
 
     var body: some View {
         VStack(spacing: 16) {
@@ -35,6 +36,31 @@ struct GeneralPane: View {
                 )
             }
 
+            SettingsCard("Language", symbol: "globe") {
+                // Named in all three languages, so it can be found whichever
+                // language Meno is in.
+                SettingRow("Language / 语言 / 語言", subtitle: "Meno uses the new language after it relaunches.") {
+                    EnumPicker(
+                        selection: Binding(get: { language }, set: { newValue in
+                            language = newValue
+                            InterfaceLanguageSetting.set(newValue)
+                        }),
+                        title: \.title,
+                        width: 180
+                    )
+                }
+                if language != InterfaceLanguageSetting.atLaunch {
+                    HStack {
+                        Text("Relaunch Meno to switch languages.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Relaunch Now") { Relauncher.relaunch() }
+                            .menoGlassButtonStyle(prominent: true)
+                    }
+                }
+            }
+
             SettingsCard("Revealing hidden items", symbol: "eye") {
                 ToggleRow(
                     "Click an empty part of the menu bar",
@@ -60,6 +86,13 @@ struct GeneralPane: View {
                 )
                 if !model.settings.revealOnChange.isEmpty {
                     SliderRow("Show changed items for", value: $model.settings.reveal.changeDuration, in: 3...30, step: 1, format: Formatters.seconds)
+                    if ItemImageCache.captureIsSupported {
+                        ToggleRow(
+                            "Compare icons too",
+                            subtitle: "Notices items whose icon changes while their text stays the same. This needs Screen Recording, and macOS shows its recording indicator in the menu bar every few seconds while Meno looks.",
+                            isOn: $model.settings.reveal.comparesIcons
+                        )
+                    }
                 }
                 Divider().opacity(0.4)
                 SettingRow("Show hidden items", subtitle: "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing.") {

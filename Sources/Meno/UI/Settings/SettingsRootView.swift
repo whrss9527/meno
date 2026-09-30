@@ -30,6 +30,12 @@ struct SettingsRootView: View {
             .ignoresSafeArea()
         }
         .frame(minWidth: 820, idealWidth: 940, minHeight: 560, idealHeight: 660)
+        // A .meno file dropped anywhere on the window shows what it holds.
+        .dropDestination(for: URL.self) { urls, _ in
+            guard let url = urls.first(where: { $0.pathExtension.lowercased() == ShareFile.fileExtension }) else { return false }
+            model.openShareFile(url)
+            return true
+        }
     }
 
     @ViewBuilder

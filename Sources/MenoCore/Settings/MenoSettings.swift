@@ -179,6 +179,10 @@ public struct RevealSettings: Codable, Equatable, Sendable {
     /// How long an item picked for Show When It Changes is shown after it
     /// changed, in seconds.
     public var changeDuration: Double = 6
+    /// Whether Show When It Changes compares the items' icons as well as
+    /// their text. Icons are captured for that every few seconds, and macOS
+    /// shows its screen recording indicator while they are.
+    public var comparesIcons = false
 
     public init() {}
 }

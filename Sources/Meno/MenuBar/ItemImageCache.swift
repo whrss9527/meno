@@ -11,7 +11,17 @@ final class ItemImageCache: ObservableObject {
     /// Symbols the person picked for items, by item key.
     private var customSymbols: [String: String] = [:]
     private var captureTask: Task<Void, Never>?
-    private var lastCapture: Date?
+    /// When all items were last captured.
+    private var lastFullCapture: Date?
+    /// When each item was last tried, so that one without a window that can
+    /// be captured is not tried on every scan.
+    private var attempts: [MenuItemKey: Date] = [:]
+    /// Counts captures, and names the capture of all items on its way.
+    private var generation = 0
+    private var fullCaptureGeneration: Int?
+    /// How long captures are reused before a window that shows them captures
+    /// them again: macOS shows its screen recording indicator each time.
+    private static let reuseSpan: TimeInterval = 30
 
     /// Capturing individual item windows only works up to macOS 26.
     static var captureIsSupported: Bool {
@@ -55,7 +65,11 @@ final class ItemImageCache: ObservableObject {
         return NSImage(systemSymbolName: "app.dashed", accessibilityDescription: nil) ?? NSImage()
     }
 
-    func refresh(for items: [MenuBarItem], captureAllowed: Bool, force: Bool = false) {
+    /// Captures the artwork of items. `renew`, for a window that shows the
+    /// artwork and just opened, captures all items again once the last
+    /// captures are older than ``reuseSpan``; otherwise only items without
+    /// artwork yet are captured.
+    func refresh(for items: [MenuBarItem], captureAllowed: Bool, renew: Bool = false) {
         guard captureAllowed, Self.captureIsSupported else {
             if !captured.isEmpty {
                 captured.removeAll()
@@ -63,16 +77,39 @@ final class ItemImageCache: ObservableObject {
             }
             return
         }
-        if !force, let lastCapture, Date().timeIntervalSince(lastCapture) < 2 { return }
-        lastCapture = Date()
-        let requests = items
-            .filter { $0.kind != .marker && $0.frame.width > 0 }
-            .map { WindowCapture.Request(key: $0.key, frame: $0.frame) }
+        let now = Date()
+        let capturable = items.filter { $0.kind != .marker && $0.frame.width > 0 }
+        let isStale = lastFullCapture.map { now.timeIntervalSince($0) >= Self.reuseSpan } ?? true
+        let all = renew && isStale
+        // A capture of all items on its way covers the missing ones.
+        if !all, fullCaptureGeneration != nil { return }
+        let wanted = all ? capturable : capturable.filter { item in
+            captured[item.key] == nil && (attempts[item.key].map { now.timeIntervalSince($0) >= Self.reuseSpan } ?? true)
+        }
+        guard !wanted.isEmpty else { return }
+        if all {
+            lastFullCapture = now
+        }
+        for item in wanted {
+            attempts[item.key] = now
+        }
+        let requests = wanted.map { WindowCapture.Request(key: $0.key, frame: $0.frame) }
+        let present = Set(capturable.map(\.key))
+        generation += 1
+        let current = generation
+        if all {
+            fullCaptureGeneration = current
+        }
         captureTask?.cancel()
         captureTask = Task { [weak self] in
             let images = await WindowCapture.captureItems(requests)
-            guard let self, !Task.isCancelled else { return }
-            var updated: [MenuItemKey: NSImage] = [:]
+            guard let self else { return }
+            if self.fullCaptureGeneration == current {
+                self.fullCaptureGeneration = nil
+            }
+            guard !Task.isCancelled, self.generation == current else { return }
+            // Earlier captures of items still there are kept.
+            var updated = all ? [:] : self.captured.filter { present.contains($0.key) }
             for (key, image) in images {
                 let scale = NSScreen.main?.backingScaleFactor ?? 2
                 let size = NSSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)

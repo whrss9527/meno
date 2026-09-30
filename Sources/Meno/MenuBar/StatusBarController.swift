@@ -55,6 +55,11 @@ final class StatusBarController: NSObject {
     private var dividersForcedVisible = false
     private var orderRepairs = 0
     private var orderHintShown = false
+    /// The display whose menu bar had the items when last looked at.
+    private var menuBarDisplay: CGDirectDisplayID?
+    /// When Meno's items were first seen out of order, until they are in
+    /// order again.
+    private var outOfOrderSince: Date?
 
     init(model: AppModel) {
         self.model = model
@@ -75,6 +80,21 @@ final class StatusBarController: NSObject {
         hiddenDivider = makeItem(name: Name.hiddenDivider, action: #selector(dividerClicked(_:)))
         syncStashDivider()
         refreshAppearance()
+        for name in [NSWindow.didChangeScreenNotification, NSWindow.didMoveNotification] {
+            NotificationCenter.default.addObserver(self, selector: #selector(itemWindowMoved(_:)), name: name, object: nil)
+        }
+        menuBarDisplay = screen.flatMap(ScreenGeometry.displayID(of:))
+    }
+
+    /// Rules can depend on the display whose menu bar has the items, which
+    /// changes as the person moves to another display.
+    @objc private func itemWindowMoved(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              window === toggle?.button?.window || window === hiddenDivider?.button?.window else { return }
+        let display = screen.flatMap(ScreenGeometry.displayID(of:))
+        guard display != menuBarDisplay else { return }
+        menuBarDisplay = display
+        model.automation.evaluate()
     }
 
     /// Adds or removes the Stash divider to match the settings.
@@ -191,23 +211,49 @@ final class StatusBarController: NSObject {
         stashDivider = nil
     }
 
-    /// Makes sure the dividers sit left of the Meno icon, and the Stash
-    /// divider left of the Hidden divider. Otherwise collapsing would push
+    /// Whether the dividers sit left of the Meno icon, and the Stash divider
+    /// left of the Hidden divider. Right after launch macOS may not have
+    /// placed them yet, and where their windows are then says otherwise.
+    var isInOrder: Bool {
+        guard let hiddenFrame = hiddenDividerFrame else { return false }
+        // Without the Meno icon its item has no width and no frame, but the
+        // Stash divider is still checked.
+        if toggle != nil, let toggleFrame, hiddenFrame.maxX > toggleFrame.maxX { return false }
+        if let stashFrame = stashDividerFrame, stashFrame.maxX > hiddenFrame.maxX { return false }
+        return true
+    }
+
+    /// Makes sure the dividers stay in order. Otherwise collapsing would push
     /// the Meno icon itself out of the menu bar.
     func ensureDividerOrder() {
         guard let hiddenFrame = hiddenDividerFrame else { return }
-        var repaired = false
-        // Without the Meno icon its item has no width and no frame, but the
-        // Stash divider is still checked.
+        guard !isInOrder else {
+            outOfOrderSince = nil
+            return
+        }
+        // Only an order that lasts is repaired, not one of items that macOS
+        // is still placing; a scan soon tells.
+        let now = Date()
+        guard let since = outOfOrderSince, now.timeIntervalSince(since) >= 1 else {
+            if outOfOrderSince == nil {
+                outOfOrderSince = now
+            }
+            model.inventory.scheduleRefresh(after: 1.5)
+            return
+        }
+        let repaired: Bool
         if let toggle, let toggleFrame, hiddenFrame.maxX > toggleFrame.maxX {
             repaired = reseat(\.hiddenDivider, name: Name.hiddenDivider, leftOf: Name.toggle, item: toggle)
-        } else if let hiddenDivider, let stashFrame = stashDividerFrame, stashFrame.maxX > hiddenFrame.maxX {
+        } else if let hiddenDivider {
             repaired = reseat(\.stashDivider, name: Name.stashDivider, leftOf: Name.hiddenDivider, item: hiddenDivider)
         } else {
             return
         }
         if repaired {
+            // The new divider gets a moment of its own to be placed.
+            outOfOrderSince = nil
             apply(state)
+            model.inventory.scheduleRefresh(after: 1.5)
         } else if !orderHintShown {
             orderHintShown = true
             model.toasts.show(
@@ -547,17 +593,24 @@ final class StatusBarController: NSObject {
     var hiddenDividerFrame: CGRect? { frame(of: hiddenDivider) }
     var stashDividerFrame: CGRect? { frame(of: stashDivider) }
 
-    /// The screen that shows Meno's items.
+    /// The screen that shows Meno's items. With several displays macOS
+    /// keeps the items on the menu bar of the display in use.
     var screen: NSScreen? {
-        guard let window = toggle?.button?.window else { return ScreenGeometry.primaryScreen }
-        // Zen can grow the icon across the screens to its left, so its right
-        // end tells where it is.
+        // The icon has no width while it is hidden.
+        let windows = [toggle, hiddenDivider].compactMap { $0?.button?.window }
+        guard let window = windows.first(where: { $0.frame.width > 0 }) ?? windows.first else {
+            return ScreenGeometry.primaryScreen
+        }
+        // Zen grows the icon, and a divider grows to hide items, across the
+        // screens to their left, so the right end tells where they are.
         let end = NSPoint(x: window.frame.maxX - 1, y: window.frame.midY)
         return ScreenGeometry.screen(containingCocoa: end) ?? window.screen ?? ScreenGeometry.primaryScreen
     }
 
+    /// Where the dividers are, while they are in order, to tell the items'
+    /// sections by.
     var dividerLayout: DividerLayout? {
-        guard let hidden = hiddenDividerFrame else { return nil }
+        guard isInOrder, let hidden = hiddenDividerFrame else { return nil }
         let stash = stashDividerFrame.map { HorizontalSpan(minX: Double($0.minX), maxX: Double($0.maxX)) }
         return DividerLayout(hidden: HorizontalSpan(minX: Double(hidden.minX), maxX: Double(hidden.maxX)), stash: stash)
     }

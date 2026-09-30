@@ -3,6 +3,8 @@ import SwiftUI
 
 struct AboutPane: View {
     @EnvironmentObject private var model: AppModel
+    /// Other copies of Meno on this Mac, such as "Meno 2" next to "Meno".
+    @State private var otherCopies: [URL] = []
 
     private let columns = [GridItem(.adaptive(minimum: 200), spacing: 12)]
 
@@ -24,6 +26,17 @@ struct AboutPane: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 22)
             .menoGlassCard(cornerRadius: 24)
+
+            if !otherCopies.isEmpty {
+                Banner(
+                    symbol: "square.on.square",
+                    tint: .orange,
+                    title: "Another copy of Meno",
+                    message: "Also at \(otherCopyPaths). Keep one: each copy needs its own permissions, and a login item may open the other one.",
+                    actionTitle: "Show in Finder",
+                    action: { NSWorkspace.shared.activateFileViewerSelecting(otherCopies) }
+                )
+            }
 
             LazyVGrid(columns: columns, spacing: 12) {
                 Feature(symbol: "eye.slash", title: "Hidden and Stash", text: "Two levels of hiding, revealed by click, hover, scroll or hotkey.")
@@ -65,6 +78,11 @@ struct AboutPane: View {
                 .help(Text("Copies the macOS version, permissions and the menu bar items Meno sees, to help find problems."))
             }
         }
+        .onAppear { otherCopies = SingleInstance.otherCopies }
+    }
+
+    private var otherCopyPaths: String {
+        otherCopies.map(\.path).joined(separator: ", ")
     }
 
     private func infoRow(_ title: String, _ value: String) -> some View {

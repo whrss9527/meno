@@ -48,6 +48,29 @@ final class RuleTests: XCTestCase {
         XCTAssertFalse(RuleCondition.displayConnected(name: "").isSatisfied(by: RuleContext(displayNames: [""])))
     }
 
+    func testMenuBarDisplay() {
+        let laptop = RuleContext(
+            externalDisplayCount: 1,
+            displayNames: ["Built-in Retina Display", "LG UltraFine"],
+            menuBarDisplayName: "Built-in Retina Display"
+        )
+        var desk = laptop
+        desk.menuBarDisplayName = "LG UltraFine"
+        desk.menuBarOnExternalDisplay = true
+
+        XCTAssertFalse(RuleCondition.menuBarOnExternalDisplay.isSatisfied(by: laptop))
+        XCTAssertTrue(RuleCondition.menuBarOnExternalDisplay.isSatisfied(by: desk))
+        // Connected either way; only where the items are differs.
+        XCTAssertTrue(RuleCondition.externalDisplay.isSatisfied(by: laptop))
+
+        let ultraFine = RuleCondition.menuBarOnDisplay(name: "LG UltraFine")
+        XCTAssertFalse(ultraFine.isSatisfied(by: laptop))
+        XCTAssertTrue(ultraFine.isSatisfied(by: desk))
+        XCTAssertTrue(RuleCondition.menuBarOnDisplay(name: "Built-in Retina Display").isSatisfied(by: laptop))
+        XCTAssertFalse(RuleCondition.menuBarOnDisplay(name: "").isSatisfied(by: RuleContext(menuBarDisplayName: "")))
+        XCTAssertFalse(ultraFine.isSatisfied(by: RuleContext()))
+    }
+
     func testAnyOfTheConditions() {
         var rule = AutomationRule(name: "Calls", conditions: [.appFrontmost(bundleID: "us.zoom.xos"), .microphoneInUse], action: .zen)
         let zoomOnly = RuleContext(frontmostBundleID: "us.zoom.xos")
@@ -146,6 +169,8 @@ final class RuleTests: XCTestCase {
             AutomationRule(name: "Calls", conditions: [.microphoneInUse, .cameraInUse], action: .zen),
             AutomationRule(name: "Saver", conditions: [.lowPowerMode], action: .collapse),
             AutomationRule(name: "Office", conditions: [.displayConnected(name: "LG UltraFine")], action: .revealAll),
+            AutomationRule(name: "Desk", conditions: [.menuBarOnExternalDisplay], action: .revealHidden),
+            AutomationRule(name: "Laptop", conditions: [.menuBarOnDisplay(name: "Built-in Retina Display")], action: .zen),
             AutomationRule(name: "VPN", conditions: [.commandSucceeds(command: "test -e ~/.vpn")], action: .revealAll),
         ]
         let decoded = try MenoSettings.decode(from: settings.encoded())

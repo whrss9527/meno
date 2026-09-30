@@ -5,7 +5,13 @@ import MenoCore
 /// Collects the state that rules are evaluated against.
 enum SystemSignals {
     @MainActor
-    static func snapshot(isOnline: Bool, capture: CaptureActivity.State, succeededCommands: Set<String>, routers: Set<String>) -> RuleContext {
+    static func snapshot(
+        isOnline: Bool,
+        capture: CaptureActivity.State,
+        succeededCommands: Set<String>,
+        routers: Set<String>,
+        menuBarScreen: NSScreen?
+    ) -> RuleContext {
         let workspace = NSWorkspace.shared
         let running = Set(workspace.runningApplications.compactMap(\.bundleIdentifier))
         let power = PowerSource.current()
@@ -19,6 +25,8 @@ enum SystemSignals {
             isLowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
             externalDisplayCount: externalDisplays,
             displayNames: Set(NSScreen.screens.map(\.localizedName)),
+            menuBarDisplayName: menuBarScreen?.localizedName,
+            menuBarOnExternalDisplay: menuBarScreen.map { !ScreenGeometry.isBuiltIn($0) } ?? false,
             minuteOfDay: (now.hour ?? 0) * 60 + (now.minute ?? 0),
             weekday: now.weekday ?? 0,
             isOnline: isOnline,

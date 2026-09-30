@@ -66,8 +66,8 @@ After an update, macOS may keep an entry for the previous build in the Accessibi
 
 ### Make it yours
 
-- **Rules:** "When a microphone is in use, turn on Zen." Conditions include the frontmost or running app, a microphone or camera in use, battery, power and Low Power Mode, external or specific displays, the time of day and the day of the week, the network the Mac is on (recognized by its router, without Location Services), being offline and a shell command of your own that succeeds; a rule can need all of its conditions or any one of them. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically. Moves wait until you are not using the mouse and keyboard. *Pause Rules* in Meno's menu, or a shortcut of its own, stops them all for a while.
-- **Scenes:** save arrangements such as *Work*, *Home* or *Presenting* and switch between them from the menu, with a rule or with a shortcut of their own.
+- **Rules:** "When a microphone is in use, turn on Zen." Conditions include the frontmost or running app, a microphone or camera in use, battery, power and Low Power Mode, external or specific displays and the display whose menu bar is in use, the time of day and the day of the week, the network the Mac is on (recognized by its router, without Location Services), being offline and a shell command of your own that succeeds; a rule can need all of its conditions or any one of them. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically. Moves wait until you are not using the mouse and keyboard. *Pause Rules* in Meno's menu, or a shortcut of its own, stops them all for a while.
+- **Scenes:** save arrangements such as *Work*, *Home* or *Presenting* and switch between them from the menu, with a rule or with a shortcut of their own. Export scenes and rules to a `.meno` file for another Mac or for someone else; opening the file, or dropping it on Settings, shows what it holds before anything is imported.
 - **Zen:** one shortcut clears every app icon, leaving only system status. Great for screenshots, recordings and talks.
 - **Item shortcuts:** open a specific item (Wi-Fi, a VPN, a timer…) from anywhere, even while it is hidden.
 - **Links:** `meno://` links let Shortcuts, launchers and scripts show or hide items, switch Zen, apply a scene or open an item. Scenes and items offer *Copy Link*.
@@ -75,7 +75,7 @@ After an update, macOS may keep an entry for the previous build in the Accessibi
 - **Insights:** private, on-device statistics — how often you reveal, your most used items, and suggestions such as "you opened this 12 times this week while it was hidden — keep it visible?" or stashing what you have not used for months. Suggestions you turn down stay away for two months.
 - **New arrivals:** when an app adds a new icon, Meno can ask you, hide it or stash it.
 - **Appearance:** choose the Meno icon or any SF Symbol for it, divider style, Shelf glass and tint, a menu bar tint in your own colors or the wallpaper's, with gradient, border, shadow and split "island" shapes (experimental), and system-wide icon spacing (beta).
-- English, Simplified Chinese and Traditional Chinese.
+- English, Simplified Chinese and Traditional Chinese. Meno follows the system language, or the one chosen in *Settings › General › Language*.
 
 ## Links
 
@@ -91,6 +91,8 @@ After an update, macOS may keep an entry for the previous build in the Accessibi
 
 For example, `open meno://zen/on` in Terminal, or an *Open URLs* action in Shortcuts. For names with spaces or other scripts, *Copy Link* gives a link that is already encoded.
 
+On macOS 26 and later, a Focus can change the menu bar too: in Shortcuts, add an automation for when the Focus turns on, with an *Open URLs* action and a scene's link, such as `meno://scene/Work`, and another for when it turns off.
+
 ## How it works
 
 Meno adds small dividers to the menu bar: a single chevron starts the Hidden section, a double chevron the Stash. Everything left of a divider belongs to that section. Hold ⌘ and drag icons across the dividers, or use the Layout editor.
@@ -102,12 +104,29 @@ To hide a section, its divider grows until the items to its left no longer fit:
 
 Menu bar items are read through each app's accessibility tree, which works on every supported macOS version, including the single-window menu bar of macOS 27.
 
+## Footprint
+
+Left alone, Meno uses about a tenth of a percent of one CPU core and 10 to 15 MB of memory, as Activity Monitor counts it. CI measures this after every change: `scripts/measure-footprint.sh` starts the app, leaves it alone for a minute and adds the numbers to the run's summary.
+
+| Idle for a minute, Apple silicon | macOS 26 | macOS 15 |
+| --- | --- | --- |
+| CPU | 0.13 % of one core | 0.12 % of one core |
+| Memory | 14.2 MB | 9.7 MB |
+| Wake-ups | 0.1 per second | 0.1 per second |
+| A look over the menu bar, usually | 37–49 ms | 34–53 ms |
+
+- Meno hears about most changes as they happen, such as apps starting and quitting, and looks over the whole menu bar only every 20 seconds (every minute in Low Power Mode) to catch what slipped through. It does not look while the displays sleep or another user's session is in front.
+- Nothing is captured from the screen in the background.
+- Rules that run a command or depend on the network only do that work while such a rule is on.
+
+The measurements run on GitHub's virtual Macs, which have only macOS's own menu bar items; with more items, each look at the menu bar takes a little longer.
+
 ## Permissions and privacy
 
 | Permission | Needed for |
 | --- | --- |
 | **Accessibility** (required) | Reading menu bar items, opening them from the Shelf, Quick Open and shortcuts, and arranging them with ⌘-drag. |
-| **Screen Recording** (optional) | Showing the real artwork of hidden items and noticing when their icons change (macOS 14–26). Without it Meno shows app icons. Only menu bar items are captured. |
+| **Screen Recording** (optional) | Showing the real artwork of hidden items (macOS 14–26), and noticing when their icons change if you turn that on. Without it Meno shows app icons. Only menu bar items are captured, while the Shelf, Quick Open or Settings is open or while icons are compared; macOS shows its recording indicator in the menu bar meanwhile. |
 
 Rules about a microphone or camera in use only ask macOS whether a device is running, which needs no permission. Meno never records anything.
 
@@ -122,6 +141,8 @@ Meno has no analytics or accounts. It only goes online to ask GitHub for the lat
 - **An app's icon or the Meno icon is missing on macOS 26 or later.** macOS only shows the items of apps that are allowed in *System Settings › Menu Bar*. Meno's own icon can also be turned off in *Settings › Appearance*; open Settings from Quick Open, with `open meno://settings` or by opening Meno again.
 - **An item moves back after you moved it.** Meno only puts an item back when its app, or Meno itself, has just started and the item is not where it was last left while Meno ran. Items you move while Meno runs stay where you put them. To stop this, turn off *Keep items where you put them* in *General › Sections*.
 - **macOS asks every month whether Meno may keep recording the screen (macOS 15 to 26).** Screen Recording is optional: without it the Shelf shows app icons instead of the items' own artwork, and changes are noticed by text only.
+- **A purple indicator says "Meno is capturing your screen".** macOS shows it whenever Meno captures the artwork of menu bar items: when the Shelf, Quick Open or Settings opens, at most every 30 seconds, and every few seconds while *Compare icons too* is on. Turn off Screen Recording for Meno to stop it; Meno then shows app icons.
+- **macOS calls Meno "Meno 2".** There are two copies, for example after a download was kept next to the old one. *Settings › About* shows where the other copy is; keep one. Only one copy runs at a time: opening another shows the running one's Settings, or takes over when it is newer.
 - Anything else: *Settings › About › Copy Diagnostic Report* copies what Meno sees, to paste into an issue.
 
 ## Good to know
@@ -129,6 +150,7 @@ Meno has no analytics or accounts. It only goes online to ask GitHub for the lat
 - Moving items simulates ⌘-drags, so Meno briefly takes over the pointer and puts it back afterwards. Items that are not currently on screen cannot be dragged; reveal them first. The clock and the Control Center icon cannot be moved.
 - Icon spacing uses the `NSStatusItemSpacing` and `NSStatusItemSelectionPadding` preferences, which apps read at launch. Applying it relaunches apps that own menu bar items.
 - The menu bar tint is drawn behind the menu bar and is most visible with the transparent menu bar of macOS 26 and later.
+- With several displays, every menu bar shows the same items in the same order: macOS keeps them on the menu bar of the display you are using and shows them on the others as well. Meno hides and shows them alike on all displays. For more room on a large display, add the rule *Show hidden items on an external display*, or use the condition *The menu bar is on a specific display*.
 
 ## Development
 
@@ -165,6 +187,7 @@ scripts            App bundling, icon generation, localization check
 - `swift test` runs the MenoCore tests (they also run on Linux).
 - `scripts/check-localization.py` lists user-facing strings and checks the translations in `Resources/*.lproj`.
 - `scripts/generate-icon.py` renders `Resources/AppIcon.icns` (needs Pillow and numpy).
+- `scripts/measure-footprint.sh` measures what the built app costs while idle, and `scripts/check-hiding.sh` checks with a menu bar item of its own that hiding and showing work. CI runs both on macOS 15 and 26; they need a Mac where Meno has not been set up, and Accessibility for the app that runs them. With `MENO_DIAG=1` in its environment Meno prints its scans and its diagnostic report to standard error, and the report again on `SIGUSR1`.
 
 ### Releases
 

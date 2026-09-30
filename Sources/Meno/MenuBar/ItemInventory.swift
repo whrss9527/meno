@@ -122,6 +122,7 @@ final class ItemInventory: ObservableObject {
     private func performRefresh() async {
         guard model.permissions.accessibility else {
             if !items.isEmpty { items = model.markers.inventoryItems(sections: [:]) }
+            Diagnostics.event("scan accessibility=missing footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
             return
         }
         isRefreshing = true
@@ -129,6 +130,9 @@ final class ItemInventory: ObservableObject {
 
         let started = Date()
         let raw = await MenuBarScanner.scan(MenuBarScanner.currentTargets())
+        // Sections come from where items are next to Meno's dividers, which
+        // macOS may not have placed yet right after launch.
+        let sectioned = model.statusBar.isInOrder
         let built = keepingBriefAbsences(build(from: raw))
         if built != items {
             items = built
@@ -138,7 +142,11 @@ final class ItemInventory: ObservableObject {
         model.statusBar.ensureDividerOrder()
         model.statusBar.refreshAppearance()
         model.statusBar.refreshGroupTooltips()
-        detectNewArrivals()
+        // What happens to a new item depends on its section, so a scan
+        // without sections leaves new items to the next one.
+        if sectioned {
+            detectNewArrivals()
+        }
         model.keeper.scanned(keeperObservations())
         // Artwork is only captured for what shows it, so that macOS's
         // reminders about capturing the screen come up while Meno is in use
@@ -146,6 +154,8 @@ final class ItemInventory: ObservableObject {
         if model.showsItemArtwork {
             model.images.refresh(for: items, captureAllowed: model.permissions.canCapture)
         }
+        Diagnostics.event("scan items=\(items.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))"
+            + " sectioned=\(sectioned ? 1 : 0) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
     }
 
     /// Whether the last scan could tell the item's section from its

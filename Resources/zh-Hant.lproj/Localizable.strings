@@ -14,17 +14,20 @@
 "%@ sits behind the camera housing, where it cannot be dragged. Move other visible items to Hidden to make room, then try again." = "%@ 位於瀏海後面，無法拖移。請先把其他常顯項目移到「隱藏」騰出空間，再試一次。";
 "%lld items are no longer where you left them." = "有 %lld 個項目不在你原本放的位置了。";
 "%lld items · %lld tucked away" = "共 %lld 項 · %lld 項已收起";
+"A .meno file holds scenes and rules, for another Mac or for someone else; shortcuts stay here. Open a .meno file, or drop it on this window, to see what it holds before anything is imported." = "一個 .meno 檔案可以裝下場景和規則，帶到另一台 Mac 上，或分享給別人；快速鍵不會帶走。打開 .meno 檔案，或把它拖到這個視窗上，可以先看看裡面有什麼，再決定匯入哪些。";
 "A calm menu bar, made with glass." = "一個安靜的選單列，由玻璃打造。";
 "A camera is in use" = "相機正在使用";
 "a camera is in use" = "相機正在使用";
 "A command succeeds" = "指令執行成功";
 "a deleted scene" = "已刪除的場景";
+"A Focus can change the menu bar too: in Shortcuts, add an automation for when the Focus turns on or off that opens a scene's link, such as meno://scene/Work." = "專注模式也能改變選單列：在「捷徑」裡為專注模式開啟或關閉時加入一個自動化操作，打開某個場景的連結，例如 meno://scene/Work。";
 "A glass bar for items that do not fit next to the notch." = "為瀏海旁放不下的圖示準備的玻璃托盤。";
 "A group gets its own icon in the menu bar that shows its items. Visible items move to the Stash." = "群組會在選單列裡有自己的圖示，用來顯示組內的項目。常顯的項目會移到暗格。";
 "A little access" = "需要一點權限";
 "A meno:// link that applies this scene, for Shortcuts and launchers" = "套用這個場景的 meno:// 連結，可用於捷徑和啟動器";
 "A microphone is in use" = "麥克風正在使用";
 "a microphone is in use" = "麥克風正在使用";
+"A newer version of Meno made this file. What this version cannot read is left out." = "這個檔案由較新版本的 Meno 製作，目前版本讀不懂的部分會被略過。";
 "A scene remembers the section and order of every movable item. Applying it moves items back with ⌘-drag. Items of apps that are not running are skipped." = "場景會記住每個可移動項目所在的區段和順序。套用場景時會透過 ⌘ 拖移把項目放回原位，未執行的 App 會被跳過。";
 "A scene remembers which items are visible, hidden or stashed." = "場景會記住哪些項目常顯、隱藏或放在暗格中。";
 "A second hidden section for items you rarely need. They never appear in the menu bar, only in the Shelf, Quick Open or with ⌥-click." = "為很少用到的項目準備的第二個隱藏區段。它們永不出現在選單列中，只能透過托盤、快速開啟或按住 ⌥ 按一下來取用。";
@@ -50,6 +53,7 @@
 "After" = "延遲";
 "After an update, System Settings can still list an earlier build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "更新之後，系統設定裡可能還留著舊版本 Meno 的記錄，它對新版本不生效。先清除這條記錄，再在系統提示時開啟 Meno 的開關。";
 "Already switched on?" = "開關已經開啟了？";
+"Also at %@. Keep one: each copy needs its own permissions, and a login item may open the other one." = "另一份在 %@。建議只保留一份：每一份都需要個別授權，登入項目也可能開啟另一份。";
 "Also hide the items in the Visible section" = "同時隱藏「常顯」區段中的項目";
 "Always" = "永遠";
 "Always shown in the menu bar." = "永遠顯示在選單列中。";
@@ -58,6 +62,7 @@
 "An app's items are missing? macOS 26 and later only show the items of apps that are allowed in System Settings › Menu Bar." = "找不到某個 App 的圖示？macOS 26 及以上只會顯示在「系統設定 › 選單列」裡允許的 App 的項目。";
 "An external display is connected" = "已連接外接顯示器";
 "an external display is connected" = "已連接外接顯示器";
+"Another copy of Meno" = "這部 Mac 上還有另一份 Meno";
 "Another move is still in progress." = "另一個移動操作仍在進行中。";
 "Any symbol from the SF Symbols app. While items are shown, its filled variant is used when there is one." = "可以使用 SF Symbols App 中的任意符號。顯示項目時，如果該符號有實心版本，會改用實心版本。";
 "App switch" = "切換 App";
@@ -121,6 +126,7 @@
 "Close after opening an item" = "開啟項目後關閉托盤";
 "Colors" = "顏色";
 "Commands run with zsh every 10 seconds while the rule is on. A command counts as true when it exits with status 0; one that takes longer than 5 seconds is stopped." = "規則開啟時，指令每 10 秒用 zsh 執行一次。指令以狀態 0 結束時條件成立；執行超過 5 秒的指令會被終止。";
+"Compare icons too" = "同時比較圖示";
 "Conditions" = "條件";
 "Connected now" = "目前已連接";
 "Connected to a network" = "連接到某個網路";
@@ -162,7 +168,10 @@
 "Empty menu bar" = "選單列空白處";
 "Empty. Drag items here, or choose Group in an item's menu." = "還是空的。把項目拖到這裡，或在項目選單的「群組」裡加入。";
 "Experimental" = "實驗性";
+"Export Scenes and Rules" = "匯出場景和規則";
 "Export Settings…" = "匯出設定…";
+"Exported to “%@”." = "已匯出到「%@」。";
+"Export…" = "匯出…";
 "Eye" = "眼睛";
 "Fill" = "填色";
 "Fill in Dark Mode" = "深色模式下的填色";
@@ -170,6 +179,7 @@
 "Find and open any item from the keyboard, pinyin included." = "用鍵盤尋找並開啟任意項目，支援拼音。";
 "Finder" = "Finder";
 "Floating" = "浮動";
+"Follow System" = "跟隨系統";
 "Force Quit" = "強制結束";
 "From the Wallpaper" = "取自背景圖片";
 "Full width" = "全寬";
@@ -222,7 +232,13 @@
 "Icon size" = "圖示大小";
 "Icon spacing" = "圖示間距";
 "Ignore hover, scrolling and clicks while Zen is on" = "禪模式開啟時忽略停留、捲動和按一下";
+"Import" = "匯入";
+"Import from “%@”" = "從「%@」匯入";
 "Import Settings…" = "匯入設定…";
+"Imported as “%@”" = "匯入後名為「%@」";
+"Imported from “%@”." = "已從「%@」匯入。";
+"Imported from “%@”. Rules that run commands were turned off; check them before turning them on." = "已從「%@」匯入。帶指令的規則已被關閉，請檢查後再開啟。";
+"Import…" = "匯入…";
 "In the group “%@”" = "在群組「%@」中";
 "In the menu bar" = "在選單列中";
 "In the Shelf" = "在托盤中";
@@ -239,6 +255,7 @@
 "Items left of this divider are hidden" = "此分隔線左側的項目會被隱藏";
 "Items left of this divider go to the Stash" = "此分隔線左側的項目會放入暗格";
 "Items on the left do not fit into the menu bar" = "左側是選單列裡放不下的項目";
+"Items on this Mac: %lld of %lld" = "本機有其中 %lld 個項目，共 %lld 個";
 "Items that belong together, behind one icon of their own." = "把相關的項目收進一個單獨的圖示。";
 "Items to the right of the Meno icon stay visible." = "Meno 圖示右側的項目會保持顯示。";
 "keep %@ visible" = "讓 %@ 保持顯示";
@@ -249,6 +266,8 @@
 "Keyboard shortcuts that work in every app." = "在任何 App 中都可用的鍵盤快速鍵。";
 "Kind" = "類型";
 "Label" = "標籤";
+"Language" = "語言";
+"Language / 语言 / 語言" = "Language / 语言 / 語言";
 "Launch" = "啟動";
 "Launch Meno at login" = "登入時開啟 Meno";
 "Layout" = "佈局";
@@ -268,6 +287,7 @@
 "macOS has no symbol with this name." = "macOS 中沒有這個名稱的符號。";
 "macOS keeps this item in place" = "macOS 固定了這個項目的位置";
 "macOS runs Meno from a temporary copy. Move Meno to the Applications folder, open it from there and try again." = "macOS 正從暫存副本執行 Meno。請把 Meno 移到「應用程式」資料夾，從那裡打開後再試一次。";
+"Made with Meno %@" = "由 Meno %@ 製作";
 "Makes room by hiding the menus of the frontmost app while items are shown." = "顯示項目時暫時隱藏最前方 App 的選單，騰出空間。";
 "Manage Scenes…" = "管理場景…";
 "Markers" = "標記";
@@ -294,8 +314,10 @@
 "Meno quits and opens again. macOS then asks you to allow Meno in Accessibility again." = "Meno 會結束並重新開啟，之後 macOS 會請你在「輔助使用」中重新允許 Meno。";
 "Meno reads and moves menu bar items through Accessibility." = "Meno 透過輔助使用讀取和移動選單列項目。";
 "Meno recognizes a network by its router, without needing Location Services." = "Meno 透過路由器辨識網路，不需要定位服務。";
+"Meno Scenes" = "Meno 場景";
 "Meno Settings" = "Meno 設定";
 "Meno shows this name in the Shelf, Quick Open, hotkeys and rules. The menu bar itself does not change." = "Meno 會在托盤、快速開啟、快速鍵和規則中使用這個名字，選單列本身不會改變。";
+"Meno uses the new language after it relaunches." = "Meno 重新開啟後才會使用新的語言。";
 "Meno was updated to %@." = "Meno 已更新到 %@。";
 "Meno works on your Mac, with no analytics and no accounts. It only goes online to ask GitHub for the latest release, when you check for updates or once a day if you turned that on, and to download a release you chose to install. Usage statistics and settings are stored in ~/Library/Application Support/Meno." = "Meno 在你的 Mac 上執行，沒有資料分析，也沒有帳號。它只在你檢查更新時，或在你開啟每日檢查後每天一次，向 GitHub 詢問最新版本，以及下載你選擇安裝的版本時才會連網。使用統計和設定儲存在 ~/Library/Application Support/Meno 中。";
 "Meno — click to show or hide items, ⌥-click to include the Stash, right-click for more" = "Meno — 按一下以顯示或隱藏項目，按住 ⌥ 並按一下以包含暗格，按一下右鍵以顯示更多";
@@ -340,6 +362,7 @@
 "Nothing is hidden" = "沒有隱藏的項目";
 "Nothing to set" = "無需設定";
 "Nothing to suggest right now. Your menu bar looks well arranged." = "暫時沒有建議，你的選單列看起來井井有條。";
+"Notices items whose icon changes while their text stays the same. This needs Screen Recording, and macOS shows its recording indicator in the menu bar every few seconds while Meno looks." = "也能發現文字不變、只有圖示變化的項目。這需要螢幕錄製權限，而且 Meno 檢查期間 macOS 會每隔幾秒在選單列顯示錄製指示器。";
 "offline" = "離線";
 "on %@" = "在%@";
 "on any day" = "在任何一天";
@@ -357,11 +380,12 @@
 "Open Secondary Menu" = "開啟輔助選單";
 "Open Settings" = "開啟設定";
 "Open Shelf" = "開啟托盤";
+"Open Shortcuts" = "打開「捷徑」";
 "Open System Settings" = "開啟系統設定";
 "Opened %lld times this week while hidden." = "本週在隱藏狀態下開啟了 %lld 次。";
 "Opening items" = "開啟項目";
 "Optional" = "選用";
-"Optional. Shows the real artwork of hidden items instead of app icons (macOS 14 to 26). Meno only captures menu bar items, never your screen." = "選用。顯示隱藏項目的真實圖示，而不是 App 圖示（macOS 14 至 26）。Meno 只擷取選單列項目，絕不會擷取你的螢幕。";
+"Optional. Shows the real artwork of hidden items instead of app icons (macOS 14 to 26). Meno only captures menu bar items, never your screen, and only while the Shelf, Quick Open or Settings is open; macOS shows its recording indicator in the menu bar meanwhile." = "選用。顯示隱藏項目的真實圖示，而不是 App 圖示（macOS 14 至 26）。Meno 只擷取選單列項目，絕不會擷取你的螢幕，而且只在托盤、快速開啟或設定視窗打開時擷取；此時 macOS 會在選單列顯示錄製指示器。";
 "Optional. Shows the real icons of hidden items on macOS 14 to 26." = "選用。在 macOS 14 至 26 上顯示隱藏項目的真實圖示。";
 "Or drag it onto a section, or onto another item. A line shows on which side it will land." = "也可以直接拖：拖到某個區段，或拖到另一個項目上，直線標出它會落在哪一邊。";
 "Other colors in Dark Mode" = "深色模式使用其他顏色";
@@ -394,6 +418,8 @@
 "Relaunch apps to apply the new spacing?" = "要重新開啟 App 以套用新的間距嗎？";
 "Relaunch Meno" = "重新開啟 Meno";
 "Relaunch Meno later to use Screen Recording." = "稍後重新開啟 Meno 即可使用螢幕錄製權限。";
+"Relaunch Meno to switch languages." = "重新開啟 Meno 以切換語言。";
+"Relaunch Now" = "立即重新開啟";
 "Relaunch to finish" = "重新開啟以完成設定";
 "Release Notes" = "版本說明";
 "Remove" = "移除";
@@ -427,6 +453,7 @@
 "Rules are paused" = "規則已暫停";
 "Rules are paused." = "規則已暫停。";
 "Running on battery" = "使用電池供電";
+"Runs a command, so it stays off until you turn it on." = "會執行指令，所以匯入後保持關閉，等你開啟。";
 "Save" = "儲存";
 "Save a scene first" = "請先儲存一個場景";
 "Save arrangements and switch between them." = "儲存多種佈局並隨時切換。";
@@ -435,6 +462,7 @@
 "Save Only" = "僅儲存";
 "Save Scene" = "儲存場景";
 "Save the current layout" = "儲存目前佈局";
+"Save this scene to a .meno file, for another Mac or for someone else" = "把這個場景存成 .meno 檔案，帶到另一台 Mac 上或分享給別人";
 "Saved scene “%@”." = "已儲存場景「%@」。";
 "Saved. The new spacing appears as apps restart." = "已儲存。App 重新開啟後即可看到新的間距。";
 "Scene name, for example Work" = "場景名稱，例如「工作」";
@@ -456,6 +484,7 @@
 "SF Symbol name" = "SF 符號名稱";
 "Shadow" = "陰影";
 "Shape" = "形狀";
+"Share scenes and rules" = "分享場景和規則";
 "Shelf" = "托盤";
 "Shell command" = "Shell 指令";
 "Shortcut" = "快速鍵";
@@ -470,6 +499,7 @@
 "Show Hidden Items" = "顯示隱藏項目";
 "Show hidden items" = "顯示隱藏項目";
 "show hidden items" = "顯示隱藏項目";
+"Show hidden items on an external display" = "在外接顯示器上顯示隱藏項目";
 "Show hidden items while offline" = "離線時顯示隱藏項目";
 "Show how many items are hidden next to the Meno icon" = "在 Meno 圖示旁顯示隱藏項目的數量";
 "Show in Finder" = "在 Finder 中顯示";
@@ -515,6 +545,7 @@
 "System Settings still lists the previous build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "系統設定裡還留著上一個版本 Meno 的記錄，它對新版本不生效。先清除這條記錄，再在系統提示時開啟 Meno 的開關。";
 "Test" = "測試";
 "Text" = "文字";
+"That file does not contain Meno scenes or rules." = "該檔案不包含 Meno 場景或規則。";
 "That file does not contain Meno settings." = "該檔案不包含 Meno 設定。";
 "That item is not in the menu bar right now." = "該項目目前不在選單列中。";
 "The colors of the wallpaper under the menu bar, which keep it as easy to read as the wallpaper. A moving wallpaper, or one in a folder that macOS protects such as Downloads, gets your own colors." = "採用選單列下方背景圖片的顏色，選單列會和背景圖片本身一樣易讀。會動的背景圖片，或放在「下載項目」等受 macOS 保護的檔案夾中的背景圖片，會使用你自己設定的顏色。";
@@ -534,8 +565,13 @@
 "The Meno icon is hidden and no other way to show items is on. Turn one on below, or show the icon again." = "Meno 圖示已隱藏，也沒有開啟其他顯示項目的方式。請在下方開啟一種，或重新顯示圖示。";
 "The Meno icon, the Shelf and the look of the menu bar." = "Meno 圖示、托盤以及選單列的外觀。";
 "The menu bar adapts to apps, displays, power and time." = "選單列會隨 App、顯示器、電源和時間自動調整。";
+"The menu bar is on a specific display" = "選單列在指定的顯示器上";
+"The menu bar is on an external display" = "選單列在外接顯示器上";
+"the menu bar is on an external display" = "選單列在外接顯示器上";
+"the menu bar is on “%@”" = "選單列在「%@」上";
 "The move was called off." = "移動已取消。";
 "The release has no app to install." = "這個版本沒有可以安裝的 App。";
+"The scenes that chosen rules apply go along." = "選取的規則所用的場景會一併匯出。";
 "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing." = "當選單列放不下時（例如瀏海附近），托盤能讓項目依然觸手可及。";
 "The tint sits behind the menu bar. It is most visible with a transparent menu bar, as on macOS 26 and later." = "著色位於選單列後方，在透明選單列（如 macOS 26 及更高版本）上最明顯。";
 "Then" = "然後";

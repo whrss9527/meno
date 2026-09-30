@@ -188,6 +188,8 @@ struct RuleEditor: View {
             switch entry.condition {
             case .appFrontmost(let id), .appRunning(let id):
                 if id.isEmpty { return false }
+            case .displayConnected(let name), .menuBarOnDisplay(let name):
+                if name.isEmpty { return false }
             case .commandSucceeds:
                 if entry.condition.command == nil { return false }
             case .network(let router, _):
@@ -275,6 +277,8 @@ private struct ConditionEditor: View {
             AppPicker(bundleID: Binding(get: { id }, set: { condition = .appRunning(bundleID: $0) }))
         case .displayConnected(let name):
             DisplayPicker(name: Binding(get: { name }, set: { condition = .displayConnected(name: $0) }))
+        case .menuBarOnDisplay(let name):
+            DisplayPicker(name: Binding(get: { name }, set: { condition = .menuBarOnDisplay(name: $0) }))
         case .batteryBelow(let percent):
             Stepper(value: Binding(get: { percent }, set: { condition = .batteryBelow(percent: $0) }), in: 5...95, step: 5) {
                 Text(verbatim: "\(percent)%")

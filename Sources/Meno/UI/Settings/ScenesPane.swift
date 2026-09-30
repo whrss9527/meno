@@ -10,6 +10,7 @@ struct ScenesPane: View {
     @State private var newSymbol = "briefcase"
     @State private var renaming: LayoutScene?
     @State private var renameText = ""
+    @State private var isExporting = false
 
     static let symbols = [
         "briefcase", "house", "cup.and.saucer", "gamecontroller", "airplane", "graduationcap",
@@ -68,6 +69,7 @@ struct ScenesPane: View {
                                 renaming = scene
                             },
                             onCopyLink: { model.copyLink(.scene(name: scene.name)) },
+                            onExport: { model.exportShare(scenes: [scene.id], rules: []) },
                             onDelete: { model.deleteScene(id: scene.id) },
                             hotkey: Binding(
                                 get: { scene.hotkey },
@@ -80,6 +82,27 @@ struct ScenesPane: View {
                     }
                 }
             }
+
+            SettingsCard(
+                "Share scenes and rules",
+                symbol: "square.and.arrow.up.on.square",
+                footnote: "A .meno file holds scenes and rules, for another Mac or for someone else; shortcuts stay here. Open a .meno file, or drop it on this window, to see what it holds before anything is imported."
+            ) {
+                HStack(spacing: 10) {
+                    Button("Export…") { isExporting = true }
+                        .disabled(model.settings.scenes.isEmpty && model.settings.rules.isEmpty)
+                    Button("Import…") { model.chooseShareFile() }
+                    Spacer()
+                }
+            }
+        }
+        .sheet(isPresented: $isExporting) {
+            ShareExportSheet(inventory: inventory)
+                .environmentObject(model)
+        }
+        .sheet(item: $model.pendingShare) { share in
+            ShareImportSheet(share: share, inventory: inventory)
+                .environmentObject(model)
         }
         .alert("Rename Scene", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Name", text: $renameText)
@@ -111,6 +134,7 @@ private struct SceneCard: View {
     let onUpdate: () -> Void
     let onRename: () -> Void
     let onCopyLink: () -> Void
+    let onExport: () -> Void
     let onDelete: () -> Void
     @Binding var hotkey: KeyCombo?
 
@@ -136,6 +160,8 @@ private struct SceneCard: View {
                     Button("Rename…", action: onRename)
                     Button("Copy Link", action: onCopyLink)
                         .help(Text("A meno:// link that applies this scene, for Shortcuts and launchers"))
+                    Button("Export…", action: onExport)
+                        .help(Text("Save this scene to a .meno file, for another Mac or for someone else"))
                     Divider()
                     Button("Delete", role: .destructive, action: onDelete)
                 } label: {
@@ -186,4 +212,215 @@ private struct SceneCard: View {
         .background { Capsule().fill(section.color.opacity(0.13)) }
         .help(Text(section.title))
     }
+}
+
+/// Chooses the scenes and rules to write to a `.meno` file.
+private struct ShareExportSheet: View {
+    @ObservedObject var inventory: ItemInventory
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var scenes: Set<UUID> = []
+    @State private var rules: Set<UUID> = []
+    @State private var didChoose = false
+
+    var body: some View {
+        let required = requiredScenes
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Export Scenes and Rules")
+                .font(.system(size: 15, weight: .semibold))
+            Text("The scenes that chosen rules apply go along.")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    if !model.settings.scenes.isEmpty {
+                        ShareSectionHeader(title: "Scenes")
+                        ForEach(model.settings.scenes) { scene in
+                            Toggle(isOn: member(scene.id, of: $scenes, required: required)) {
+                                Label { Text(verbatim: scene.name) } icon: { Image(systemName: scene.symbol) }
+                            }
+                            .disabled(required.contains(scene.id))
+                        }
+                    }
+                    if !model.settings.rules.isEmpty {
+                        ShareSectionHeader(title: "Rules")
+                        ForEach(model.settings.rules) { rule in
+                            Toggle(isOn: member(rule.id, of: $rules)) {
+                                ShareRuleLabel(rule: rule, scenes: model.settings.scenes, items: inventory.items)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: 340)
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Export…") {
+                    let chosen = (scenes: scenes, rules: rules)
+                    dismiss()
+                    // The save panel comes up once the sheet is gone.
+                    DispatchQueue.main.async {
+                        model.exportShare(scenes: chosen.scenes, rules: chosen.rules)
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(scenes.isEmpty && rules.isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 460)
+        .onAppear {
+            guard !didChoose else { return }
+            didChoose = true
+            scenes = Set(model.settings.scenes.map(\.id))
+            rules = Set(model.settings.rules.map(\.id))
+        }
+    }
+
+    private var requiredScenes: Set<UUID> {
+        Set(model.settings.rules.filter { rules.contains($0.id) }.compactMap { rule in
+            if case .applyScene(let id) = rule.action { return id }
+            return nil
+        })
+    }
+}
+
+/// Shows what a `.meno` file holds and imports what the person chooses.
+private struct ShareImportSheet: View {
+    let share: PendingShare
+    @ObservedObject var inventory: ItemInventory
+    @EnvironmentObject private var model: AppModel
+    @State private var scenes: Set<UUID>
+    @State private var rules: Set<UUID>
+
+    init(share: PendingShare, inventory: ItemInventory) {
+        self.share = share
+        self.inventory = inventory
+        _scenes = State(initialValue: Set(share.file.scenes.map(\.id)))
+        _rules = State(initialValue: Set(share.file.rules.map(\.id)))
+    }
+
+    var body: some View {
+        let file = share.file
+        let required = Set(file.rules.filter { rules.contains($0.id) }.flatMap { file.scenes(appliedBy: $0).map(\.id) })
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                Image(systemName: "square.and.arrow.down.on.square")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(Color.accentColor)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Import from “\(share.name)”")
+                        .font(.system(size: 15, weight: .semibold))
+                    Text("Made with Meno \(file.createdBy)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if file.isFromNewerVersion {
+                Label("A newer version of Meno made this file. What this version cannot read is left out.", systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.orange)
+            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    if !file.scenes.isEmpty {
+                        ShareSectionHeader(title: "Scenes")
+                        ForEach(file.scenes) { scene in
+                            Toggle(isOn: member(scene.id, of: $scenes, required: required)) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Label { Text(verbatim: scene.name) } icon: { Image(systemName: scene.symbol) }
+                                    Text(verbatim: detail(of: scene))
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .disabled(required.contains(scene.id))
+                        }
+                    }
+                    if !file.rules.isEmpty {
+                        ShareSectionHeader(title: "Rules")
+                        ForEach(file.rules) { rule in
+                            Toggle(isOn: member(rule.id, of: $rules)) {
+                                ShareRuleLabel(rule: rule, scenes: file.scenes, items: inventory.items)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: 340)
+            HStack {
+                Spacer()
+                Button("Cancel") { model.pendingShare = nil }
+                    .keyboardShortcut(.cancelAction)
+                Button("Import") { model.importShare(share, scenes: scenes, rules: rules) }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(scenes.isEmpty && rules.isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 460)
+    }
+
+    private func detail(of scene: LayoutScene) -> String {
+        let keys = scene.layout.visible + scene.layout.hidden + scene.layout.stash
+        let present = keys.filter { inventory.item(for: $0) != nil }
+        var text = String(localized: "Items on this Mac: \(present.count) of \(keys.count)")
+        let taken = model.settings.scenes.map(\.name)
+        if ShareFile.uniqueName(scene.name, among: taken) != scene.name {
+            text += " · " + String(localized: "Imported as “\(ShareFile.uniqueName(scene.name, among: taken))”")
+        }
+        return text
+    }
+}
+
+private struct ShareSectionHeader: View {
+    let title: LocalizedStringKey
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .padding(.top, 2)
+    }
+}
+
+private struct ShareRuleLabel: View {
+    let rule: AutomationRule
+    let scenes: [LayoutScene]
+    let items: [MenuBarItem]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: rule.name.isEmpty ? String(localized: "Untitled Rule") : rule.name)
+            Text(verbatim: RuleDescriber.describe(rule, scenes: scenes, items: items))
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if rule.runsCommands {
+                Label("Runs a command, so it stays off until you turn it on.", systemImage: "terminal")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.orange)
+            }
+        }
+    }
+}
+
+/// Whether `id` is in `set`, as a binding for a checkbox. A required member
+/// is always in.
+private func member(_ id: UUID, of set: Binding<Set<UUID>>, required: Set<UUID> = []) -> Binding<Bool> {
+    Binding(
+        get: { required.contains(id) || set.wrappedValue.contains(id) },
+        set: { isOn in
+            if isOn {
+                set.wrappedValue.insert(id)
+            } else {
+                set.wrappedValue.remove(id)
+            }
+        }
+    )
 }

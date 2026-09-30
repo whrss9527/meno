@@ -25,6 +25,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var refusedHotkeys: Set<KeyCombo> = []
     /// The shortcut recorder that is recording, if any.
     @Published var activeShortcutRecorder: UUID?
+    /// A `.meno` file whose scenes and rules wait for the person to choose
+    /// what to import.
+    @Published var pendingShare: PendingShare?
     /// Whether nobody can see the menu bar: the displays sleep or another
     /// user's session is in front. Background scans pause meanwhile.
     private(set) var isAway = false
@@ -105,6 +108,8 @@ final class AppModel: ObservableObject {
             // change can be undone.
             automation.start()
             temporary.schedule()
+            Diagnostics.event("ready\n" + Diagnostics.report(for: self))
+            Diagnostics.printReportsOnSignal(for: self)
         }
         let updated = recordLaunchedVersion()
         // The previous copy stays until this one has run for a few seconds,
@@ -289,7 +294,7 @@ final class AppModel: ObservableObject {
         if old.scenes.map(\.hotkey) != new.scenes.map(\.hotkey) {
             registerHotkeys()
         }
-        if old.revealOnChange != new.revealOnChange {
+        if old.revealOnChange != new.revealOnChange || old.reveal.comparesIcons != new.reveal.comparesIcons {
             changes.settingsChanged()
         }
         if old.general.checksForUpdates != new.general.checksForUpdates {

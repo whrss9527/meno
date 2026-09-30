@@ -110,7 +110,9 @@ final class QuickOpenController: ObservableObject {
         keyMonitor.start()
         outsideClickMonitor.start()
         Task { [weak self] in
-            await self?.model.inventory.refresh()
+            guard let model = self?.model else { return }
+            await model.inventory.refresh()
+            model.images.refresh(for: model.inventory.items, captureAllowed: model.permissions.canCapture, renew: true)
         }
     }
 

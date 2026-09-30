@@ -140,7 +140,7 @@ final class ShelfController: ObservableObject {
         model.recordReveal(trigger: trigger)
         Task { [weak self] in
             await self?.model.inventory.refresh()
-            self?.model.images.refresh(for: self?.model.inventory.items ?? [], captureAllowed: self?.model.permissions.canCapture ?? false, force: true)
+            self?.model.images.refresh(for: self?.model.inventory.items ?? [], captureAllowed: self?.model.permissions.canCapture ?? false, renew: true)
         }
     }
 

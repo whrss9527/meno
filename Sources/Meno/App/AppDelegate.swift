@@ -8,6 +8,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var waitingURLs: [URL] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // The language Meno shows, before Settings can change it.
+        _ = InterfaceLanguageSetting.atLaunch
+        // One copy runs at a time; a newer one that runs takes the links.
+        guard SingleInstance.claim(forwarding: waitingURLs) else {
+            waitingURLs = []
+            NSApp.terminate(nil)
+            return
+        }
         // An empty main menu keeps the menu bar clear whenever Meno is active.
         NSApp.mainMenu = NSMenu()
         let model = AppModel()

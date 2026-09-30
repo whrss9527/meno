@@ -11,6 +11,11 @@ public struct RuleContext: Equatable, Sendable {
     public var externalDisplayCount: Int
     /// Names of the connected displays.
     public var displayNames: Set<String>
+    /// The name of the display whose menu bar has the items, or `nil` when
+    /// not known.
+    public var menuBarDisplayName: String?
+    /// Whether that display is an external one.
+    public var menuBarOnExternalDisplay: Bool
     /// Minutes since local midnight.
     public var minuteOfDay: Int
     /// The day of the week as `Calendar` numbers it, 1 (Sunday) to 7
@@ -34,6 +39,8 @@ public struct RuleContext: Equatable, Sendable {
         isLowPowerMode: Bool = false,
         externalDisplayCount: Int = 0,
         displayNames: Set<String> = [],
+        menuBarDisplayName: String? = nil,
+        menuBarOnExternalDisplay: Bool = false,
         minuteOfDay: Int = 0,
         weekday: Int = 0,
         isOnline: Bool = true,
@@ -49,6 +56,8 @@ public struct RuleContext: Equatable, Sendable {
         self.isLowPowerMode = isLowPowerMode
         self.externalDisplayCount = externalDisplayCount
         self.displayNames = displayNames
+        self.menuBarDisplayName = menuBarDisplayName
+        self.menuBarOnExternalDisplay = menuBarOnExternalDisplay
         self.minuteOfDay = minuteOfDay
         self.weekday = weekday
         self.isOnline = isOnline
@@ -71,6 +80,13 @@ public enum RuleCondition: Codable, Hashable, Sendable {
     case noExternalDisplay
     /// A display with this name is connected, for example a monitor at the office.
     case displayConnected(name: String)
+    /// The items are on the menu bar of an external display. With several
+    /// displays macOS keeps them on the menu bar of the display in use and
+    /// shows a copy on the others, so their order is the same everywhere;
+    /// what rules can change for a display is how much of them shows.
+    case menuBarOnExternalDisplay
+    /// The items are on the menu bar of the display with this name.
+    case menuBarOnDisplay(name: String)
     /// Between two times of day, given in minutes after midnight. The window
     /// wraps around midnight when `startMinute > endMinute`.
     case timeWindow(startMinute: Int, endMinute: Int)
@@ -110,6 +126,10 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             return context.externalDisplayCount == 0
         case .displayConnected(let name):
             return !name.isEmpty && context.displayNames.contains(name)
+        case .menuBarOnExternalDisplay:
+            return context.menuBarOnExternalDisplay
+        case .menuBarOnDisplay(let name):
+            return !name.isEmpty && context.menuBarDisplayName == name
         case .timeWindow(let start, let end):
             let minute = context.minuteOfDay
             if start == end { return true }
@@ -149,6 +169,8 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case .externalDisplay: return .externalDisplay
         case .noExternalDisplay: return .noExternalDisplay
         case .displayConnected: return .displayConnected
+        case .menuBarOnExternalDisplay: return .menuBarOnExternalDisplay
+        case .menuBarOnDisplay: return .menuBarOnDisplay
         case .timeWindow: return .timeWindow
         case .weekdays: return .weekdays
         case .offline: return .offline
@@ -169,6 +191,8 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case externalDisplay
         case noExternalDisplay
         case displayConnected
+        case menuBarOnExternalDisplay
+        case menuBarOnDisplay
         case timeWindow
         case weekdays
         case offline
@@ -189,6 +213,8 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             case .externalDisplay: return .externalDisplay
             case .noExternalDisplay: return .noExternalDisplay
             case .displayConnected: return .displayConnected(name: "")
+            case .menuBarOnExternalDisplay: return .menuBarOnExternalDisplay
+            case .menuBarOnDisplay: return .menuBarOnDisplay(name: "")
             case .timeWindow: return .timeWindow(startMinute: 9 * 60, endMinute: 18 * 60)
             case .weekdays: return .weekdays(days: Weekdays.mondayToFriday)
             case .offline: return .offline

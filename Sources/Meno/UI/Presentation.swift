@@ -53,6 +53,12 @@ extension Image {
     }
 }
 
+extension InterfaceLanguage {
+    var title: String {
+        nativeName ?? String(localized: "Follow System")
+    }
+}
+
 extension RevealStyle {
     var title: String {
         switch self {
@@ -258,6 +264,8 @@ extension RuleCondition.Kind {
         case .externalDisplay: return String(localized: "An external display is connected")
         case .noExternalDisplay: return String(localized: "No external display")
         case .displayConnected: return String(localized: "A specific display is connected")
+        case .menuBarOnExternalDisplay: return String(localized: "The menu bar is on an external display")
+        case .menuBarOnDisplay: return String(localized: "The menu bar is on a specific display")
         case .timeWindow: return String(localized: "Time of day")
         case .weekdays: return String(localized: "Day of the week")
         case .offline: return String(localized: "The Mac is offline")
@@ -279,6 +287,8 @@ extension RuleCondition.Kind {
         case .externalDisplay: return "display.2"
         case .noExternalDisplay: return "laptopcomputer"
         case .displayConnected: return "display"
+        case .menuBarOnExternalDisplay: return "menubar.rectangle"
+        case .menuBarOnDisplay: return "menubar.dock.rectangle"
         case .timeWindow: return "clock"
         case .weekdays: return "calendar"
         case .offline: return "wifi.slash"

@@ -4,6 +4,11 @@ import MenoCore
 extension AppModel {
     /// Runs a `meno://` link, for example from Shortcuts or a launcher.
     func handle(_ url: URL) {
+        // A .meno file opened in the Finder.
+        if url.isFileURL {
+            openShareFile(url)
+            return
+        }
         guard let command = LinkCommand(url: url) else {
             toasts.show(String(localized: "Meno does not know the link \(url.absoluteString)."), symbol: "link")
             return

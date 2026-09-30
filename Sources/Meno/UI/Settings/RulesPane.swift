@@ -1,3 +1,4 @@
+import AppKit
 import MenoCore
 import SwiftUI
 
@@ -76,6 +77,26 @@ struct RulesPane: View {
                     },
                     onDelete: { model.settings.rules.removeAll { $0.id == rule.id } }
                 )
+            }
+
+            // Meno cannot see which Focus is on, but Shortcuts can tell it.
+            if AppInfo.osMajorVersion >= 26 {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Image(systemName: "moon")
+                        .foregroundStyle(.secondary)
+                    Text("A Focus can change the menu bar too: in Shortcuts, add an automation for when the Focus turns on or off that opens a scene's link, such as meno://scene/Work.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Button("Open Shortcuts") {
+                        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.shortcuts") {
+                            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+                        }
+                    }
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 4)
             }
         }
         .sheet(item: $editing) { state in
@@ -190,6 +211,10 @@ enum RuleDescriber {
             return String(localized: "no external display is connected")
         case .displayConnected(let name):
             return String(localized: "“\(name)” is connected")
+        case .menuBarOnExternalDisplay:
+            return String(localized: "the menu bar is on an external display")
+        case .menuBarOnDisplay(let name):
+            return String(localized: "the menu bar is on “\(name)”")
         case .timeWindow(let start, let end):
             return String(localized: "between \(Formatters.time(minuteOfDay: start)) and \(Formatters.time(minuteOfDay: end))")
         case .weekdays(let days):
@@ -232,6 +257,7 @@ enum RulePreset: CaseIterable {
     case videoCall
     case lowBattery
     case desk
+    case externalMenuBar
     case workHours
     case offline
     case evening
@@ -242,6 +268,7 @@ enum RulePreset: CaseIterable {
         case .videoCall: return String(localized: "Zen during calls")
         case .lowBattery: return String(localized: "Show the battery when it runs low")
         case .desk: return String(localized: "Apply a scene at the desk")
+        case .externalMenuBar: return String(localized: "Show hidden items on an external display")
         case .workHours: return String(localized: "Apply a scene during work hours")
         case .offline: return String(localized: "Show hidden items while offline")
         case .evening: return String(localized: "Quiet menu bar in the evening")
@@ -267,6 +294,8 @@ enum RulePreset: CaseIterable {
         case .desk:
             let action: RuleAction = model.settings.scenes.first.map { RuleAction.applyScene(id: $0.id) } ?? RuleAction.revealHidden
             return AutomationRule(name: title, conditions: [.externalDisplay], action: action)
+        case .externalMenuBar:
+            return AutomationRule(name: title, conditions: [.menuBarOnExternalDisplay], action: .revealHidden)
         case .workHours:
             let action: RuleAction = model.settings.scenes.first.map { RuleAction.applyScene(id: $0.id) } ?? RuleAction.revealHidden
             return AutomationRule(
