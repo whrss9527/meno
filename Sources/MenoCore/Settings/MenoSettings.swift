@@ -313,6 +313,10 @@ public struct ZenSettings: Codable, Equatable, Sendable {
 public struct MenuBarTint: Codable, Equatable, Sendable {
     public var enabled = false
     public var fill: TintFill = .gradient
+    /// Whether the colors are picked or come from the wallpaper.
+    public var colorSource: TintColorSource = .custom
+    /// How much the wallpaper's colors cover, from 0 to 1.
+    public var wallpaperOpacity: Double = 0.45
     public var color = RGBAColor(red: 0.36, green: 0.47, blue: 1.0, alpha: 0.32)
     public var secondaryColor = RGBAColor(red: 0.80, green: 0.36, blue: 0.96, alpha: 0.32)
     /// Use other colors while the Mac is in Dark Mode.
@@ -333,6 +337,32 @@ extension MenuBarTint {
     public func colors(dark: Bool) -> (primary: RGBAColor, secondary: RGBAColor) {
         dark && usesDarkColors ? (darkColor, darkSecondaryColor) : (color, secondaryColor)
     }
+
+    /// The fill colors, from `wallpaper` when the colors come from it. `nil`
+    /// while the wallpaper's colors are not known.
+    public func colors(dark: Bool, wallpaper: WallpaperPalette?) -> (primary: RGBAColor, secondary: RGBAColor)? {
+        guard colorSource == .wallpaper else { return colors(dark: dark) }
+        guard let wallpaper else { return nil }
+        let opacity = min(max(wallpaperOpacity, 0), 1)
+        func covering(_ color: RGBAColor) -> RGBAColor {
+            RGBAColor(red: color.red, green: color.green, blue: color.blue, alpha: opacity)
+        }
+        switch fill {
+        case .solid:
+            return (covering(wallpaper.average), covering(wallpaper.average))
+        case .gradient:
+            return (covering(wallpaper.leading), covering(wallpaper.trailing))
+        }
+    }
+}
+
+/// Where the colors of the menu bar tint come from.
+public enum TintColorSource: String, Codable, CaseIterable, Sendable {
+    /// The colors picked in Settings.
+    case custom
+    /// The colors of the wallpaper under the menu bar, so that the tint
+    /// blends in and keeps the menu bar as easy to read as the wallpaper.
+    case wallpaper
 }
 
 public enum TintFill: String, Codable, CaseIterable, Sendable {

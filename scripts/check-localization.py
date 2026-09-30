@@ -25,7 +25,7 @@ SECOND_ARGUMENT = ["tip(", "pill("]
 # Keys produced outside the patterns above.
 EXTRA = ["Beta", "Experimental"]
 # Matches of the patterns above that are not user-facing.
-IGNORE = {"%@.network", "%@.capture", "%@.commands", "%@.routers"}
+IGNORE = {"%@.network", "%@.capture", "%@.commands", "%@.routers", "%@.wallpaper"}
 
 INT_HINTS = (".count", "total", "uses", "days", "percent", "min(", "entry.value")
 
@@ -85,8 +85,9 @@ def extract():
             keys.setdefault(to_key(m.group(1)), path.relative_to(ROOT))
             keys.setdefault(to_key(m.group(2)), path.relative_to(ROOT))
         # Keys picked by a condition, as in subtitle: flag ? "A" : "B" or
-        # subtitle: flag ? "A" : nil, and Picker(title ?? "A").
-        for m in re.finditer(r"subtitle:[^\n]*\?\s*" + LITERAL + r"\s*:\s*(?:nil|" + LITERAL + r")", source):
+        # subtitle: flag ? "A" : nil, also with the condition on the line
+        # before the literals, and Picker(title ?? "A").
+        for m in re.finditer(r"subtitle:[^\n?]*(?:\n[^\n?]*)?\?\s*" + LITERAL + r"\s*:\s*(?:nil|" + LITERAL + r")", source):
             keys.setdefault(to_key(m.group(1)), path.relative_to(ROOT))
             if m.group(2) is not None:
                 keys.setdefault(to_key(m.group(2)), path.relative_to(ROOT))

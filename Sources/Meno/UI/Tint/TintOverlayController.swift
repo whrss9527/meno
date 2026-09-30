@@ -14,6 +14,10 @@ final class TintOverlayController {
     private var panels: [CGDirectDisplayID: FloatingPanel] = [:]
     private var subscriptions: Set<AnyCancellable> = []
     private var subscribed = false
+    private let wallpaper = WallpaperSampler()
+    /// Looks at the wallpapers again while the tint takes their colors.
+    private var wallpaperWatch: Task<Void, Never>?
+    private var spaceObserver: NSObjectProtocol?
 
     init(model: AppModel) {
         self.model = model
@@ -23,9 +27,12 @@ final class TintOverlayController {
         let tint = model.settings.tint
         guard tint.enabled else {
             removeAll()
+            watchWallpaper(false)
             return
         }
         subscribeIfNeeded()
+        let usesWallpaper = tint.colorSource == .wallpaper
+        watchWallpaper(usesWallpaper)
         // With "Automatically hide and show the menu bar" the tint would sit
         // on top of windows, so it is only drawn where the bar is reserved.
         let menuBarAutoHides = UserDefaults.standard.bool(forKey: "_HIHideMenuBar")
@@ -45,6 +52,7 @@ final class TintOverlayController {
             let islands = isMenoScreen ? islandSpans(on: screen) : nil
             panel.contentView = NSHostingView(rootView: TintView(
                 tint: tint,
+                wallpaper: usesWallpaper ? wallpaper.reading(for: screen) : .pending,
                 barHeight: barRect.height,
                 shadowRoom: shadowRoom,
                 islands: islands
@@ -62,6 +70,45 @@ final class TintOverlayController {
             panel.orderOut(nil)
         }
         panels.removeAll()
+    }
+
+    /// Reads the wallpapers that changed, and while the tint takes their
+    /// colors, looks again when the Space changes and every few minutes,
+    /// since a wallpaper can change without notice.
+    private func watchWallpaper(_ watches: Bool) {
+        guard watches else {
+            wallpaperWatch?.cancel()
+            wallpaperWatch = nil
+            if let spaceObserver {
+                NSWorkspace.shared.notificationCenter.removeObserver(spaceObserver)
+            }
+            spaceObserver = nil
+            return
+        }
+        refreshWallpaper()
+        guard wallpaperWatch == nil else { return }
+        spaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.refreshWallpaper()
+            }
+        }
+        wallpaperWatch = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 300 * 1_000_000_000)
+                self?.refreshWallpaper()
+            }
+        }
+    }
+
+    private func refreshWallpaper() {
+        wallpaper.refresh { [weak self] in
+            guard let self, self.model.settings.tint.enabled, self.model.settings.tint.colorSource == .wallpaper else { return }
+            self.update()
+        }
     }
 
     private func makePanel() -> FloatingPanel {
@@ -106,6 +153,8 @@ struct TintView: View {
     }
 
     let tint: MenuBarTint
+    /// The colors of the wallpaper, when the tint takes them.
+    let wallpaper: WallpaperReading
     let barHeight: CGFloat
     let shadowRoom: CGFloat
     let islands: Islands?
@@ -170,7 +219,18 @@ struct TintView: View {
     }
 
     private var fillStyle: AnyShapeStyle {
-        let colors = tint.colors(dark: colorScheme == .dark)
+        let dark = colorScheme == .dark
+        let chosen: (primary: RGBAColor, secondary: RGBAColor)?
+        switch wallpaper {
+        case .read(let palette):
+            chosen = tint.colors(dark: dark, wallpaper: palette)
+        case .unavailable:
+            // A wallpaper that cannot be read, such as a moving one.
+            chosen = tint.colors(dark: dark)
+        case .pending:
+            chosen = tint.colors(dark: dark, wallpaper: nil)
+        }
+        guard let colors = chosen else { return AnyShapeStyle(Color.clear) }
         switch tint.fill {
         case .solid:
             return AnyShapeStyle(colors.primary.color)

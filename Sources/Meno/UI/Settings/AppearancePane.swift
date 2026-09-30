@@ -146,19 +146,36 @@ struct AppearancePane: View {
         ) {
             ToggleRow("Tint the menu bar", isOn: $model.settings.tint.enabled)
             if model.settings.tint.enabled {
+                SettingRow(
+                    "Colors",
+                    subtitle: model.settings.tint.colorSource == .wallpaper
+                        ? "The colors of the wallpaper under the menu bar, which keep it as easy to read as the wallpaper. A moving wallpaper gets your own colors."
+                        : nil
+                ) {
+                    EnumPicker(selection: $model.settings.tint.colorSource, title: \.title, width: 240, segmented: true)
+                }
                 SettingRow("Fill") {
                     HStack(spacing: 8) {
-                        ColorPicker("Fill", selection: $model.settings.tint.color.colorBinding, supportsOpacity: true)
-                            .labelsHidden()
-                        if model.settings.tint.fill == .gradient {
-                            ColorPicker("Gradient end color", selection: $model.settings.tint.secondaryColor.colorBinding, supportsOpacity: true)
+                        if model.settings.tint.colorSource == .custom {
+                            ColorPicker("Fill", selection: $model.settings.tint.color.colorBinding, supportsOpacity: true)
                                 .labelsHidden()
+                            if model.settings.tint.fill == .gradient {
+                                ColorPicker("Gradient end color", selection: $model.settings.tint.secondaryColor.colorBinding, supportsOpacity: true)
+                                    .labelsHidden()
+                            }
                         }
                         EnumPicker(selection: $model.settings.tint.fill, title: \.title, width: 160, segmented: true)
                     }
                 }
-                ToggleRow("Other colors in Dark Mode", isOn: $model.settings.tint.usesDarkColors)
-                if model.settings.tint.usesDarkColors {
+                if model.settings.tint.colorSource == .wallpaper {
+                    SliderRow("Strength", value: $model.settings.tint.wallpaperOpacity, in: 0.1...1, step: 0.05) { value in
+                        value.formatted(.percent.precision(.fractionLength(0)))
+                    }
+                }
+                if model.settings.tint.colorSource == .custom {
+                    ToggleRow("Other colors in Dark Mode", isOn: $model.settings.tint.usesDarkColors)
+                }
+                if model.settings.tint.colorSource == .custom, model.settings.tint.usesDarkColors {
                     SettingRow("Fill in Dark Mode") {
                         HStack(spacing: 8) {
                             ColorPicker("Fill in Dark Mode", selection: $model.settings.tint.darkColor.colorBinding, supportsOpacity: true)

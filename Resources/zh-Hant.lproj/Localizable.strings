@@ -118,6 +118,7 @@
 "Clicking again hides the items." = "再次按一下會重新隱藏。";
 "Close" = "關閉";
 "Close after opening an item" = "開啟項目後關閉托盤";
+"Colors" = "顏色";
 "Commands run with zsh every 10 seconds while the rule is on. A command counts as true when it exits with status 0; one that takes longer than 5 seconds is stopped." = "規則開啟時，指令每 10 秒用 zsh 執行一次。指令以狀態 0 結束時條件成立；執行超過 5 秒的指令會被終止。";
 "Conditions" = "條件";
 "Connected now" = "目前已連接";
@@ -169,6 +170,7 @@
 "Finder" = "Finder";
 "Floating" = "浮動";
 "Force Quit" = "強制結束";
+"From the Wallpaper" = "取自背景圖片";
 "Full width" = "全寬";
 "General" = "一般";
 "Glass" = "玻璃";
@@ -498,6 +500,7 @@
 "Statistics never leave this Mac." = "統計資料永遠不會離開這台 Mac。";
 "Stepped" = "階梯式";
 "Stored only on this Mac. Used for Insights and to rank Quick Open results." = "僅儲存在這台 Mac 上，用於「洞察」和快速開啟的結果排序。";
+"Strength" = "強度";
 "Style" = "樣式";
 "Suggestions" = "建議";
 "Swipe down to show, swipe up to hide." = "向下輕掃顯示，向上輕掃隱藏。";
@@ -508,6 +511,7 @@
 "Text" = "文字";
 "That file does not contain Meno settings." = "該檔案不包含 Meno 設定。";
 "That item is not in the menu bar right now." = "該項目目前不在選單列中。";
+"The colors of the wallpaper under the menu bar, which keep it as easy to read as the wallpaper. A moving wallpaper gets your own colors." = "採用選單列下方背景圖片的顏色，選單列會和背景圖片本身一樣易讀。會動的背景圖片則使用你自己設定的顏色。";
 "The command failed or took too long." = "指令執行失敗或耗時過長。";
 "The command succeeded." = "指令執行成功。";
 "The conditions are met now." = "目前已滿足條件。";

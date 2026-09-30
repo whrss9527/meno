@@ -238,6 +238,7 @@ final class TintTests: XCTestCase {
     func testDarkModeColors() throws {
         var tint = MenuBarTint()
         XCTAssertEqual(tint.colors(dark: true).primary, tint.color)
+        XCTAssertEqual(tint.colors(dark: false, wallpaper: nil)?.secondary, tint.secondaryColor)
         tint.usesDarkColors = true
         XCTAssertEqual(tint.colors(dark: true).primary, tint.darkColor)
         XCTAssertEqual(tint.colors(dark: true).secondary, tint.darkSecondaryColor)
@@ -246,5 +247,26 @@ final class TintTests: XCTestCase {
         // Files from before the option keep their look.
         let decoded = try MenoSettings.decode(from: Data(#"{"tint": {"enabled": true}}"#.utf8))
         XCTAssertFalse(decoded.tint.usesDarkColors)
+        XCTAssertEqual(decoded.tint.colorSource, .custom)
+    }
+
+    func testWallpaperColors() {
+        var tint = MenuBarTint()
+        tint.colorSource = .wallpaper
+        tint.wallpaperOpacity = 0.5
+        // Nothing to draw until the wallpaper's colors are known.
+        XCTAssertNil(tint.colors(dark: false, wallpaper: nil))
+        let palette = WallpaperPalette(
+            average: RGBAColor(red: 0.5, green: 0.5, blue: 0.5),
+            leading: RGBAColor(red: 1, green: 0, blue: 0),
+            trailing: RGBAColor(red: 0, green: 0, blue: 1)
+        )
+        tint.fill = .gradient
+        let gradient = tint.colors(dark: true, wallpaper: palette)
+        XCTAssertEqual(gradient?.primary, RGBAColor(red: 1, green: 0, blue: 0, alpha: 0.5))
+        XCTAssertEqual(gradient?.secondary, RGBAColor(red: 0, green: 0, blue: 1, alpha: 0.5))
+        tint.fill = .solid
+        tint.wallpaperOpacity = 2
+        XCTAssertEqual(tint.colors(dark: false, wallpaper: palette)?.primary, RGBAColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1))
     }
 }

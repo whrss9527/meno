@@ -158,6 +158,15 @@ extension TintFill {
     }
 }
 
+extension TintColorSource {
+    var title: String {
+        switch self {
+        case .custom: return String(localized: "Custom")
+        case .wallpaper: return String(localized: "From the Wallpaper")
+        }
+    }
+}
+
 extension TintShape {
     var title: String {
         switch self {
