@@ -51,6 +51,7 @@
 "After" = "延迟";
 "After an update, System Settings can still list an earlier build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "更新之后，系统设置里可能还留着旧版本 Meno 的记录，它对新版本不生效。先清除这条记录，再在系统提示时打开 Meno 的开关。";
 "Already switched on?" = "开关已经打开了？";
+"Also at %@. Keep one: each copy needs its own permissions, and a login item may open the other one." = "另一份在 %@。建议只保留一份：每一份都需要单独授权，登录项也可能打开另一份。";
 "Also hide the items in the Visible section" = "同时隐藏“常显”分区中的项目";
 "Always" = "始终";
 "Always shown in the menu bar." = "始终显示在菜单栏中。";
@@ -59,6 +60,7 @@
 "An app's items are missing? macOS 26 and later only show the items of apps that are allowed in System Settings › Menu Bar." = "找不到某个 App 的图标？macOS 26 及以上只会显示在“系统设置 › 菜单栏”里允许的 App 的项目。";
 "An external display is connected" = "连接了外接显示器";
 "an external display is connected" = "连接了外接显示器";
+"Another copy of Meno" = "这台 Mac 上还有另一份 Meno";
 "Another move is still in progress." = "另一个移动操作仍在进行中。";
 "Any symbol from the SF Symbols app. While items are shown, its filled variant is used when there is one." = "可以使用 SF Symbols App 中的任意符号。显示项目时，如果该符号有实心版本，会改用实心版本。";
 "App switch" = "切换 App";

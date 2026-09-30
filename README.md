@@ -124,6 +124,8 @@ Meno has no analytics or accounts. It only goes online to ask GitHub for the lat
 - **An app's icon or the Meno icon is missing on macOS 26 or later.** macOS only shows the items of apps that are allowed in *System Settings › Menu Bar*. Meno's own icon can also be turned off in *Settings › Appearance*; open Settings from Quick Open, with `open meno://settings` or by opening Meno again.
 - **An item moves back after you moved it.** Meno only puts an item back when its app, or Meno itself, has just started and the item is not where it was last left while Meno ran. Items you move while Meno runs stay where you put them. To stop this, turn off *Keep items where you put them* in *General › Sections*.
 - **macOS asks every month whether Meno may keep recording the screen (macOS 15 to 26).** Screen Recording is optional: without it the Shelf shows app icons instead of the items' own artwork, and changes are noticed by text only.
+- **A purple indicator says "Meno is capturing your screen".** macOS shows it whenever Meno captures the artwork of menu bar items: when the Shelf, Quick Open or Settings opens, at most every 30 seconds, and every few seconds while *Compare icons too* is on. Turn off Screen Recording for Meno to stop it; Meno then shows app icons.
+- **macOS calls Meno "Meno 2".** There are two copies, for example after a download was kept next to the old one. *Settings › About* shows where the other copy is; keep one. Only one copy runs at a time: opening another shows the running one's Settings, or takes over when it is newer.
 - Anything else: *Settings › About › Copy Diagnostic Report* copies what Meno sees, to paste into an issue.
 
 ## Good to know
