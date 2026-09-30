@@ -150,8 +150,16 @@ struct InsightsPane: View {
 
     private var suggestions: some View {
         let markers = Set(inventory.items.filter { $0.kind == .marker }.map(\.key))
-        let list = model.usage.suggestions(sections: inventory.sections, movable: inventory.movableKeys.subtracting(markers))
-        return SettingsCard("Suggestions", symbol: "lightbulb", footnote: "Based on how often you open items while they are hidden, and on items you have not used for three weeks.") {
+        let list = model.usage.suggestions(
+            sections: inventory.sections,
+            movable: inventory.movableKeys.subtracting(markers),
+            includesStash: model.settings.general.stashEnabled
+        )
+        return SettingsCard(
+            "Suggestions",
+            symbol: "lightbulb",
+            footnote: "Based on how often you open items while they are hidden, and on items you have not used for three weeks, or two months while hidden. Suggestions you turn down come back after two months."
+        ) {
             if list.isEmpty {
                 Text("Nothing to suggest right now. Your menu bar looks well arranged.")
                     .font(.system(size: 12))
@@ -178,15 +186,25 @@ struct InsightsPane: View {
                             Text("Not used for \(days) days.")
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
+                        case .stash(_, let days):
+                            Text("Hidden and not used for \(days) days.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
                         }
                     }
                     Spacer()
+                    Button("Not Now") { model.dismissSuggestion(suggestion) }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.secondary)
                     switch suggestion {
                     case .promote(let key, _):
                         Button("Keep Visible") { model.move(key, to: .visible) }
                             .menoGlassButtonStyle(prominent: true)
                     case .demote(let key, _):
                         Button("Hide") { model.move(key, to: .hidden) }
+                            .menoGlassButtonStyle()
+                    case .stash(let key, _):
+                        Button("Move to Stash") { model.move(key, to: .stash) }
                             .menoGlassButtonStyle()
                     }
                 }

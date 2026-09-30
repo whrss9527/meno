@@ -41,7 +41,7 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 - **Item shortcuts:** open a specific item (Wi-Fi, a VPN, a timer…) from anywhere, even while it is hidden.
 - **Links:** `meno://` links let Shortcuts, launchers and scripts show or hide items, switch Zen, apply a scene or open an item. Scenes and items offer *Copy Link*.
 - **Markers:** add spaces, thin lines, dots, SF Symbols or short text labels to the menu bar to group your items.
-- **Insights:** private, on-device statistics — how often you reveal, your most used items, and suggestions such as "you opened this 12 times this week while it was hidden — keep it visible?".
+- **Insights:** private, on-device statistics — how often you reveal, your most used items, and suggestions such as "you opened this 12 times this week while it was hidden — keep it visible?" or stashing what you have not used for months. Suggestions you turn down stay away for two months.
 - **New arrivals:** when an app adds a new icon, Meno can ask you, hide it or stash it.
 - **Appearance:** choose the Meno icon or any SF Symbol for it, divider style, Shelf glass and tint, a menu bar tint in your own colors or the wallpaper's, with gradient, border, shadow and split "island" shapes (experimental), and system-wide icon spacing (beta).
 - English, Simplified Chinese and Traditional Chinese.

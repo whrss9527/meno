@@ -80,7 +80,7 @@
 "Automatically" = "自动";
 "Available" = "可用";
 "Back" = "返回";
-"Based on how often you open items while they are hidden, and on items you have not used for three weeks." = "依据你打开隐藏项目的频率，以及三周内未使用过的项目给出。";
+"Based on how often you open items while they are hidden, and on items you have not used for three weeks, or two months while hidden. Suggestions you turn down come back after two months." = "依据你打开隐藏项目的频率，以及三周内未使用、或隐藏后两个月内未使用的项目给出。你暂不采纳的建议两个月后会再次出现。";
 "battery below %lld%%" = "电量低于 %lld%%";
 "Battery is below" = "电量低于";
 "Below the Meno icon" = "Meno 图标下方";
@@ -188,6 +188,7 @@
 "Group" = "分组";
 "Groups" = "分组";
 "Hidden" = "隐藏";
+"Hidden and not used for %lld days." = "隐藏中，已有 %lld 天未使用。";
 "Hidden and Stash" = "隐藏与暗格";
 "Hidden items appear for a moment when something happens." = "隐藏的项目有变化时会短暂出现。";
 "Hidden items appear in the menu bar, so the file can be dropped on one of them. Items in the Shelf cannot take drops." = "隐藏的项目会显示在菜单栏中，方便把文件放到其中一个项目上。托盘中的项目无法接收拖放。";
@@ -331,6 +332,7 @@
 "No scenes yet." = "还没有场景。";
 "Not available, using frosted glass" = "不可用，改用磨砂玻璃";
 "Not connected now" = "当前未连接";
+"Not Now" = "暂不";
 "Not true now" = "当前不满足";
 "Not used for %lld days." = "已有 %lld 天未使用。";
 "Nothing in this group yet. Add items from their menu in the layout editor." = "这个分组还是空的。可以在布局编辑器的项目菜单里加入项目。";

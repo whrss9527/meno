@@ -30,6 +30,12 @@ public struct UsageLog: Codable, Equatable, Sendable {
     /// Reveals per trigger (click, hover, scroll, hotkey…).
     public var revealTriggers: [String: Int] = [:]
     public var firstRecorded: Date?
+    /// Suggestions the person turned down, by ``UsageSuggestion/id``, and
+    /// when. They come back after ``dismissalSpan``.
+    public var dismissedSuggestions: [String: Date] = [:]
+
+    /// How long a suggestion that was turned down stays away.
+    public static let dismissalSpan: TimeInterval = 60 * 24 * 60 * 60
 
     public init() {}
 
@@ -112,9 +118,16 @@ public struct UsageLog: Codable, Equatable, Sendable {
         }
     }
 
-    /// Drops per-day records older than `days` days.
+    /// Turns a suggestion down for a while.
+    public mutating func dismiss(_ suggestion: UsageSuggestion, at date: Date = Date()) {
+        dismissedSuggestions[suggestion.id] = date
+    }
+
+    /// Drops per-day records older than `days` days, and dismissals that
+    /// ran out.
     public mutating func prune(keepingDays days: Int, now: Date = Date(), calendar: Calendar = .current) {
         let keep = Set(Self.recentDayKeys(days, now: now, calendar: calendar).map(\.key))
+        dismissedSuggestions = dismissedSuggestions.filter { now.timeIntervalSince($0.value) < Self.dismissalSpan }
         reveals = reveals.filter { keep.contains($0.key) }
         for (raw, usage) in items {
             var trimmed = usage
@@ -129,41 +142,53 @@ public struct UsageLog: Codable, Equatable, Sendable {
     ///   while concealed are suggested for the Visible section.
     /// - Visible items unused for `idleDays` days are suggested for Hidden,
     ///   once Meno has been recording for at least that long.
+    /// - Hidden items unused for `stashIdleDays` days are suggested for the
+    ///   Stash, when there is one.
+    ///
+    /// Suggestions turned down during the last ``dismissalSpan`` are left out.
     public func suggestions(
         sections: [MenuItemKey: ItemSection],
         movable: Set<MenuItemKey>,
+        includesStash: Bool = true,
         now: Date = Date(),
         calendar: Calendar = .current,
         promoteThreshold: Int = 5,
-        idleDays: Int = 21
+        idleDays: Int = 21,
+        stashIdleDays: Int = 60
     ) -> [UsageSuggestion] {
+        /// Days an item was not used, once Meno has recorded for `days` days.
+        func idle(_ key: MenuItemKey, atLeast days: Int) -> Int? {
+            guard let firstRecorded,
+                  let recordingDays = calendar.dateComponents([.day], from: firstRecorded, to: now).day,
+                  recordingDays >= days else { return nil }
+            let lastUsed = items[key.rawValue]?.lastUsed ?? firstRecorded
+            let idle = calendar.dateComponents([.day], from: lastUsed, to: now).day ?? 0
+            return idle >= days ? idle : nil
+        }
         var result: [UsageSuggestion] = []
         for (key, section) in sections.sorted(by: { $0.key < $1.key }) where movable.contains(key) {
+            let uses = count(of: key, lastDays: 7, now: now, calendar: calendar)
             switch section {
             case .hidden, .stash:
-                let uses = count(of: key, lastDays: 7, now: now, calendar: calendar)
                 if uses >= promoteThreshold {
                     result.append(.promote(key, uses: uses))
+                } else if section == .hidden, includesStash, let days = idle(key, atLeast: stashIdleDays) {
+                    result.append(.stash(key, idleDays: days))
                 }
             case .visible:
-                guard let firstRecorded,
-                      let recordingDays = calendar.dateComponents([.day], from: firstRecorded, to: now).day,
-                      recordingDays >= idleDays else { continue }
-                let lastUsed = items[key.rawValue]?.lastUsed ?? firstRecorded
-                let idle = calendar.dateComponents([.day], from: lastUsed, to: now).day ?? 0
-                if idle >= idleDays {
-                    result.append(.demote(key, idleDays: idle))
+                if let days = idle(key, atLeast: idleDays) {
+                    result.append(.demote(key, idleDays: days))
                 }
             }
         }
-        return result.sorted { lhs, rhs in
-            switch (lhs, rhs) {
-            case let (.promote(_, a), .promote(_, b)): return a > b
-            case (.promote, .demote): return true
-            case (.demote, .promote): return false
-            case let (.demote(_, a), .demote(_, b)): return a > b
+        return result
+            .filter { suggestion in
+                guard let dismissed = dismissedSuggestions[suggestion.id] else { return true }
+                return now.timeIntervalSince(dismissed) >= Self.dismissalSpan
             }
-        }
+            .sorted { lhs, rhs in
+                lhs.order != rhs.order ? lhs.order < rhs.order : lhs.weight > rhs.weight
+            }
     }
 }
 
@@ -172,10 +197,39 @@ public enum UsageSuggestion: Hashable, Sendable {
     case promote(MenuItemKey, uses: Int)
     /// Not used for a long time: hide it.
     case demote(MenuItemKey, idleDays: Int)
+    /// Hidden and not used for even longer: put it in the Stash.
+    case stash(MenuItemKey, idleDays: Int)
 
     public var key: MenuItemKey {
         switch self {
-        case .promote(let key, _), .demote(let key, _): return key
+        case .promote(let key, _), .demote(let key, _), .stash(let key, _): return key
+        }
+    }
+
+    /// Names the suggestion for an item regardless of its numbers, so that
+    /// turning it down lasts while they change.
+    public var id: String {
+        switch self {
+        case .promote(let key, _): return "promote:" + key.rawValue
+        case .demote(let key, _): return "demote:" + key.rawValue
+        case .stash(let key, _): return "stash:" + key.rawValue
+        }
+    }
+
+    /// Showing items comes first, then hiding and stashing them.
+    fileprivate var order: Int {
+        switch self {
+        case .promote: return 0
+        case .demote: return 1
+        case .stash: return 2
+        }
+    }
+
+    /// Within a kind, the most used or the longest unused first.
+    fileprivate var weight: Int {
+        switch self {
+        case .promote(_, let uses): return uses
+        case .demote(_, let days), .stash(_, let days): return days
         }
     }
 }

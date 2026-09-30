@@ -80,7 +80,7 @@
 "Automatically" = "自動";
 "Available" = "可用";
 "Back" = "返回";
-"Based on how often you open items while they are hidden, and on items you have not used for three weeks." = "依據你開啟隱藏項目的頻率，以及三週內未使用過的項目給出。";
+"Based on how often you open items while they are hidden, and on items you have not used for three weeks, or two months while hidden. Suggestions you turn down come back after two months." = "依據你開啟隱藏項目的頻率，以及三週內未使用、或隱藏後兩個月內未使用的項目給出。你暫不採納的建議兩個月後會再次出現。";
 "battery below %lld%%" = "電量低於 %lld%%";
 "Battery is below" = "電量低於";
 "Below the Meno icon" = "Meno 圖示下方";
@@ -188,6 +188,7 @@
 "Group" = "群組";
 "Groups" = "群組";
 "Hidden" = "隱藏";
+"Hidden and not used for %lld days." = "隱藏中，已有 %lld 天未使用。";
 "Hidden and Stash" = "隱藏與暗格";
 "Hidden items appear for a moment when something happens." = "隱藏的項目有變化時會短暫出現。";
 "Hidden items appear in the menu bar, so the file can be dropped on one of them. Items in the Shelf cannot take drops." = "隱藏的項目會顯示在選單列中，方便把檔案放到其中一個項目上。托盤中的項目無法接收拖放。";
@@ -331,6 +332,7 @@
 "No scenes yet." = "還沒有場景。";
 "Not available, using frosted glass" = "不可用，改用霧面玻璃";
 "Not connected now" = "目前未連接";
+"Not Now" = "暫不";
 "Not true now" = "目前不滿足";
 "Not used for %lld days." = "已有 %lld 天未使用。";
 "Nothing in this group yet. Add items from their menu in the layout editor." = "這個群組還是空的。可以在佈局編輯器的項目選單裡加入項目。";

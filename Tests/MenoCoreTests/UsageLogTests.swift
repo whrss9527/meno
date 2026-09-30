@@ -73,4 +73,48 @@ final class UsageLogTests: XCTestCase {
         let early = log.suggestions(sections: sections, movable: [dropbox, idle], now: day(10), calendar: calendar)
         XCTAssertFalse(early.contains { if case .demote = $0 { return true } else { return false } })
     }
+
+    func testStashSuggestions() {
+        var log = UsageLog()
+        let forgotten = MenuItemKey(owner: "com.example.forgotten", token: "solo")
+        log.recordItemUse(forgotten, section: .hidden, source: .shelf, at: day(0), calendar: calendar)
+        let sections: [MenuItemKey: ItemSection] = [forgotten: .hidden]
+        XCTAssertEqual(
+            log.suggestions(sections: sections, movable: [forgotten], now: day(61), calendar: calendar),
+            [.stash(forgotten, idleDays: 61)]
+        )
+        // Not before 60 days, and not without the Stash.
+        XCTAssertEqual(log.suggestions(sections: sections, movable: [forgotten], now: day(40), calendar: calendar), [])
+        XCTAssertEqual(
+            log.suggestions(sections: sections, movable: [forgotten], includesStash: false, now: day(61), calendar: calendar),
+            []
+        )
+        // Items in the Stash already are left alone.
+        XCTAssertEqual(log.suggestions(sections: [forgotten: .stash], movable: [forgotten], now: day(61), calendar: calendar), [])
+    }
+
+    func testDismissedSuggestionsStayAwayForAWhile() throws {
+        var log = UsageLog()
+        let idle = MenuItemKey(owner: "com.example.idle", token: "solo")
+        log.recordItemUse(idle, section: .visible, source: .menuBar, at: day(0), calendar: calendar)
+        let sections: [MenuItemKey: ItemSection] = [idle: .visible]
+        let suggestion = try XCTUnwrap(log.suggestions(sections: sections, movable: [idle], now: day(30), calendar: calendar).first)
+        log.dismiss(suggestion, at: day(30))
+        // Turned down, also while its numbers change.
+        XCTAssertEqual(log.suggestions(sections: sections, movable: [idle], now: day(45), calendar: calendar), [])
+        XCTAssertEqual(
+            log.suggestions(sections: sections, movable: [idle], now: day(91), calendar: calendar),
+            [.demote(idle, idleDays: 91)]
+        )
+        // Other kinds of suggestions for the item are not turned down.
+        XCTAssertNotEqual(UsageSuggestion.stash(idle, idleDays: 1).id, suggestion.id)
+
+        // Dismissals are dropped once they ran out, and survive saving.
+        let decoded = try TolerantJSON.decode(UsageLog.self, from: TolerantJSON.makeEncoder().encode(log), defaults: UsageLog())
+        XCTAssertEqual(decoded.dismissedSuggestions, log.dismissedSuggestions)
+        log.prune(keepingDays: 90, now: day(91), calendar: calendar)
+        XCTAssertTrue(log.dismissedSuggestions.isEmpty)
+        let old = try TolerantJSON.decode(UsageLog.self, from: Data(#"{"reveals": {}}"#.utf8), defaults: UsageLog())
+        XCTAssertTrue(old.dismissedSuggestions.isEmpty)
+    }
 }

@@ -632,6 +632,12 @@ final class AppModel: ObservableObject {
         storage.saveUsage(usage, immediately: true)
     }
 
+    /// Turns a suggestion in Insights down for a while.
+    func dismissSuggestion(_ suggestion: UsageSuggestion) {
+        usage.dismiss(suggestion)
+        storage.saveUsage(usage)
+    }
+
     private func updateUsageMonitor() {
         if settings.general.usageTracking {
             usageClickMonitor.start()
