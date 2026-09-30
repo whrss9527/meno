@@ -456,6 +456,7 @@
 "Save Only" = "僅儲存";
 "Save Scene" = "儲存場景";
 "Save the current layout" = "儲存目前佈局";
+"Save this scene to a .meno file, for another Mac or for someone else" = "把這個場景存成 .meno 檔案，帶到另一台 Mac 上或分享給別人";
 "Saved scene “%@”." = "已儲存場景「%@」。";
 "Saved. The new spacing appears as apps restart." = "已儲存。App 重新開啟後即可看到新的間距。";
 "Scene name, for example Work" = "場景名稱，例如「工作」";

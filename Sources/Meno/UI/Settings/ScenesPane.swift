@@ -69,6 +69,7 @@ struct ScenesPane: View {
                                 renaming = scene
                             },
                             onCopyLink: { model.copyLink(.scene(name: scene.name)) },
+                            onExport: { model.exportShare(scenes: [scene.id], rules: []) },
                             onDelete: { model.deleteScene(id: scene.id) },
                             hotkey: Binding(
                                 get: { scene.hotkey },
@@ -133,6 +134,7 @@ private struct SceneCard: View {
     let onUpdate: () -> Void
     let onRename: () -> Void
     let onCopyLink: () -> Void
+    let onExport: () -> Void
     let onDelete: () -> Void
     @Binding var hotkey: KeyCombo?
 
@@ -158,6 +160,8 @@ private struct SceneCard: View {
                     Button("Rename…", action: onRename)
                     Button("Copy Link", action: onCopyLink)
                         .help(Text("A meno:// link that applies this scene, for Shortcuts and launchers"))
+                    Button("Export…", action: onExport)
+                        .help(Text("Save this scene to a .meno file, for another Mac or for someone else"))
                     Divider()
                     Button("Delete", role: .destructive, action: onDelete)
                 } label: {
