@@ -1,18 +1,49 @@
 <div align="center">
   <img src="docs/icon.png" width="128" height="128" alt="Meno icon">
   <h1>Meno</h1>
-  <p><strong>A calm menu bar, made with glass.</strong></p>
-  <p>A native macOS menu bar manager with a Liquid Glass interface.</p>
+  <p><strong>A calm menu bar, made with glass</strong></p>
+  <p>A menu bar manager for macOS. Native Swift, Liquid Glass, free and open source.</p>
   <p>
+    <a href="https://github.com/whrss9527/meno/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/whrss9527/meno?include_prereleases&label=release&color=7C6CFF"></a>
     <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white">
-    <img alt="Swift" src="https://img.shields.io/badge/Swift-5.10%2B-F05138?logo=swift&logoColor=white">
     <img alt="Liquid Glass" src="https://img.shields.io/badge/UI-Liquid%20Glass-7C6CFF">
-    <a href="LICENSE"><img alt="GPL-3.0 License" src="https://img.shields.io/badge/license-GPL--3.0-2563EB"></a>
+    <a href="LICENSE"><img alt="GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-2563EB"></a>
   </p>
-  <p><a href="README.zh-CN.md">简体中文</a></p>
+  <p>
+    <a href="https://github.com/whrss9527/meno/releases/latest"><b>Download</b></a> ·
+    <a href="https://github.com/whrss9527/meno/releases">Release notes</a> ·
+    <a href="README.zh-CN.md">简体中文</a>
+  </p>
 </div>
 
-Meno tucks away the menu bar icons you rarely need and brings them back the moment you want them — with a click, a hover, a swipe or a shortcut. Everything stays reachable from the keyboard, and the menu bar can adapt to what you are doing.
+### **Meno** /ˈmeː.no/
+
+Italian for "less".
+
+On sheet music, *meno mosso* means "slow down a little, no rush."
+
+Your menu bar should hold a little less, too: keep what you use, tuck away what you don't, and call it back when you need it.
+
+And **Meno** is just one letter away from **Menu** — a little less, just right.
+
+## Highlights
+
+- **Tuck away what you rarely need:** Visible, Hidden, and a Stash for the icons you almost never touch.
+- **Bring them back your way:** a click, a hover, a swipe or a shortcut. Quick Open finds any item from the keyboard.
+- **Glass all the way:** a Shelf below the menu bar and a Spotlight-style palette, in Liquid Glass on macOS 26.
+- **A menu bar that reads the room:** rules and scenes kick in when the mic is on, a display is plugged in or you're on battery.
+- **Zen in one keystroke:** clear every app icon for screenshots, recordings and talks.
+- **Private:** no analytics, no accounts. Meno only goes online for updates.
+
+## Install
+
+Meno runs on macOS 14 Sonoma or later. Liquid Glass needs macOS 26 and a build made with Xcode 26.
+
+Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/releases/latest), unzip it and move Meno.app to *Applications*. The app is universal (Apple silicon and Intel). From 0.10.0 on it is signed with a Developer ID and notarized by Apple, so it opens with a double-click. Versions before 0.10.0 are signed ad hoc: right-click Meno.app and choose *Open*, or run `xattr -dr com.apple.quarantine /Applications/Meno.app`.
+
+Meno installs updates itself: when a check finds a newer release, choose *Install and Relaunch* in the notice, in *Settings › About* or in Meno's menu. Meno downloads the release from GitHub, checks its checksum, version and code signature, replaces itself and opens again. When Meno runs from a folder it cannot write to, it offers the download instead.
+
+After an update, macOS may keep an entry for the previous build in the Accessibility list that no longer counts. Meno then opens *Settings › Permissions*, replaces the entry and macOS asks again; *Reset and Grant Again* does the same by hand. Releases from 0.10.0 on are signed with the same Developer ID certificate, so later updates keep the permission; only the update from an ad hoc version asks once more.
 
 ## Features
 
@@ -46,50 +77,6 @@ Meno tucks away the menu bar icons you rarely need and brings them back the mome
 - **Appearance:** choose the Meno icon or any SF Symbol for it, divider style, Shelf glass and tint, a menu bar tint in your own colors or the wallpaper's, with gradient, border, shadow and split "island" shapes (experimental), and system-wide icon spacing (beta).
 - English, Simplified Chinese and Traditional Chinese.
 
-## Requirements
-
-- macOS 14 Sonoma or later. Liquid Glass needs macOS 26 and a build made with Xcode 26.
-- Building needs Xcode 16 or later (Xcode 26 for Liquid Glass).
-
-## Download
-
-Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/releases/latest), unzip it and move Meno.app to *Applications*. The app is universal (Apple silicon and Intel). From 0.10.0 on it is signed with a Developer ID and notarized by Apple, so it opens with a double-click. Versions before 0.10.0 are signed ad hoc: right-click Meno.app and choose *Open*, or run `xattr -dr com.apple.quarantine /Applications/Meno.app`.
-
-Meno installs updates itself: when a check finds a newer release, choose *Install and Relaunch* in the notice, in *Settings › About* or in Meno's menu. Meno downloads the release from GitHub, checks its checksum, version and code signature, replaces itself and opens again. When Meno runs from a folder it cannot write to, it offers the download instead.
-
-New versions are published by pushing a `v*` tag or by running the *Release* workflow with a version number. The workflow uses the shared release workflow in [Frit](https://github.com/whrss9527/frit): with the Developer ID secrets set (see Frit's [docs/release.md](https://github.com/whrss9527/frit/blob/main/docs/release.md)) it signs, notarizes and staples the app. The notes come from `.github/releases/<tag>.md`.
-
-After an update, macOS may keep an entry for the previous build in the Accessibility list that no longer counts. Meno then opens *Settings › Permissions*, replaces the entry and macOS asks again; *Reset and Grant Again* does the same by hand. Releases from 0.10.0 on are signed with the same Developer ID certificate, so later updates keep the permission; only the update from an ad hoc version asks once more.
-
-## Build and run
-
-```bash
-git clone https://github.com/whrss9527/meno.git
-cd meno
-make run        # builds build/Meno.app and opens it
-make install    # copies Meno.app to /Applications
-make test       # unit tests
-```
-
-`make app` builds a release app bundle in `build/`. Set `UNIVERSAL=1` for an arm64 + x86_64 binary and `SIGN_IDENTITY="Developer ID Application: …"` to sign with your certificate.
-
-The default build is signed ad hoc. macOS ties privacy permissions to the signature, so after rebuilding you may have to remove Meno from *System Settings › Privacy & Security › Accessibility* and add it again. Signing with a real certificate avoids this.
-
-You can also open `Package.swift` in Xcode to edit and debug. When Meno runs outside an app bundle, macOS attributes permissions to Xcode instead of Meno, so use `make run` to try permission-related features.
-
-## Permissions
-
-| Permission | Needed for |
-| --- | --- |
-| **Accessibility** (required) | Reading menu bar items, opening them from the Shelf, Quick Open and shortcuts, and arranging them with ⌘-drag. |
-| **Screen Recording** (optional) | Showing the real artwork of hidden items (macOS 14–26), and noticing when their icons change if you turn that on. Without it Meno shows app icons. Only menu bar items are captured, while the Shelf, Quick Open or Settings is open or while icons are compared; macOS shows its recording indicator in the menu bar meanwhile. |
-
-Rules about a microphone or camera in use only ask macOS whether a device is running, which needs no permission. Meno never records anything.
-
-A rule condition that runs a command runs exactly the command you typed, every 10 seconds with zsh, and only while the rule is on. While a rule depends on a network, Meno runs `route` and `arp` when the network changes and every 30 seconds, which read the router of each connection from what macOS already knows and send nothing. Rules with commands are turned off when you import settings, so a settings file cannot run anything before you have looked at it.
-
-Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*; and to download a release you chose to install. Settings and statistics live in `~/Library/Application Support/Meno`.
-
 ## Links
 
 | Link | Does |
@@ -117,6 +104,19 @@ To hide a section, its divider grows until the items to its left no longer fit:
 
 Menu bar items are read through each app's accessibility tree, which works on every supported macOS version, including the single-window menu bar of macOS 27.
 
+## Permissions and privacy
+
+| Permission | Needed for |
+| --- | --- |
+| **Accessibility** (required) | Reading menu bar items, opening them from the Shelf, Quick Open and shortcuts, and arranging them with ⌘-drag. |
+| **Screen Recording** (optional) | Showing the real artwork of hidden items (macOS 14–26), and noticing when their icons change if you turn that on. Without it Meno shows app icons. Only menu bar items are captured, while the Shelf, Quick Open or Settings is open or while icons are compared; macOS shows its recording indicator in the menu bar meanwhile. |
+
+Rules about a microphone or camera in use only ask macOS whether a device is running, which needs no permission. Meno never records anything.
+
+A rule condition that runs a command runs exactly the command you typed, every 10 seconds with zsh, and only while the rule is on. While a rule depends on a network, Meno runs `route` and `arp` when the network changes and every 30 seconds, which read the router of each connection from what macOS already knows and send nothing. Rules with commands are turned off when you import settings, so a settings file cannot run anything before you have looked at it.
+
+Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*; and to download a release you chose to install. Settings and statistics live in `~/Library/Application Support/Meno`.
+
 ## Troubleshooting
 
 - **Meno does not respond after an update.** Builds without a fixed certificate get a new Accessibility entry with every update. Meno replaces the old entry and macOS asks again; if it does not, open *Settings › Permissions* and click *Reset and Grant Again*.
@@ -132,7 +132,27 @@ Menu bar items are read through each app's accessibility tree, which works on ev
 - Icon spacing uses the `NSStatusItemSpacing` and `NSStatusItemSelectionPadding` preferences, which apps read at launch. Applying it relaunches apps that own menu bar items.
 - The menu bar tint is drawn behind the menu bar and is most visible with the transparent menu bar of macOS 26 and later.
 
-## Project layout
+## Development
+
+Building needs Xcode 16 or later (Xcode 26 for Liquid Glass).
+
+### Build and run
+
+```bash
+git clone https://github.com/whrss9527/meno.git
+cd meno
+make run        # builds build/Meno.app and opens it
+make install    # copies Meno.app to /Applications
+make test       # unit tests
+```
+
+`make app` builds a release app bundle in `build/`. Set `UNIVERSAL=1` for an arm64 + x86_64 binary and `SIGN_IDENTITY="Developer ID Application: …"` to sign with your certificate.
+
+The default build is signed ad hoc. macOS ties privacy permissions to the signature, so after rebuilding you may have to remove Meno from *System Settings › Privacy & Security › Accessibility* and add it again. Signing with a real certificate avoids this.
+
+You can also open `Package.swift` in Xcode to edit and debug. When Meno runs outside an app bundle, macOS attributes permissions to Xcode instead of Meno, so use `make run` to try permission-related features.
+
+### Project layout
 
 ```
 Sources/MenoCore   Platform-independent logic: models, settings, rules, planning, matching
@@ -142,11 +162,15 @@ Resources          Info.plist, app icon, localizations
 scripts            App bundling, icon generation, localization check
 ```
 
-## Development
+### Tests and scripts
 
 - `swift test` runs the MenoCore tests (they also run on Linux).
 - `scripts/check-localization.py` lists user-facing strings and checks the translations in `Resources/*.lproj`.
 - `scripts/generate-icon.py` renders `Resources/AppIcon.icns` (needs Pillow and numpy).
+
+### Releases
+
+New versions are published by pushing a `v*` tag or by running the *Release* workflow with a version number. The workflow uses the shared release workflow in [Frit](https://github.com/whrss9527/frit): with the Developer ID secrets set (see Frit's [docs/release.md](https://github.com/whrss9527/frit/blob/main/docs/release.md)) it signs, notarizes and staples the app. The notes come from `.github/releases/<tag>.md`.
 
 ## License
 
@@ -159,3 +183,12 @@ The name "Meno" and the Meno icon are not licensed under the GPL (section 7(e)).
 Contributions are accepted under the contributor license agreement in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Meno 0.1.0 was released under the MIT License, and that version stays available under it.
+
+---
+
+<div align="center">
+  <p><b>Also living in the menu bar</b></p>
+  <a href="https://github.com/whrss9527/pop"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/pop.svg" width="30%" alt="Pop"></a>
+  <a href="https://github.com/whrss9527/stox"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/stox.svg" width="30%" alt="Stox"></a>
+  <a href="https://github.com/whrss9527/proxi"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/proxi.svg" width="30%" alt="Proxi"></a>
+</div>
