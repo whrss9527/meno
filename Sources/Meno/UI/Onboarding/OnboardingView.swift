@@ -158,7 +158,7 @@ struct OnboardingView: View {
     }
 
     private var ready: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("You're all set")
                 .font(.system(size: 26, weight: .bold, design: .rounded))
             tip("cursorarrow.click", "Click the Meno icon to show or hide items.")
@@ -167,26 +167,45 @@ struct OnboardingView: View {
             tip("keyboard", "Set up shortcuts in Settings › Hotkeys, and open any item with Quick Open.")
             tip("rectangle.3.group", "Arrange items by dragging them in Settings › Layout.")
             tip("square.grid.2x2", "Put items that belong together into a group with an icon of its own, from an item's menu in Settings › Layout.")
+            // A menu bar manager is only useful while it runs.
+            choice(
+                "power",
+                "Launch Meno at login",
+                subtitle: model.launchAtLoginNeedsApproval ? "Waiting for your approval in System Settings › General › Login Items." : nil,
+                isOn: Binding(get: { model.launchAtLogin || model.launchAtLoginNeedsApproval }, set: { model.setLaunchAtLogin($0) })
+            )
+            .onAppear { model.refreshLaunchAtLogin() }
             // New versions can be installed from within Meno once it knows of them.
-            HStack(spacing: 12) {
-                Image(systemName: "arrow.down.circle")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 34, height: 34)
-                    .menoGlass(in: Circle())
-                Toggle(isOn: $model.settings.general.checksForUpdates) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Check for updates once a day")
-                            .font(.system(size: 13))
-                        Text("Meno asks GitHub whether there is a newer release. Nothing about you or your Mac is sent.")
+            choice(
+                "arrow.down.circle",
+                "Check for updates once a day",
+                subtitle: "Meno asks GitHub whether there is a newer release. Nothing about you or your Mac is sent.",
+                isOn: $model.settings.general.checksForUpdates
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func choice(_ symbol: String, _ title: LocalizedStringKey, subtitle: LocalizedStringKey?, isOn: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 34, height: 34)
+                .menoGlass(in: Circle())
+            Toggle(isOn: isOn) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 13))
+                    if let subtitle {
+                        Text(subtitle)
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                     }
                 }
-                .toggleStyle(.switch)
             }
+            .toggleStyle(.switch)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: Pieces
