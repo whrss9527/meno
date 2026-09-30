@@ -6,6 +6,21 @@
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
 	<string>Meno</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Meno Scenes and Rules</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>io.github.whrss9527.meno.share</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>Meno</string>
 	<key>CFBundleIconFile</key>
@@ -53,5 +68,25 @@
 	<string>NSApplication</string>
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Meno Scenes and Rules</string>
+			<key>UTTypeIdentifier</key>
+			<string>io.github.whrss9527.meno.share</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>meno</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>

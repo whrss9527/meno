@@ -25,6 +25,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var refusedHotkeys: Set<KeyCombo> = []
     /// The shortcut recorder that is recording, if any.
     @Published var activeShortcutRecorder: UUID?
+    /// A `.meno` file whose scenes and rules wait for the person to choose
+    /// what to import.
+    @Published var pendingShare: PendingShare?
     /// Whether nobody can see the menu bar: the displays sleep or another
     /// user's session is in front. Background scans pause meanwhile.
     private(set) var isAway = false

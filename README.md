@@ -67,7 +67,7 @@ After an update, macOS may keep an entry for the previous build in the Accessibi
 ### Make it yours
 
 - **Rules:** "When a microphone is in use, turn on Zen." Conditions include the frontmost or running app, a microphone or camera in use, battery, power and Low Power Mode, external or specific displays and the display whose menu bar is in use, the time of day and the day of the week, the network the Mac is on (recognized by its router, without Location Services), being offline and a shell command of your own that succeeds; a rule can need all of its conditions or any one of them. Actions reveal or hide sections, apply a scene, turn on Zen, or move a specific item — and can be undone automatically. Moves wait until you are not using the mouse and keyboard. *Pause Rules* in Meno's menu, or a shortcut of its own, stops them all for a while.
-- **Scenes:** save arrangements such as *Work*, *Home* or *Presenting* and switch between them from the menu, with a rule or with a shortcut of their own.
+- **Scenes:** save arrangements such as *Work*, *Home* or *Presenting* and switch between them from the menu, with a rule or with a shortcut of their own. Export scenes and rules to a `.meno` file for another Mac or for someone else; opening the file, or dropping it on Settings, shows what it holds before anything is imported.
 - **Zen:** one shortcut clears every app icon, leaving only system status. Great for screenshots, recordings and talks.
 - **Item shortcuts:** open a specific item (Wi-Fi, a VPN, a timer…) from anywhere, even while it is hidden.
 - **Links:** `meno://` links let Shortcuts, launchers and scripts show or hide items, switch Zen, apply a scene or open an item. Scenes and items offer *Copy Link*.
