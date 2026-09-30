@@ -1,3 +1,4 @@
+import AppKit
 import MenoCore
 import SwiftUI
 
@@ -76,6 +77,26 @@ struct RulesPane: View {
                     },
                     onDelete: { model.settings.rules.removeAll { $0.id == rule.id } }
                 )
+            }
+
+            // Meno cannot see which Focus is on, but Shortcuts can tell it.
+            if AppInfo.osMajorVersion >= 26 {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Image(systemName: "moon")
+                        .foregroundStyle(.secondary)
+                    Text("A Focus can change the menu bar too: in Shortcuts, add an automation for when the Focus turns on or off that opens a scene's link, such as meno://scene/Work.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Button("Open Shortcuts") {
+                        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.shortcuts") {
+                            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+                        }
+                    }
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 4)
             }
         }
         .sheet(item: $editing) { state in

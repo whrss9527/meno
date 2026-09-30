@@ -104,6 +104,8 @@ Meno has no analytics or accounts. It only goes online to ask GitHub for the lat
 
 For example, `open meno://zen/on` in Terminal, or an *Open URLs* action in Shortcuts. For names with spaces or other scripts, *Copy Link* gives a link that is already encoded.
 
+On macOS 26 and later, a Focus can change the menu bar too: in Shortcuts, add an automation for when the Focus turns on, with an *Open URLs* action and a scene's link, such as `meno://scene/Work`, and another for when it turns off.
+
 ## How it works
 
 Meno adds small dividers to the menu bar: a single chevron starts the Hidden section, a double chevron the Stash. Everything left of a divider belongs to that section. Hold ⌘ and drag icons across the dividers, or use the Layout editor.

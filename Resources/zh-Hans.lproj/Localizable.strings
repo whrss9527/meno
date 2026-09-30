@@ -19,6 +19,7 @@
 "a camera is in use" = "摄像头正在使用";
 "A command succeeds" = "命令执行成功";
 "a deleted scene" = "已删除的场景";
+"A Focus can change the menu bar too: in Shortcuts, add an automation for when the Focus turns on or off that opens a scene's link, such as meno://scene/Work." = "专注模式也能改变菜单栏：在快捷指令里为专注模式打开或关闭时添加一个自动化，打开某个场景的链接，例如 meno://scene/Work。";
 "A glass bar for items that do not fit next to the notch." = "为刘海旁放不下的图标准备的玻璃托盘。";
 "A group gets its own icon in the menu bar that shows its items. Visible items move to the Stash." = "分组会在菜单栏里有自己的图标，用来显示组内的项目。常显的项目会移到暗格。";
 "A little access" = "需要一点权限";
@@ -357,6 +358,7 @@
 "Open Secondary Menu" = "打开辅助菜单";
 "Open Settings" = "打开设置";
 "Open Shelf" = "打开托盘";
+"Open Shortcuts" = "打开快捷指令";
 "Open System Settings" = "打开系统设置";
 "Opened %lld times this week while hidden." = "本周在隐藏状态下打开了 %lld 次。";
 "Opening items" = "打开项目";
