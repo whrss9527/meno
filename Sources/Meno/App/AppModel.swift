@@ -289,7 +289,7 @@ final class AppModel: ObservableObject {
         if old.scenes.map(\.hotkey) != new.scenes.map(\.hotkey) {
             registerHotkeys()
         }
-        if old.revealOnChange != new.revealOnChange {
+        if old.revealOnChange != new.revealOnChange || old.reveal.comparesIcons != new.reveal.comparesIcons {
             changes.settingsChanged()
         }
         if old.general.checksForUpdates != new.general.checksForUpdates {

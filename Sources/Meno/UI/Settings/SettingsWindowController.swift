@@ -105,6 +105,7 @@ final class SettingsWindowController: NSObject, ObservableObject, NSWindowDelega
         window.makeKeyAndOrderFront(nil)
         Task {
             await model.inventory.refresh()
+            model.images.refresh(for: model.inventory.items, captureAllowed: model.permissions.canCapture, renew: true)
         }
     }
 

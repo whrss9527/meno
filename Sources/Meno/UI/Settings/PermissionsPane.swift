@@ -30,7 +30,7 @@ struct PermissionsPane: View {
                 symbol: "rectangle.dashed.badge.record",
                 isGranted: permissions.screenRecording,
                 isRequired: false,
-                explanation: "Optional. Shows the real artwork of hidden items instead of app icons (macOS 14 to 26). Meno only captures menu bar items, never your screen.",
+                explanation: "Optional. Shows the real artwork of hidden items instead of app icons (macOS 14 to 26). Meno only captures menu bar items, never your screen, and only while the Shelf, Quick Open or Settings is open; macOS shows its recording indicator in the menu bar meanwhile.",
                 grant: { permissions.requestScreenRecording() },
                 openSettings: { permissions.open(.screenRecording) }
             )

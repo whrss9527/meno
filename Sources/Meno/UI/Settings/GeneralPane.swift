@@ -60,6 +60,13 @@ struct GeneralPane: View {
                 )
                 if !model.settings.revealOnChange.isEmpty {
                     SliderRow("Show changed items for", value: $model.settings.reveal.changeDuration, in: 3...30, step: 1, format: Formatters.seconds)
+                    if ItemImageCache.captureIsSupported {
+                        ToggleRow(
+                            "Compare icons too",
+                            subtitle: "Notices items whose icon changes while their text stays the same. This needs Screen Recording, and macOS shows its recording indicator in the menu bar every few seconds while Meno looks.",
+                            isOn: $model.settings.reveal.comparesIcons
+                        )
+                    }
                 }
                 Divider().opacity(0.4)
                 SettingRow("Show hidden items", subtitle: "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing.") {

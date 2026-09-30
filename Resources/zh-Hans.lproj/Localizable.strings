@@ -122,6 +122,7 @@
 "Close after opening an item" = "打开项目后关闭托盘";
 "Colors" = "颜色";
 "Commands run with zsh every 10 seconds while the rule is on. A command counts as true when it exits with status 0; one that takes longer than 5 seconds is stopped." = "规则开启时，命令每 10 秒用 zsh 运行一次。命令以状态 0 退出时条件成立；运行超过 5 秒的命令会被终止。";
+"Compare icons too" = "同时比较图标";
 "Conditions" = "条件";
 "Connected now" = "当前已连接";
 "Connected to a network" = "连接到某个网络";
@@ -341,6 +342,7 @@
 "Nothing is hidden" = "没有隐藏的项目";
 "Nothing to set" = "无需设置";
 "Nothing to suggest right now. Your menu bar looks well arranged." = "暂时没有建议，你的菜单栏看起来井井有条。";
+"Notices items whose icon changes while their text stays the same. This needs Screen Recording, and macOS shows its recording indicator in the menu bar every few seconds while Meno looks." = "也能发现文字不变、只有图标变化的项目。这需要屏幕录制权限，而且 Meno 检查期间 macOS 会每隔几秒在菜单栏显示录屏指示器。";
 "offline" = "离线";
 "on %@" = "在%@";
 "on any day" = "在任何一天";
@@ -363,7 +365,7 @@
 "Opened %lld times this week while hidden." = "本周在隐藏状态下打开了 %lld 次。";
 "Opening items" = "打开项目";
 "Optional" = "可选";
-"Optional. Shows the real artwork of hidden items instead of app icons (macOS 14 to 26). Meno only captures menu bar items, never your screen." = "可选。显示隐藏项目的真实图标，而不是 App 图标（macOS 14 至 26）。Meno 只截取菜单栏项目，绝不会截取你的屏幕。";
+"Optional. Shows the real artwork of hidden items instead of app icons (macOS 14 to 26). Meno only captures menu bar items, never your screen, and only while the Shelf, Quick Open or Settings is open; macOS shows its recording indicator in the menu bar meanwhile." = "可选。显示隐藏项目的真实图标，而不是 App 图标（macOS 14 至 26）。Meno 只截取菜单栏项目，绝不会截取你的屏幕，而且只在托盘、快速打开或设置窗口打开时截取；此时 macOS 会在菜单栏显示录屏指示器。";
 "Optional. Shows the real icons of hidden items on macOS 14 to 26." = "可选。在 macOS 14 至 26 上显示隐藏项目的真实图标。";
 "Or drag it onto a section, or onto another item. A line shows on which side it will land." = "也可以直接拖：拖到某个分区，或拖到另一个项目上，竖线标出它会落在哪一边。";
 "Other colors in Dark Mode" = "深色模式使用其他颜色";

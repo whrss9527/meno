@@ -4,8 +4,9 @@ import MenoCore
 /// Shows a hidden item for a moment when its icon or text changes, for the
 /// items the person picked (for example to notice when a sync fails).
 ///
-/// Texts come from Accessibility. Icons are compared too when Screen
-/// Recording is allowed and items can be captured (up to macOS 26).
+/// Texts come from Accessibility. Icons are compared too when the person
+/// turned that on, Screen Recording is allowed and items can be captured
+/// (up to macOS 26): capturing them shows macOS's recording indicator.
 @MainActor
 final class ChangeWatcher: ObservableObject {
     unowned let model: AppModel
@@ -24,6 +25,8 @@ final class ChangeWatcher: ObservableObject {
     /// Until when items are shown because they changed. Changes of other
     /// watched items meanwhile are still news.
     private var showingChangesUntil = Date.distantPast
+    /// Whether the last checks compared icons.
+    private var comparedIcons = false
 
     init(model: AppModel) {
         self.model = model
@@ -31,6 +34,11 @@ final class ChangeWatcher: ObservableObject {
 
     /// Starts or stops checking to match the settings.
     func settingsChanged() {
+        // Icons seen before comparing stopped are no measure for new ones.
+        if model.settings.reveal.comparesIcons != comparedIcons {
+            comparedIcons = model.settings.reveal.comparesIcons
+            tracker.reset()
+        }
         let watching = !model.settings.revealOnChange.isEmpty
         if watching, loop == nil {
             loop = Task { [weak self] in
@@ -75,7 +83,7 @@ final class ChangeWatcher: ObservableObject {
         }
         let texts = await MenuBarScanner.texts(of: items.compactMap(\.element))
         var glyphs: [MenuItemKey: GlyphSignature] = [:]
-        if model.permissions.canCapture, ItemImageCache.captureIsSupported {
+        if model.settings.reveal.comparesIcons, model.permissions.canCapture, ItemImageCache.captureIsSupported {
             // Item windows are found by their frames. Those of the last scan
             // can be old, and items move when others appear or go.
             let frames = await MenuBarScanner.frames(of: items.compactMap(\.element))

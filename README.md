@@ -82,7 +82,7 @@ You can also open `Package.swift` in Xcode to edit and debug. When Meno runs out
 | Permission | Needed for |
 | --- | --- |
 | **Accessibility** (required) | Reading menu bar items, opening them from the Shelf, Quick Open and shortcuts, and arranging them with ⌘-drag. |
-| **Screen Recording** (optional) | Showing the real artwork of hidden items and noticing when their icons change (macOS 14–26). Without it Meno shows app icons. Only menu bar items are captured. |
+| **Screen Recording** (optional) | Showing the real artwork of hidden items (macOS 14–26), and noticing when their icons change if you turn that on. Without it Meno shows app icons. Only menu bar items are captured, while the Shelf, Quick Open or Settings is open or while icons are compared; macOS shows its recording indicator in the menu bar meanwhile. |
 
 Rules about a microphone or camera in use only ask macOS whether a device is running, which needs no permission. Meno never records anything.
 
