@@ -3,6 +3,7 @@
 " and " = "且";
 " or " = "或";
 "%@ changed." = "%@ 有變化。";
+"%@ copy" = "%@ 拷貝";
 "%@ could not be opened." = "無法開啟 %@。";
 "%@ did not move. Try dragging it with ⌘ held down." = "%@ 沒有移動。請按住 ⌘ 手動拖移試試。";
 "%@ did not quit." = "%@ 沒有結束。";
@@ -151,6 +152,7 @@
 "Drag a file onto the menu bar" = "把檔案拖到選單列上";
 "Dragging onto the menu bar" = "拖到選單列";
 "Drop items here" = "拖到這裡";
+"Duplicate…" = "製作副本…";
 "Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items by dragging them onto a group, or with Group in their menu. Hold ⌘ and drag a group's icon to move it." = "每個群組在選單列裡都有自己的圖示，按一下即可在托盤中顯示組內的項目。把項目拖到群組上，或在項目選單的「群組」裡加入；按住 ⌘ 拖移群組圖示可以調整它的位置。";
 "Edit Groups…" = "編輯群組…";
 "Edit Rule" = "編輯規則";

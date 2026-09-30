@@ -67,6 +67,13 @@ struct RulesPane: View {
                     rule: $rule,
                     isActive: automation.activeRuleIDs.contains(rule.id),
                     onEdit: { editing = EditorState(rule: rule, isNew: false) },
+                    onDuplicate: {
+                        // A copy is only added once it is saved.
+                        var copy = rule
+                        copy.id = UUID()
+                        copy.name = rule.name.isEmpty ? "" : String(localized: "\(rule.name) copy")
+                        editing = EditorState(rule: copy, isNew: true)
+                    },
                     onDelete: { model.settings.rules.removeAll { $0.id == rule.id } }
                 )
             }
@@ -93,6 +100,7 @@ private struct RuleCard: View {
     @Binding var rule: AutomationRule
     let isActive: Bool
     let onEdit: () -> Void
+    let onDuplicate: () -> Void
     let onDelete: () -> Void
 
     @EnvironmentObject private var model: AppModel
@@ -133,6 +141,7 @@ private struct RuleCard: View {
                 .controlSize(.small)
             Menu {
                 Button("Edit…", action: onEdit)
+                Button("Duplicate…", action: onDuplicate)
                 Button("Delete", role: .destructive, action: onDelete)
             } label: {
                 Image(systemName: "ellipsis.circle")

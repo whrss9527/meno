@@ -3,6 +3,7 @@
 " and " = "且";
 " or " = "或";
 "%@ changed." = "%@ 有变化。";
+"%@ copy" = "%@ 副本";
 "%@ could not be opened." = "无法打开 %@。";
 "%@ did not move. Try dragging it with ⌘ held down." = "%@ 没有移动。请按住 ⌘ 手动拖移试试。";
 "%@ did not quit." = "%@ 没有退出。";
@@ -151,6 +152,7 @@
 "Drag a file onto the menu bar" = "把文件拖到菜单栏上";
 "Dragging onto the menu bar" = "拖到菜单栏";
 "Drop items here" = "拖到这里";
+"Duplicate…" = "创建副本…";
 "Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items by dragging them onto a group, or with Group in their menu. Hold ⌘ and drag a group's icon to move it." = "每个分组在菜单栏里都有自己的图标，点按即可在托盘中显示组内的项目。把项目拖到分组上，或在项目菜单的“分组”里加入；按住 ⌘ 拖移分组图标可以调整它的位置。";
 "Edit Groups…" = "编辑分组…";
 "Edit Rule" = "编辑规则";
