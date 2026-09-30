@@ -96,11 +96,28 @@ struct QuickOpenView: View {
                             controller.selection = index
                             controller.activateSelection(secondary: false)
                         }
+                        .contextMenu {
+                            if case .item(let item) = result {
+                                CommandMenuItems(commands: controller.actions(for: item))
+                            }
+                        }
+                        .background {
+                            if index == controller.selection {
+                                GeometryReader { proxy in
+                                    Color.clear.preference(key: SelectedRowFrameKey.self, value: proxy.frame(in: .global))
+                                }
+                            }
+                        }
                     }
                 }
                 .padding(6)
             }
             .frame(height: listHeight)
+            .onPreferenceChange(SelectedRowFrameKey.self) { [controller] frame in
+                MainActor.assumeIsolated {
+                    controller.selectedRowFrame = frame
+                }
+            }
             .onChange(of: controller.selection) { _, newValue in
                 guard controller.results.indices.contains(newValue) else { return }
                 proxy.scrollTo(controller.results[newValue].id)
@@ -113,6 +130,7 @@ struct QuickOpenView: View {
             KeyHint(keys: "↩", label: "Open")
             KeyHint(keys: "⌘↩", label: "Secondary click")
             KeyHint(keys: "⌥↩", label: "Show in menu bar")
+            KeyHint(keys: "⌘K", label: "Actions")
             Spacer()
             KeyHint(keys: "esc", label: "Close")
         }
@@ -124,6 +142,44 @@ struct QuickOpenView: View {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 60_000_000)
             fieldFocused = true
+        }
+    }
+}
+
+/// Where the selected row is, for the actions menu.
+private struct SelectedRowFrameKey: PreferenceKey {
+    static let defaultValue: CGRect? = nil
+
+    static func reduce(value: inout CGRect?, nextValue: () -> CGRect?) {
+        value = value ?? nextValue()
+    }
+}
+
+/// Commands as the entries of a context menu.
+struct CommandMenuItems: View {
+    let commands: [MoveCommand]
+
+    var body: some View {
+        ForEach(Array(commands.enumerated()), id: \.offset) { index, command in
+            if command.startsGroup, index > 0 {
+                Divider()
+            }
+            if !command.children.isEmpty {
+                Menu {
+                    CommandMenuItems(commands: command.children)
+                } label: {
+                    Label(command.title, systemImage: command.symbol)
+                }
+            } else if command.isChecked {
+                Toggle(isOn: Binding(get: { true }, set: { _ in command.action() })) {
+                    Label(command.title, systemImage: command.symbol)
+                }
+            } else {
+                Button(action: command.action) {
+                    Label(command.title, systemImage: command.symbol)
+                }
+                .disabled(!command.isEnabled)
+            }
         }
     }
 }

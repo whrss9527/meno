@@ -35,6 +35,7 @@
 "Accessibility access is needed" = "需要輔助使用權限";
 "Accessibility access needed" = "需要輔助使用權限";
 "Action" = "動作";
+"Actions" = "更多動作";
 "Active" = "生效中";
 "Add" = "新增";
 "Add Condition" = "新增條件";
@@ -463,6 +464,7 @@
 "Show how many items are hidden next to the Meno icon" = "在 Meno 圖示旁顯示隱藏項目的數量";
 "Show in Finder" = "在 Finder 中顯示";
 "Show in menu bar" = "在選單列中顯示";
+"Show in Menu Bar" = "在選單列中顯示";
 "Show names under the icons" = "在圖示下方顯示名稱";
 "Show or hide everything, including the Stash" = "顯示或隱藏全部（包含暗格）";
 "Show or hide hidden items" = "顯示或隱藏隱藏項目";

@@ -55,8 +55,13 @@ final class QuickOpenController: ObservableObject {
     /// Bumped whenever the palette opens, so the view can focus its field.
     @Published private(set) var presentation = 0
 
+    /// Where the selected row is in the palette, in SwiftUI's coordinates.
+    var selectedRowFrame: CGRect?
+
     private var panel: FloatingPanel?
     private var shownAt = Date.distantPast
+    /// The actions menu of a result is open.
+    private var isShowingActions = false
     private var hostingView: NSHostingView<QuickOpenView>?
     private var subscriptions: Set<AnyCancellable> = []
     private lazy var keyMonitor = LocalEventMonitor(mask: [.keyDown]) { [weak self] event in
@@ -251,6 +256,95 @@ final class QuickOpenController: ObservableObject {
         }
     }
 
+    /// What can be done with an item, as its actions menu offers it.
+    func actions(for item: MenuBarItem) -> [MoveCommand] {
+        let model = self.model
+        var commands = [
+            MoveCommand(title: String(localized: "Open"), symbol: "cursorarrow.click") { [weak self] in
+                self?.hide()
+                Task { await model.activator.open(item, click: .primary, source: .quickOpen) }
+            },
+            MoveCommand(title: String(localized: "Open Secondary Menu"), symbol: "contextualmenu.and.cursorarrow") { [weak self] in
+                self?.hide()
+                Task { await model.activator.open(item, click: .secondary, source: .quickOpen) }
+            },
+            MoveCommand(title: String(localized: "Show in Menu Bar"), symbol: "menubar.arrow.down.rectangle") { [weak self] in
+                self?.reveal(item)
+            },
+        ]
+        if item.isMovable {
+            let sections = ItemSection.allCases.filter { section in
+                section != item.section && (section != .stash || model.settings.general.stashEnabled)
+            }
+            for (index, section) in sections.enumerated() {
+                commands.append(MoveCommand(title: section.moveTitle, symbol: section.symbol, startsGroup: index == 0) { [weak self] in
+                    self?.hide()
+                    model.move(item.key, to: section)
+                })
+            }
+            if item.section != .visible {
+                commands.append(MoveCommand(
+                    title: String(localized: "Show for a While"),
+                    symbol: "timer",
+                    children: TemporaryPlacement.durations.map { duration in
+                        MoveCommand(title: Formatters.duration(duration), symbol: "clock") { [weak self] in
+                            self?.hide()
+                            model.temporary.show(item.key, for: duration)
+                        }
+                    }
+                ))
+            } else if model.temporary.returnDate(of: item.key) != nil {
+                commands.append(MoveCommand(title: String(localized: "Put Back Now"), symbol: "arrow.uturn.backward") { [weak self] in
+                    self?.hide()
+                    model.temporary.putBack(item.key)
+                })
+            }
+        }
+        if item.section != .visible {
+            let shows = model.showsOnChange(item.key)
+            commands.append(MoveCommand(title: String(localized: "Show When It Changes"), symbol: "bell", isChecked: shows, startsGroup: true) {
+                model.setShowsOnChange(item.key, !shows)
+            })
+        }
+        commands.append(MoveCommand(title: String(localized: "Copy Link"), symbol: "link", startsGroup: true) { [weak self] in
+            self?.hide()
+            model.copyLink(.open(name: item.key.rawValue, secondary: false))
+        })
+        // Many menu bar apps have no Dock icon to quit them from.
+        if item.kind == .app, let app = item.runningApplication {
+            if let url = app.bundleURL {
+                commands.append(MoveCommand(title: String(localized: "Show in Finder"), symbol: "folder", startsGroup: true) { [weak self] in
+                    self?.hide()
+                    NSWorkspace.shared.activateFileViewerSelecting([url])
+                })
+            }
+            commands.append(MoveCommand(
+                title: String(localized: "Quit \(item.appName)"),
+                symbol: "xmark.circle",
+                startsGroup: app.bundleURL == nil
+            ) { [weak self] in
+                self?.hide()
+                model.quitApp(of: item)
+            })
+        }
+        return commands
+    }
+
+    /// Opens the actions menu of the selected item below its row.
+    func showActions() {
+        guard results.indices.contains(selection), case .item(let item) = results[selection],
+              let hostingView, !isShowingActions else { return }
+        let menu = MoveCommand.menu(from: actions(for: item))
+        let bounds = hostingView.bounds
+        let row = selectedRowFrame ?? CGRect(x: bounds.midX, y: bounds.midY, width: 0, height: 0)
+        let x = row.minX + row.width * 0.55
+        // SwiftUI measures from the top.
+        let y = hostingView.isFlipped ? row.maxY : bounds.height - row.maxY
+        isShowingActions = true
+        menu.popUp(positioning: nil, at: NSPoint(x: x, y: y), in: hostingView)
+        isShowingActions = false
+    }
+
     /// Shows the item's section in the menu bar without opening it.
     func revealSelection() {
         guard results.indices.contains(selection) else { return }
@@ -258,6 +352,10 @@ final class QuickOpenController: ObservableObject {
             activateSelection(secondary: false)
             return
         }
+        reveal(item)
+    }
+
+    private func reveal(_ item: MenuBarItem) {
         hide()
         if item.section != .visible || model.isZenActive {
             // Zen keeps every section folded.
@@ -270,7 +368,8 @@ final class QuickOpenController: ObservableObject {
 
     /// Handles navigation keys. Returns `true` when the key was used.
     private func handleKey(_ event: NSEvent) -> Bool {
-        guard isVisible, let panel, panel.isKeyWindow else { return false }
+        // The actions menu handles its own keys.
+        guard isVisible, !isShowingActions, let panel, panel.isKeyWindow else { return false }
         // While an input method composes text, its keys are its own.
         if let editor = panel.firstResponder as? NSTextView, editor.hasMarkedText() {
             return false
@@ -292,8 +391,14 @@ final class QuickOpenController: ObservableObject {
                 activateSelection(secondary: flags.contains(.command))
             }
         default:
-            guard flags.contains(.command), let characters = event.charactersIgnoringModifiers,
-                  let digit = Int(characters), (1...9).contains(digit), results.count >= digit else {
+            guard flags.contains(.command), let characters = event.charactersIgnoringModifiers else { return false }
+            // ⌘K, also where the layout types other letters than Latin
+            // ones: there, by the key where K is on a US keyboard.
+            if characters.lowercased() == "k" || (event.keyCode == 0x28 && !characters.allSatisfy(\.isASCII)) {
+                showActions()
+                return true
+            }
+            guard let digit = Int(characters), (1...9).contains(digit), results.count >= digit else {
                 return false
             }
             selection = digit - 1
@@ -326,7 +431,8 @@ final class QuickOpenController: ObservableObject {
         NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification, object: panel)
             .sink { [weak self] _ in
                 MainActor.assumeIsolated {
-                    guard let self, self.isVisible, Date().timeIntervalSince(self.shownAt) > 0.3 else { return }
+                    guard let self, self.isVisible, !self.isShowingActions,
+                          Date().timeIntervalSince(self.shownAt) > 0.3 else { return }
                     self.hide()
                 }
             }
