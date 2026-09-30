@@ -57,6 +57,9 @@ final class StatusBarController: NSObject {
     private var orderHintShown = false
     /// The display whose menu bar had the items when last looked at.
     private var menuBarDisplay: CGDirectDisplayID?
+    /// When Meno's items were first seen out of order, until they are in
+    /// order again.
+    private var outOfOrderSince: Date?
 
     init(model: AppModel) {
         self.model = model
@@ -208,23 +211,49 @@ final class StatusBarController: NSObject {
         stashDivider = nil
     }
 
-    /// Makes sure the dividers sit left of the Meno icon, and the Stash
-    /// divider left of the Hidden divider. Otherwise collapsing would push
+    /// Whether the dividers sit left of the Meno icon, and the Stash divider
+    /// left of the Hidden divider. Right after launch macOS may not have
+    /// placed them yet, and where their windows are then says otherwise.
+    var isInOrder: Bool {
+        guard let hiddenFrame = hiddenDividerFrame else { return false }
+        // Without the Meno icon its item has no width and no frame, but the
+        // Stash divider is still checked.
+        if toggle != nil, let toggleFrame, hiddenFrame.maxX > toggleFrame.maxX { return false }
+        if let stashFrame = stashDividerFrame, stashFrame.maxX > hiddenFrame.maxX { return false }
+        return true
+    }
+
+    /// Makes sure the dividers stay in order. Otherwise collapsing would push
     /// the Meno icon itself out of the menu bar.
     func ensureDividerOrder() {
         guard let hiddenFrame = hiddenDividerFrame else { return }
-        var repaired = false
-        // Without the Meno icon its item has no width and no frame, but the
-        // Stash divider is still checked.
+        guard !isInOrder else {
+            outOfOrderSince = nil
+            return
+        }
+        // Only an order that lasts is repaired, not one of items that macOS
+        // is still placing; a scan soon tells.
+        let now = Date()
+        guard let since = outOfOrderSince, now.timeIntervalSince(since) >= 1 else {
+            if outOfOrderSince == nil {
+                outOfOrderSince = now
+            }
+            model.inventory.scheduleRefresh(after: 1.5)
+            return
+        }
+        let repaired: Bool
         if let toggle, let toggleFrame, hiddenFrame.maxX > toggleFrame.maxX {
             repaired = reseat(\.hiddenDivider, name: Name.hiddenDivider, leftOf: Name.toggle, item: toggle)
-        } else if let hiddenDivider, let stashFrame = stashDividerFrame, stashFrame.maxX > hiddenFrame.maxX {
+        } else if let hiddenDivider {
             repaired = reseat(\.stashDivider, name: Name.stashDivider, leftOf: Name.hiddenDivider, item: hiddenDivider)
         } else {
             return
         }
         if repaired {
+            // The new divider gets a moment of its own to be placed.
+            outOfOrderSince = nil
             apply(state)
+            model.inventory.scheduleRefresh(after: 1.5)
         } else if !orderHintShown {
             orderHintShown = true
             model.toasts.show(
@@ -578,8 +607,10 @@ final class StatusBarController: NSObject {
         return ScreenGeometry.screen(containingCocoa: end) ?? window.screen ?? ScreenGeometry.primaryScreen
     }
 
+    /// Where the dividers are, while they are in order, to tell the items'
+    /// sections by.
     var dividerLayout: DividerLayout? {
-        guard let hidden = hiddenDividerFrame else { return nil }
+        guard isInOrder, let hidden = hiddenDividerFrame else { return nil }
         let stash = stashDividerFrame.map { HorizontalSpan(minX: Double($0.minX), maxX: Double($0.maxX)) }
         return DividerLayout(hidden: HorizontalSpan(minX: Double(hidden.minX), maxX: Double(hidden.maxX)), stash: stash)
     }
