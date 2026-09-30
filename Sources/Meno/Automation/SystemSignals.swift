@@ -10,7 +10,7 @@ enum SystemSignals {
         let running = Set(workspace.runningApplications.compactMap(\.bundleIdentifier))
         let power = PowerSource.current()
         let externalDisplays = NSScreen.screens.filter { !ScreenGeometry.isBuiltIn($0) }.count
-        let now = Calendar.current.dateComponents([.hour, .minute], from: Date())
+        let now = Calendar.current.dateComponents([.hour, .minute, .weekday], from: Date())
         return RuleContext(
             frontmostBundleID: workspace.frontmostApplication?.bundleIdentifier,
             runningBundleIDs: running,
@@ -20,6 +20,7 @@ enum SystemSignals {
             externalDisplayCount: externalDisplays,
             displayNames: Set(NSScreen.screens.map(\.localizedName)),
             minuteOfDay: (now.hour ?? 0) * 60 + (now.minute ?? 0),
+            weekday: now.weekday ?? 0,
             isOnline: isOnline,
             microphoneInUse: capture.microphone,
             cameraInUse: capture.camera,

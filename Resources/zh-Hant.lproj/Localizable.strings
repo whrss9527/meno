@@ -63,6 +63,7 @@
 "Apply & Relaunch Apps…" = "套用並重新開啟 App…";
 "Apply a scene" = "套用場景";
 "Apply a scene at the desk" = "在辦公桌前套用場景";
+"Apply a scene during work hours" = "上班時間套用場景";
 "Apply Scene “%@”" = "套用場景「%@」";
 "apply “%@”" = "套用場景「%@」";
 "Approve Meno in System Settings › General › Login Items." = "請在「系統設定 › 一般 › 登入項目」中允許 Meno。";
@@ -133,6 +134,7 @@
 "Create" = "建立";
 "Current" = "目前";
 "Custom" = "自訂";
+"Day of the week" = "星期幾";
 "Delete" = "刪除";
 "Delete Group" = "刪除群組";
 "Diagnostic report copied. Paste it into an issue or a message." = "診斷報告已複製，可以貼上到問題回報或訊息裡。";
@@ -154,6 +156,7 @@
 "Edit…" = "編輯…";
 "Empty menu bar" = "選單列空白處";
 "Empty. Drag items here, or choose Group in an item's menu." = "還是空的。把項目拖到這裡，或在項目選單的「群組」裡加入。";
+"every day" = "每天";
 "Experimental" = "實驗性";
 "Export Settings…" = "匯出設定…";
 "Eye" = "眼睛";
@@ -330,8 +333,12 @@
 "Nothing to set" = "無需設定";
 "Nothing to suggest right now. Your menu bar looks well arranged." = "暫時沒有建議，你的選單列看起來井井有條。";
 "offline" = "離線";
+"on %@" = "在%@";
 "on battery" = "使用電池供電";
+"on no day" = "不在任何一天";
 "on the network “%@”" = "位於網路「%@」";
+"on weekdays" = "在平日";
+"on weekends" = "在週末";
 "One divider grows past the screen edge and pushes hidden items out of view. Best on macOS 14 to 26." = "單個分隔線延伸到螢幕邊緣之外，把隱藏項目推出視野。最適合 macOS 14 至 26。";
 "One shortcut clears the menu bar for recordings and talks." = "一個快速鍵即可為螢幕錄製和演講清空選單列。";
 "Open" = "開啟";

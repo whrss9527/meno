@@ -248,6 +248,7 @@ extension RuleCondition.Kind {
         case .noExternalDisplay: return String(localized: "No external display")
         case .displayConnected: return String(localized: "A specific display is connected")
         case .timeWindow: return String(localized: "Time of day")
+        case .weekdays: return String(localized: "Day of the week")
         case .offline: return String(localized: "The Mac is offline")
         case .microphoneInUse: return String(localized: "A microphone is in use")
         case .cameraInUse: return String(localized: "A camera is in use")
@@ -268,6 +269,7 @@ extension RuleCondition.Kind {
         case .noExternalDisplay: return "laptopcomputer"
         case .displayConnected: return "display"
         case .timeWindow: return "clock"
+        case .weekdays: return "calendar"
         case .offline: return "wifi.slash"
         case .microphoneInUse: return "mic"
         case .cameraInUse: return "video"
@@ -354,6 +356,37 @@ enum Formatters {
         components.minute = minuteOfDay % 60
         let date = Calendar.current.date(from: components) ?? Date()
         return date.formatted(date: .omitted, time: .shortened)
+    }
+
+    /// For example "on weekdays", "on weekends" or "on Monday and Friday".
+    static func weekdays(_ days: [Int]) -> String {
+        let calendar = Calendar.current
+        let set = Set(days.filter { (1...7).contains($0) })
+        if set.count == 7 { return String(localized: "every day") }
+        if set.isEmpty { return String(localized: "on no day") }
+        let weekend = weekendDays(in: calendar)
+        if !weekend.isEmpty, weekend.count < 7 {
+            if set == weekend { return String(localized: "on weekends") }
+            if set == Set(1...7).subtracting(weekend) { return String(localized: "on weekdays") }
+        }
+        let names = Weekdays.normalized(Array(set), firstWeekday: calendar.firstWeekday).map {
+            calendar.weekdaySymbols[$0 - 1]
+        }
+        return String(localized: "on \(ListFormatter.localizedString(byJoining: names))")
+    }
+
+    /// The days of the weekend where the Mac is set up, usually Saturday
+    /// and Sunday.
+    private static func weekendDays(in calendar: Calendar) -> Set<Int> {
+        let today = calendar.startOfDay(for: Date())
+        var days: Set<Int> = []
+        for offset in 0..<7 {
+            guard let date = calendar.date(byAdding: .day, value: offset, to: today) else { continue }
+            if calendar.isDateInWeekend(date) {
+                days.insert(calendar.component(.weekday, from: date))
+            }
+        }
+        return days
     }
 
     static func relative(_ date: Date) -> String {

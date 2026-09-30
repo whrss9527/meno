@@ -182,6 +182,8 @@ enum RuleDescriber {
             return String(localized: "“\(name)” is connected")
         case .timeWindow(let start, let end):
             return String(localized: "between \(Formatters.time(minuteOfDay: start)) and \(Formatters.time(minuteOfDay: end))")
+        case .weekdays(let days):
+            return Formatters.weekdays(days)
         case .offline:
             return String(localized: "offline")
         case .microphoneInUse:
@@ -220,6 +222,7 @@ enum RulePreset: CaseIterable {
     case videoCall
     case lowBattery
     case desk
+    case workHours
     case offline
     case evening
 
@@ -229,6 +232,7 @@ enum RulePreset: CaseIterable {
         case .videoCall: return String(localized: "Zen during calls")
         case .lowBattery: return String(localized: "Show the battery when it runs low")
         case .desk: return String(localized: "Apply a scene at the desk")
+        case .workHours: return String(localized: "Apply a scene during work hours")
         case .offline: return String(localized: "Show hidden items while offline")
         case .evening: return String(localized: "Quiet menu bar in the evening")
         }
@@ -253,6 +257,13 @@ enum RulePreset: CaseIterable {
         case .desk:
             let action: RuleAction = model.settings.scenes.first.map { RuleAction.applyScene(id: $0.id) } ?? RuleAction.revealHidden
             return AutomationRule(name: title, conditions: [.externalDisplay], action: action)
+        case .workHours:
+            let action: RuleAction = model.settings.scenes.first.map { RuleAction.applyScene(id: $0.id) } ?? RuleAction.revealHidden
+            return AutomationRule(
+                name: title,
+                conditions: [.weekdays(days: Weekdays.mondayToFriday), .timeWindow(startMinute: 9 * 60, endMinute: 18 * 60)],
+                action: action
+            )
         case .offline:
             return AutomationRule(name: title, conditions: [.offline], action: .revealHidden)
         case .evening:

@@ -103,6 +103,7 @@ final class SettingsTests: XCTestCase {
         settings.rules = [
             AutomationRule(name: "Present", conditions: [.appFrontmost(bundleID: "com.apple.Keynote")], action: .zen),
             AutomationRule(name: "Desk", conditions: [.externalDisplay, .timeWindow(startMinute: 540, endMinute: 1080)], action: .applyScene(id: scene.id)),
+            AutomationRule(name: "Weekend", conditions: [.weekdays(days: [1, 7])], action: .collapse, requiresAll: false),
             AutomationRule(name: "Battery", conditions: [.batteryBelow(percent: 20)], action: .showItem(key: wifi), revertsWhenInactive: false),
         ]
         settings.hotkeys[.quickOpen] = KeyCombo(keyCode: 0x2E, modifiers: [.control, .option])

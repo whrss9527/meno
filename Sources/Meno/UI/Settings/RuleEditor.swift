@@ -157,6 +157,8 @@ struct RuleEditor: View {
                 if entry.condition.command == nil { return false }
             case .network(let router, _):
                 if router.isEmpty { return false }
+            case .weekdays(let days):
+                if days.isEmpty { return false }
             default:
                 break
             }
@@ -250,6 +252,8 @@ private struct ConditionEditor: View {
                     .foregroundStyle(.secondary)
                 MinutePicker(minute: Binding(get: { end }, set: { condition = .timeWindow(startMinute: start, endMinute: $0) }))
             }
+        case .weekdays(let days):
+            WeekdayPicker(days: Binding(get: { days }, set: { condition = .weekdays(days: $0) }))
         case .commandSucceeds(let command):
             TextField(
                 String(localized: "Shell command"),
@@ -402,6 +406,41 @@ private struct ActionEditor: View {
         case .hideItem: return .hideItem(key: key)
         case .stashItem: return .stashItem(key: key)
         }
+    }
+}
+
+/// Picks days of the week, shown in the order of the person's week.
+struct WeekdayPicker: View {
+    @Binding var days: [Int]
+
+    var body: some View {
+        let calendar = Calendar.current
+        HStack(spacing: 3) {
+            ForEach(Weekdays.ordered(startingOn: calendar.firstWeekday), id: \.self) { day in
+                let selected = days.contains(day)
+                let name = calendar.standaloneWeekdaySymbols[day - 1]
+                Button {
+                    days = Weekdays.toggling(day, in: days)
+                } label: {
+                    Text(verbatim: calendar.shortStandaloneWeekdaySymbols[day - 1])
+                        .font(.system(size: 11, weight: selected ? .semibold : .regular))
+                        .lineLimit(1)
+                        .frame(minWidth: 24)
+                        .padding(.horizontal, 2)
+                        .padding(.vertical, 4)
+                        .foregroundStyle(selected ? Color.white : Color.primary)
+                        .background {
+                            Capsule().fill(selected ? Color.accentColor : Color.primary.opacity(0.07))
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help(Text(verbatim: name))
+                .accessibilityLabel(Text(verbatim: name))
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .fixedSize()
     }
 }
 

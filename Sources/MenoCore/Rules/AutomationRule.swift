@@ -13,6 +13,9 @@ public struct RuleContext: Equatable, Sendable {
     public var displayNames: Set<String>
     /// Minutes since local midnight.
     public var minuteOfDay: Int
+    /// The day of the week as `Calendar` numbers it, 1 (Sunday) to 7
+    /// (Saturday), or 0 when unknown.
+    public var weekday: Int
     public var isOnline: Bool
     /// Whether any app records from a microphone.
     public var microphoneInUse: Bool
@@ -20,7 +23,7 @@ public struct RuleContext: Equatable, Sendable {
     public var cameraInUse: Bool
     /// The shell commands of rule conditions whose last run succeeded.
     public var succeededCommands: Set<String>
-    /// Hardware addresses of the routers of the networks the Mac is on.
+    /// The networks the Mac is on, as `NetworkIdentity` identifies them.
     public var routers: Set<String>
 
     public init(
@@ -32,6 +35,7 @@ public struct RuleContext: Equatable, Sendable {
         externalDisplayCount: Int = 0,
         displayNames: Set<String> = [],
         minuteOfDay: Int = 0,
+        weekday: Int = 0,
         isOnline: Bool = true,
         microphoneInUse: Bool = false,
         cameraInUse: Bool = false,
@@ -46,6 +50,7 @@ public struct RuleContext: Equatable, Sendable {
         self.externalDisplayCount = externalDisplayCount
         self.displayNames = displayNames
         self.minuteOfDay = minuteOfDay
+        self.weekday = weekday
         self.isOnline = isOnline
         self.microphoneInUse = microphoneInUse
         self.cameraInUse = cameraInUse
@@ -69,6 +74,10 @@ public enum RuleCondition: Codable, Hashable, Sendable {
     /// Between two times of day, given in minutes after midnight. The window
     /// wraps around midnight when `startMinute > endMinute`.
     case timeWindow(startMinute: Int, endMinute: Int)
+    /// On one of these days of the week, numbered as in `Calendar`: 1 is
+    /// Sunday and 7 is Saturday. The day is the one on the Mac's clock, so
+    /// a time window that wraps around midnight ends on the next day.
+    case weekdays(days: [Int])
     case offline
     case microphoneInUse
     case cameraInUse
@@ -105,6 +114,8 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             if start == end { return true }
             if start < end { return minute >= start && minute < end }
             return minute >= start || minute < end
+        case .weekdays(let days):
+            return days.contains(context.weekday)
         case .offline:
             return !context.isOnline
         case .microphoneInUse:
@@ -138,6 +149,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case .noExternalDisplay: return .noExternalDisplay
         case .displayConnected: return .displayConnected
         case .timeWindow: return .timeWindow
+        case .weekdays: return .weekdays
         case .offline: return .offline
         case .microphoneInUse: return .microphoneInUse
         case .cameraInUse: return .cameraInUse
@@ -157,6 +169,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case noExternalDisplay
         case displayConnected
         case timeWindow
+        case weekdays
         case offline
         case microphoneInUse
         case cameraInUse
@@ -176,6 +189,7 @@ public enum RuleCondition: Codable, Hashable, Sendable {
             case .noExternalDisplay: return .noExternalDisplay
             case .displayConnected: return .displayConnected(name: "")
             case .timeWindow: return .timeWindow(startMinute: 9 * 60, endMinute: 18 * 60)
+            case .weekdays: return .weekdays(days: Weekdays.mondayToFriday)
             case .offline: return .offline
             case .microphoneInUse: return .microphoneInUse
             case .cameraInUse: return .cameraInUse

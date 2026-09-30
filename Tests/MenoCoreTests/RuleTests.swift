@@ -167,6 +167,38 @@ final class RuleTests: XCTestCase {
         XCTAssertTrue(RuleCondition.timeWindow(startMinute: 5, endMinute: 5).isSatisfied(by: at(12)))
     }
 
+    func testWeekdays() {
+        let workdays = RuleCondition.weekdays(days: Weekdays.mondayToFriday)
+        XCTAssertTrue(workdays.isSatisfied(by: RuleContext(weekday: 2)))
+        XCTAssertTrue(workdays.isSatisfied(by: RuleContext(weekday: 6)))
+        XCTAssertFalse(workdays.isSatisfied(by: RuleContext(weekday: 7)))
+        XCTAssertFalse(workdays.isSatisfied(by: RuleContext(weekday: 1)))
+        // An unknown day matches nothing.
+        XCTAssertFalse(workdays.isSatisfied(by: RuleContext()))
+        XCTAssertFalse(RuleCondition.weekdays(days: []).isSatisfied(by: RuleContext(weekday: 3)))
+
+        // Friday evening until midnight, with the day and the time together.
+        let fridayNight = AutomationRule(
+            name: "Friday night",
+            conditions: [.weekdays(days: [6]), .timeWindow(startMinute: 18 * 60, endMinute: 0)],
+            action: .zen
+        )
+        XCTAssertTrue(fridayNight.matches(RuleContext(minuteOfDay: 20 * 60, weekday: 6)))
+        XCTAssertFalse(fridayNight.matches(RuleContext(minuteOfDay: 20 * 60, weekday: 5)))
+        XCTAssertFalse(fridayNight.matches(RuleContext(minuteOfDay: 9 * 60, weekday: 6)))
+    }
+
+    func testWeekdayOrder() {
+        XCTAssertEqual(Weekdays.ordered(startingOn: 1), [1, 2, 3, 4, 5, 6, 7])
+        XCTAssertEqual(Weekdays.ordered(startingOn: 2), [2, 3, 4, 5, 6, 7, 1])
+        XCTAssertEqual(Weekdays.ordered(startingOn: 7), [7, 1, 2, 3, 4, 5, 6])
+        XCTAssertEqual(Weekdays.ordered(startingOn: 0), [1, 2, 3, 4, 5, 6, 7])
+        XCTAssertEqual(Weekdays.normalized([7, 2, 2, 9, 1]), [1, 2, 7])
+        XCTAssertEqual(Weekdays.normalized([7, 2, 1], firstWeekday: 2), [2, 7, 1])
+        XCTAssertEqual(Weekdays.toggling(3, in: [2, 4]), [2, 3, 4])
+        XCTAssertEqual(Weekdays.toggling(4, in: [2, 4]), [2])
+    }
+
     func testRuleMatchingNeedsAllConditions() {
         let rule = AutomationRule(name: "r", conditions: [.onBattery, .externalDisplay], action: .revealHidden)
         XCTAssertTrue(rule.matches(RuleContext(isOnBattery: true, externalDisplayCount: 2)))

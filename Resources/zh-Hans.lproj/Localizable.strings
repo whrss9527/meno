@@ -63,6 +63,7 @@
 "Apply & Relaunch Apps…" = "应用并重新打开 App…";
 "Apply a scene" = "应用场景";
 "Apply a scene at the desk" = "在办公桌前应用场景";
+"Apply a scene during work hours" = "上班时间应用场景";
 "Apply Scene “%@”" = "应用场景“%@”";
 "apply “%@”" = "应用场景“%@”";
 "Approve Meno in System Settings › General › Login Items." = "请在“系统设置 › 通用 › 登录项”中允许 Meno。";
@@ -133,6 +134,7 @@
 "Create" = "创建";
 "Current" = "当前";
 "Custom" = "自定义";
+"Day of the week" = "星期几";
 "Delete" = "删除";
 "Delete Group" = "删除分组";
 "Diagnostic report copied. Paste it into an issue or a message." = "诊断报告已复制，可以粘贴到问题反馈或消息里。";
@@ -154,6 +156,7 @@
 "Edit…" = "编辑…";
 "Empty menu bar" = "菜单栏空白处";
 "Empty. Drag items here, or choose Group in an item's menu." = "还是空的。把项目拖到这里，或在项目菜单的“分组”里加入。";
+"every day" = "每天";
 "Experimental" = "实验性";
 "Export Settings…" = "导出设置…";
 "Eye" = "眼睛";
@@ -330,8 +333,12 @@
 "Nothing to set" = "无需设置";
 "Nothing to suggest right now. Your menu bar looks well arranged." = "暂时没有建议，你的菜单栏看起来井井有条。";
 "offline" = "离线";
+"on %@" = "在%@";
 "on battery" = "使用电池供电";
+"on no day" = "不在任何一天";
 "on the network “%@”" = "位于网络“%@”";
+"on weekdays" = "在工作日";
+"on weekends" = "在周末";
 "One divider grows past the screen edge and pushes hidden items out of view. Best on macOS 14 to 26." = "单个分隔符延伸到屏幕边缘之外，把隐藏项目推出视野。最适合 macOS 14 至 26。";
 "One shortcut clears the menu bar for recordings and talks." = "一个快捷键即可为录屏和演讲清空菜单栏。";
 "Open" = "打开";
