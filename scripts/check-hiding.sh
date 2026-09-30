@@ -71,13 +71,19 @@ log_has() {
   grep -q -- "$1" "$LOG" 2>/dev/null
 }
 
+# Whether a file has more than $3 lines that match $1: counted anew on
+# each try, as wait_for runs it again.
+has_more_lines() {
+  [[ "$(grep -c -- "$1" "$2" 2>/dev/null || true)" -gt "$3" ]]
+}
+
 # Whether the helper's item is on the screen (1) or not (0), as the helper
 # reports when asked.
 helper_on_screen() {
   local before
   before="$(grep -c '^E2E_ITEM ' "$HELPER_LOG" || true)"
   kill -USR1 "$helper"
-  wait_for 5 test "$(grep -c '^E2E_ITEM ' "$HELPER_LOG" || true)" -gt "$before" || return 1
+  wait_for 5 has_more_lines '^E2E_ITEM ' "$HELPER_LOG" "$before" || return 1
   grep '^E2E_ITEM ' "$HELPER_LOG" | tail -1 | grep -q "on_screen=$1"
 }
 
@@ -86,7 +92,7 @@ meno_report() {
   local before
   before="$(grep -c '^MENO_DIAG report' "$LOG" || true)"
   kill -USR1 "$meno"
-  wait_for 20 test "$(grep -c '^MENO_DIAG report' "$LOG" || true)" -gt "$before" || return 1
+  wait_for 20 has_more_lines '^MENO_DIAG report' "$LOG" "$before" || return 1
   # The last report runs up to the next line of Meno's own.
   awk '/^MENO_DIAG report/ { report = ""; inside = 1; next } /^MENO_DIAG / { inside = 0 } inside { report = report $0 "\n" } END { printf "%s", report }' "$LOG"
 }
@@ -117,7 +123,7 @@ wait_for 15 helper_on_screen 0 || fail "The new item is not hidden"
 echo "==> Showing the Hidden section"
 open "meno://show"
 shown=0
-for _ in $(seq 1 15); do
+for _ in $(seq 1 10); do
   if meno_report | grep -q 'hidden shown · stash collapsed'; then
     shown=1
     break
