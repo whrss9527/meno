@@ -8,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var waitingURLs: [URL] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // The language Meno shows, before Settings can change it.
+        _ = InterfaceLanguageSetting.atLaunch
         // One copy runs at a time; a newer one that runs takes the links.
         guard SingleInstance.claim(forwarding: waitingURLs) else {
             waitingURLs = []

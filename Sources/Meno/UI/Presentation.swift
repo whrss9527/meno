@@ -53,6 +53,12 @@ extension Image {
     }
 }
 
+extension InterfaceLanguage {
+    var title: String {
+        nativeName ?? String(localized: "Follow System")
+    }
+}
+
 extension RevealStyle {
     var title: String {
         switch self {

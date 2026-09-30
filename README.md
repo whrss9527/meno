@@ -75,7 +75,7 @@ After an update, macOS may keep an entry for the previous build in the Accessibi
 - **Insights:** private, on-device statistics — how often you reveal, your most used items, and suggestions such as "you opened this 12 times this week while it was hidden — keep it visible?" or stashing what you have not used for months. Suggestions you turn down stay away for two months.
 - **New arrivals:** when an app adds a new icon, Meno can ask you, hide it or stash it.
 - **Appearance:** choose the Meno icon or any SF Symbol for it, divider style, Shelf glass and tint, a menu bar tint in your own colors or the wallpaper's, with gradient, border, shadow and split "island" shapes (experimental), and system-wide icon spacing (beta).
-- English, Simplified Chinese and Traditional Chinese.
+- English, Simplified Chinese and Traditional Chinese. Meno follows the system language, or the one chosen in *Settings › General › Language*.
 
 ## Links
 

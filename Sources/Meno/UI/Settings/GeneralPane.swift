@@ -5,6 +5,7 @@ import SwiftUI
 struct GeneralPane: View {
     @EnvironmentObject private var model: AppModel
     @State private var confirmingReset = false
+    @State private var language = InterfaceLanguageSetting.current
 
     var body: some View {
         VStack(spacing: 16) {
@@ -33,6 +34,31 @@ struct GeneralPane: View {
                     subtitle: "Meno asks GitHub whether there is a newer release. Nothing about you or your Mac is sent.",
                     isOn: $model.settings.general.checksForUpdates
                 )
+            }
+
+            SettingsCard("Language", symbol: "globe") {
+                // Named in all three languages, so it can be found whichever
+                // language Meno is in.
+                SettingRow("Language / 语言 / 語言", subtitle: "Meno uses the new language after it relaunches.") {
+                    EnumPicker(
+                        selection: Binding(get: { language }, set: { newValue in
+                            language = newValue
+                            InterfaceLanguageSetting.set(newValue)
+                        }),
+                        title: \.title,
+                        width: 180
+                    )
+                }
+                if language != InterfaceLanguageSetting.atLaunch {
+                    HStack {
+                        Text("Relaunch Meno to switch languages.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Relaunch Now") { Relauncher.relaunch() }
+                            .menoGlassButtonStyle(prominent: true)
+                    }
+                }
             }
 
             SettingsCard("Revealing hidden items", symbol: "eye") {

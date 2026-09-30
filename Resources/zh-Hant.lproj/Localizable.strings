@@ -179,6 +179,7 @@
 "Find and open any item from the keyboard, pinyin included." = "用鍵盤尋找並開啟任意項目，支援拼音。";
 "Finder" = "Finder";
 "Floating" = "浮動";
+"Follow System" = "跟隨系統";
 "Force Quit" = "強制結束";
 "From the Wallpaper" = "取自背景圖片";
 "Full width" = "全寬";
@@ -265,6 +266,8 @@
 "Keyboard shortcuts that work in every app." = "在任何 App 中都可用的鍵盤快速鍵。";
 "Kind" = "類型";
 "Label" = "標籤";
+"Language" = "語言";
+"Language / 语言 / 語言" = "Language / 语言 / 語言";
 "Launch" = "啟動";
 "Launch Meno at login" = "登入時開啟 Meno";
 "Layout" = "佈局";
@@ -314,6 +317,7 @@
 "Meno Scenes" = "Meno 場景";
 "Meno Settings" = "Meno 設定";
 "Meno shows this name in the Shelf, Quick Open, hotkeys and rules. The menu bar itself does not change." = "Meno 會在托盤、快速開啟、快速鍵和規則中使用這個名字，選單列本身不會改變。";
+"Meno uses the new language after it relaunches." = "Meno 重新開啟後才會使用新的語言。";
 "Meno was updated to %@." = "Meno 已更新到 %@。";
 "Meno works on your Mac, with no analytics and no accounts. It only goes online to ask GitHub for the latest release, when you check for updates or once a day if you turned that on, and to download a release you chose to install. Usage statistics and settings are stored in ~/Library/Application Support/Meno." = "Meno 在你的 Mac 上執行，沒有資料分析，也沒有帳號。它只在你檢查更新時，或在你開啟每日檢查後每天一次，向 GitHub 詢問最新版本，以及下載你選擇安裝的版本時才會連網。使用統計和設定儲存在 ~/Library/Application Support/Meno 中。";
 "Meno — click to show or hide items, ⌥-click to include the Stash, right-click for more" = "Meno — 按一下以顯示或隱藏項目，按住 ⌥ 並按一下以包含暗格，按一下右鍵以顯示更多";
@@ -414,6 +418,8 @@
 "Relaunch apps to apply the new spacing?" = "要重新開啟 App 以套用新的間距嗎？";
 "Relaunch Meno" = "重新開啟 Meno";
 "Relaunch Meno later to use Screen Recording." = "稍後重新開啟 Meno 即可使用螢幕錄製權限。";
+"Relaunch Meno to switch languages." = "重新開啟 Meno 以切換語言。";
+"Relaunch Now" = "立即重新開啟";
 "Relaunch to finish" = "重新開啟以完成設定";
 "Release Notes" = "版本說明";
 "Remove" = "移除";

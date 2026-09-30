@@ -10,7 +10,8 @@ enum Diagnostics {
         var lines = [
             "Meno \(AppInfo.version) (\(AppInfo.build)) · signed \(CodeSigning.isAdHoc ? "ad hoc" : "with a certificate")"
                 + " · \((Bundle.main.bundlePath as NSString).abbreviatingWithTildeInPath)",
-            "macOS \(AppInfo.osVersionString) · \(architecture) · \(Locale.current.identifier)",
+            "macOS \(AppInfo.osVersionString) · \(architecture) · \(Locale.current.identifier)"
+                + " · interface \(InterfaceLanguageSetting.current.rawValue)",
             "Engine: \(model.statusBar.engine) · hidden \(state.hiddenCollapsed ? "collapsed" : "shown")"
                 + " · stash \(state.stashCollapsed ? "collapsed" : "shown") · zen \(state.zen ? "on" : "off")",
             "Accessibility: \(model.permissions.accessibility ? "granted" : "missing")"
