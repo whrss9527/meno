@@ -1,18 +1,49 @@
 <div align="center">
   <img src="docs/icon.png" width="128" height="128" alt="Meno 图标">
   <h1>Meno</h1>
-  <p><strong>一个安静的菜单栏，由玻璃打造。</strong></p>
-  <p>原生 macOS 菜单栏管理工具，采用液态玻璃（Liquid Glass）风格界面。</p>
+  <p><strong>安静的菜单栏，由玻璃打造</strong></p>
+  <p>住在 macOS 菜单栏里的菜单栏管家。原生 Swift，玻璃质感，开源免费。</p>
   <p>
+    <a href="https://github.com/whrss9527/meno/releases/latest"><img alt="最新版本" src="https://img.shields.io/github/v/release/whrss9527/meno?include_prereleases&label=release&color=7C6CFF"></a>
     <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white">
-    <img alt="Swift" src="https://img.shields.io/badge/Swift-5.10%2B-F05138?logo=swift&logoColor=white">
     <img alt="Liquid Glass" src="https://img.shields.io/badge/UI-Liquid%20Glass-7C6CFF">
-    <a href="LICENSE"><img alt="GPL-3.0 License" src="https://img.shields.io/badge/license-GPL--3.0-2563EB"></a>
+    <a href="LICENSE"><img alt="GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-2563EB"></a>
   </p>
-  <p><a href="README.md">English</a></p>
+  <p>
+    <a href="https://github.com/whrss9527/meno/releases/latest"><b>下载</b></a> ·
+    <a href="https://github.com/whrss9527/meno/releases">更新日志</a> ·
+    <a href="README.md">English</a>
+  </p>
 </div>
 
-Meno 会把你不常用的菜单栏图标收起来，需要时点按、悬停、轻扫或按下快捷键即可唤回。一切都能用键盘直达，菜单栏还能根据你正在做的事情自动调整。
+### **Meno** /ˈmeː.no/
+
+意大利语，意思是“少一点”。
+
+乐谱里的 *meno mosso*，意思是“慢一点，别那么急”。
+
+菜单栏也应该少一点：常用的留下，不常用的先收起来；需要的时候，再把它叫出来。
+
+而且 **Meno** 和 **Menu** 只差一个字母——少一点，刚刚好。
+
+## 亮点
+
+- **不常用的收起来**：常显、隐藏，再加一个“暗格”，放那些几乎用不到的图标。
+- **想怎么叫出来都行**：点一下、悬停、轻扫、按快捷键都行；快速打开还能用键盘直接找到任何一个。
+- **从里到外都是玻璃**：菜单栏下方的托盘、Spotlight 风格的快速打开，macOS 26 上是液态玻璃。
+- **会看场合的菜单栏**：麦克风开着、接上显示器、拔掉电源时，规则和场景自动帮你调好。
+- **一键禅模式**：所有 App 图标一下清空，截图、录屏、演讲都干干净净。
+- **不碰你的隐私**：没有数据分析，没有账户，只在检查和下载更新时联网。
+
+## 安装
+
+需要 macOS 14 Sonoma 或更高版本。液态玻璃需要 macOS 26，并使用 Xcode 26 构建。
+
+从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.zip`，解压后把 Meno.app 移到“应用程序”文件夹。该版本为通用二进制（支持 Apple 芯片与 Intel）。从 0.10.0 起用 Developer ID 签名并经过苹果公证，双击就能打开。0.10.0 之前的版本使用临时签名，首次打开时请右键点按 Meno.app 并选择“打开”，或运行 `xattr -dr com.apple.quarantine /Applications/Meno.app`。
+
+Meno 可以自己安装更新：检查到新版本后，在提示、“设置 › 关于”或 Meno 的菜单里选择“安装并重新打开”即可。Meno 会从 GitHub 下载新版本，核对校验和、版本号与代码签名，替换自身后重新打开。如果 Meno 所在的文件夹不可写入，则会改为提供下载链接。
+
+更新后，系统设置的“辅助功能”列表里可能还留着上一个版本的记录，它对新版本不生效。这时 Meno 会打开“设置 › 权限”，自动换成新版本的记录，macOS 随后会再次请求授权；也可以手动点“清除并重新授权”。从 0.10.0 起，发布包都用同一张 Developer ID 证书签名，之后的更新会保留授权；只有从临时签名的旧版本更新过来时会再请求一次。
 
 ## 功能
 
@@ -46,50 +77,6 @@ Meno 会把你不常用的菜单栏图标收起来，需要时点按、悬停、
 - **外观：** 自选 Meno 图标（也可以用任意 SF 符号）、分隔符样式、托盘玻璃与着色；菜单栏着色可用自选颜色或取自墙纸的颜色，支持渐变、边框、阴影和分离式“岛屿”形状（实验性）；可调整系统级图标间距（测试版）。
 - 支持英文、简体中文与繁体中文。
 
-## 系统要求
-
-- macOS 14 Sonoma 或更高版本。液态玻璃需要 macOS 26，并使用 Xcode 26 构建。
-- 构建需要 Xcode 16 或更高版本（液态玻璃需 Xcode 26）。
-
-## 下载
-
-从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.zip`，解压后把 Meno.app 移到“应用程序”文件夹。该版本为通用二进制（支持 Apple 芯片与 Intel）。从 0.10.0 起用 Developer ID 签名并经过苹果公证，双击就能打开。0.10.0 之前的版本使用临时签名，首次打开时请右键点按 Meno.app 并选择“打开”，或运行 `xattr -dr com.apple.quarantine /Applications/Meno.app`。
-
-Meno 可以自己安装更新：检查到新版本后，在提示、“设置 › 关于”或 Meno 的菜单里选择“安装并重新打开”即可。Meno 会从 GitHub 下载新版本，核对校验和、版本号与代码签名，替换自身后重新打开。如果 Meno 所在的文件夹不可写入，则会改为提供下载链接。
-
-发布新版本时，推送 `v*` 标签，或在 *Release* 工作流中填写版本号手动运行即可。工作流用的是 [Frit](https://github.com/whrss9527/frit) 里共用的发布流程：配好 Developer ID 的 Secrets 后（见 Frit 的 [docs/release.md](https://github.com/whrss9527/frit/blob/main/docs/release.md)），会签名、公证并钉上票据。发布说明取自 `.github/releases/<标签>.md`。
-
-更新后，系统设置的“辅助功能”列表里可能还留着上一个版本的记录，它对新版本不生效。这时 Meno 会打开“设置 › 权限”，自动换成新版本的记录，macOS 随后会再次请求授权；也可以手动点“清除并重新授权”。从 0.10.0 起，发布包都用同一张 Developer ID 证书签名，之后的更新会保留授权；只有从临时签名的旧版本更新过来时会再请求一次。
-
-## 构建与运行
-
-```bash
-git clone https://github.com/whrss9527/meno.git
-cd meno
-make run        # 构建 build/Meno.app 并打开
-make install    # 将 Meno.app 拷贝到“应用程序”文件夹
-make test       # 运行单元测试
-```
-
-`make app` 会在 `build/` 中生成发布版 App 包。设置 `UNIVERSAL=1` 可构建 arm64 + x86_64 通用二进制；设置 `SIGN_IDENTITY="Developer ID Application: …"` 可使用你的证书签名。
-
-默认构建使用临时（ad hoc）签名。macOS 会把隐私权限与签名绑定，因此重新构建后，可能需要在“系统设置 › 隐私与安全性 › 辅助功能”中移除 Meno 再重新添加。使用正式证书签名即可避免。
-
-也可以用 Xcode 打开 `Package.swift` 进行编辑和调试。不过 Meno 未以 App 包形式运行时，macOS 会把权限归到 Xcode 名下，所以测试与权限相关的功能请使用 `make run`。
-
-## 权限
-
-| 权限 | 用途 |
-| --- | --- |
-| **辅助功能**（必需） | 读取菜单栏项目，通过托盘、快速打开和快捷键打开它们，并用 ⌘ 拖移进行整理。 |
-| **屏幕录制**（可选） | 显示隐藏项目的真实图标，并发现图标的变化（macOS 14–26）。未授权时显示 App 图标。只会截取菜单栏项目。 |
-
-与麦克风、摄像头有关的规则只会询问 macOS 设备是否在运行，不需要任何权限，Meno 也不会录制任何内容。
-
-带命令的规则条件只会运行你输入的那条命令：每 10 秒用 zsh 运行一次，且只在规则开启时运行。有规则用到网络条件时，Meno 会在网络变化时和每 30 秒运行一次 `route` 与 `arp`，它们只读取 macOS 已知的各个连接的路由器信息，不会发送任何数据。导入设置时，带命令的规则会被关闭，因此设置文件在你检查之前无法运行任何东西。
-
-Meno 没有数据分析或账户。它只会在检查更新时联网，向 GitHub 查询最新版本：在“设置 › 关于”里点“检查更新”时，或在“通用”里开启每日检查后每天一次；此外只在下载你选择安装的新版本时联网。设置与统计数据保存在 `~/Library/Application Support/Meno`。
-
 ## 链接
 
 | 链接 | 作用 |
@@ -115,6 +102,19 @@ Meno 会在菜单栏中添加小小的分隔符：单箭头是“隐藏”分区
 
 菜单栏项目通过各个 App 的辅助功能树读取，适用于所有支持的 macOS 版本，包括 macOS 27 的单窗口菜单栏。
 
+## 权限与隐私
+
+| 权限 | 用途 |
+| --- | --- |
+| **辅助功能**（必需） | 读取菜单栏项目，通过托盘、快速打开和快捷键打开它们，并用 ⌘ 拖移进行整理。 |
+| **屏幕录制**（可选） | 显示隐藏项目的真实图标，并发现图标的变化（macOS 14–26）。未授权时显示 App 图标。只会截取菜单栏项目。 |
+
+与麦克风、摄像头有关的规则只会询问 macOS 设备是否在运行，不需要任何权限，Meno 也不会录制任何内容。
+
+带命令的规则条件只会运行你输入的那条命令：每 10 秒用 zsh 运行一次，且只在规则开启时运行。有规则用到网络条件时，Meno 会在网络变化时和每 30 秒运行一次 `route` 与 `arp`，它们只读取 macOS 已知的各个连接的路由器信息，不会发送任何数据。导入设置时，带命令的规则会被关闭，因此设置文件在你检查之前无法运行任何东西。
+
+Meno 没有数据分析或账户。它只会在检查更新时联网，向 GitHub 查询最新版本：在“设置 › 关于”里点“检查更新”时，或在“通用”里开启每日检查后每天一次；此外只在下载你选择安装的新版本时联网。设置与统计数据保存在 `~/Library/Application Support/Meno`。
+
 ## 常见问题
 
 - **更新后 Meno 没有反应。** 没有使用固定证书签名的版本，每次更新都会在“辅助功能”里产生一条新记录。Meno 会换掉旧记录，macOS 随后会再次请求授权；如果没有弹出请求，打开“设置 › 权限”，点“清除并重新授权”。
@@ -130,7 +130,27 @@ Meno 会在菜单栏中添加小小的分隔符：单箭头是“隐藏”分区
 - 图标间距使用 `NSStatusItemSpacing` 与 `NSStatusItemSelectionPadding` 偏好设置，App 只在启动时读取，因此应用时会重新打开带有菜单栏项目的 App。
 - 菜单栏着色绘制在菜单栏后方，在 macOS 26 及以上的透明菜单栏上效果最明显。
 
-## 项目结构
+## 开发
+
+构建需要 Xcode 16 或更高版本（液态玻璃需 Xcode 26）。
+
+### 构建与运行
+
+```bash
+git clone https://github.com/whrss9527/meno.git
+cd meno
+make run        # 构建 build/Meno.app 并打开
+make install    # 将 Meno.app 拷贝到“应用程序”文件夹
+make test       # 运行单元测试
+```
+
+`make app` 会在 `build/` 中生成发布版 App 包。设置 `UNIVERSAL=1` 可构建 arm64 + x86_64 通用二进制；设置 `SIGN_IDENTITY="Developer ID Application: …"` 可使用你的证书签名。
+
+默认构建使用临时（ad hoc）签名。macOS 会把隐私权限与签名绑定，因此重新构建后，可能需要在“系统设置 › 隐私与安全性 › 辅助功能”中移除 Meno 再重新添加。使用正式证书签名即可避免。
+
+也可以用 Xcode 打开 `Package.swift` 进行编辑和调试。不过 Meno 未以 App 包形式运行时，macOS 会把权限归到 Xcode 名下，所以测试与权限相关的功能请使用 `make run`。
+
+### 项目结构
 
 ```
 Sources/MenoCore   与平台无关的逻辑：模型、设置、规则、布局规划、搜索匹配
@@ -140,13 +160,17 @@ Resources          Info.plist、App 图标、本地化文件
 scripts            打包 App、生成图标、检查本地化
 ```
 
-## 开发
+### 测试与脚本
 
 - `swift test` 运行 MenoCore 测试（也可在 Linux 上运行）。
 - `scripts/check-localization.py` 列出界面文字并检查 `Resources/*.lproj` 中的翻译是否完整。
 - `scripts/generate-icon.py` 生成 `Resources/AppIcon.icns`（需要 Pillow 和 numpy）。
 
-## 许可协议
+### 发布新版本
+
+发布新版本时，推送 `v*` 标签，或在 *Release* 工作流中填写版本号手动运行即可。工作流用的是 [Frit](https://github.com/whrss9527/frit) 里共用的发布流程：配好 Developer ID 的 Secrets 后（见 Frit 的 [docs/release.md](https://github.com/whrss9527/frit/blob/main/docs/release.md)），会签名、公证并钉上票据。发布说明取自 `.github/releases/<标签>.md`。
+
+## 许可证
 
 Copyright © 2026 whrss9527
 
@@ -157,3 +181,12 @@ Meno 是自由软件，以 [GNU 通用公共许可证第 3 版（GPL-3.0）](LIC
 贡献需接受 [CONTRIBUTING.md](CONTRIBUTING.md) 中的贡献者协议。
 
 Meno 0.1.0 以 MIT 许可协议发布，这个版本仍然适用 MIT 许可协议。
+
+---
+
+<div align="center">
+  <p><b>同样住在菜单栏里</b></p>
+  <a href="https://github.com/whrss9527/pop"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/pop.svg" width="30%" alt="Pop：长按右键，一划即达"></a>
+  <a href="https://github.com/whrss9527/stox"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/stox.svg" width="30%" alt="Stox：一眼看盘，一键隐身"></a>
+  <a href="https://github.com/whrss9527/proxi"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/proxi.svg" width="30%" alt="Proxi：一个开关，管好所有代理"></a>
+</div>
