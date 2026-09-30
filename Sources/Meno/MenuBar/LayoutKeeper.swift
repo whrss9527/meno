@@ -15,6 +15,15 @@ final class LayoutKeeper {
     private var keeper: SectionKeeper
     /// Items found elsewhere while Zen kept the menu bar still, by key.
     private var waiting: [MenuItemKey: SectionKeeper.Misplacement] = [:]
+    /// When the last scan was taken in.
+    private var lastScan: Date?
+    /// When the person last ⌘-dragged in the menu bar, and where the drag
+    /// that is going on started.
+    private var personDragged: Date?
+    private var dragStart: NSPoint?
+    private lazy var dragMonitor = GlobalEventMonitor(mask: [.leftMouseDown, .leftMouseUp]) { [weak self] event in
+        self?.mouse(event)
+    }
 
     /// More items elsewhere at once than this are only offered to be put back.
     private static let automaticLimit = 3
@@ -42,10 +51,21 @@ final class LayoutKeeper {
         // as moved on purpose.
         guard now.timeIntervalSince(model.startedAt) >= Self.settling else { return }
         defer { saveIfNeeded() }
+        let previousScan = lastScan
+        lastScan = now
         let misplaced = keeper.observe(observations, at: now, includesStash: model.settings.general.stashEnabled)
         guard model.settings.general.keepsSections else {
+            dragMonitor.stop()
             keeper.accept(misplaced + Array(waiting.values), at: now)
             waiting = [:]
+            return
+        }
+        dragMonitor.start()
+        // An item the person dragged right after its app put it in the
+        // menu bar, before a scan saw it, only looks as if its app put it
+        // where it is now.
+        if let personDragged, let previousScan, personDragged >= previousScan {
+            keeper.accept(misplaced, at: now)
             return
         }
         for misplacement in misplaced {
@@ -79,6 +99,26 @@ final class LayoutKeeper {
             keeper.record(key, in: item.section, process: item.pid, at: now, includesStash: includesStash)
         }
         saveIfNeeded()
+    }
+
+    /// Notices ⌘-drags in the menu bar. Meno's own drags are recorded as
+    /// it makes them.
+    private func mouse(_ event: NSEvent) {
+        let location = NSEvent.mouseLocation
+        switch event.type {
+        case .leftMouseDown:
+            let isPersonDrag = event.modifierFlags.contains(.command) && !model.mover.isMoving
+                && ScreenGeometry.isInMenuBar(cocoa: location)
+            dragStart = isPersonDrag ? location : nil
+        case .leftMouseUp:
+            guard let start = dragStart else { return }
+            dragStart = nil
+            if abs(location.x - start.x) > 2 || abs(location.y - start.y) > 2 {
+                personDragged = Date()
+            }
+        default:
+            break
+        }
     }
 
     private func putBack(_ misplacement: SectionKeeper.Misplacement) {
