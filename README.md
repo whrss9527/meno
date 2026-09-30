@@ -106,14 +106,14 @@ Menu bar items are read through each app's accessibility tree, which works on ev
 
 ## Footprint
 
-Left alone, Meno uses about a tenth of a percent of one CPU core and 11 MB of memory, as Activity Monitor counts it. CI measures this after every change: `scripts/measure-footprint.sh` starts the app, leaves it alone for a minute and adds the numbers to the run's summary.
+Left alone, Meno uses about a tenth of a percent of one CPU core and 10 to 15 MB of memory, as Activity Monitor counts it. CI measures this after every change: `scripts/measure-footprint.sh` starts the app, leaves it alone for a minute and adds the numbers to the run's summary.
 
-| Idle for a minute | macOS 26, Apple silicon |
-| --- | --- |
-| CPU | 0.10 % of one core |
-| Memory | 10.6 MB |
-| Wake-ups | 0.1 per second |
-| One look over the menu bar | 16–39 ms |
+| Idle for a minute, Apple silicon | macOS 26 | macOS 15 |
+| --- | --- | --- |
+| CPU | 0.13 % of one core | 0.12 % of one core |
+| Memory | 14.2 MB | 9.7 MB |
+| Wake-ups | 0.1 per second | 0.1 per second |
+| A look over the menu bar, usually | 37–49 ms | 34–53 ms |
 
 - Meno hears about most changes as they happen, such as apps starting and quitting, and looks over the whole menu bar only every 20 seconds (every minute in Low Power Mode) to catch what slipped through. It does not look while the displays sleep or another user's session is in front.
 - Nothing is captured from the screen in the background.
