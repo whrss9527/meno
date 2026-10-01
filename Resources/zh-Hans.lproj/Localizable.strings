@@ -310,6 +310,7 @@
 "Meno marker — ⌘-drag to move it" = "Meno 标记 — 按住 ⌘ 拖移以调整位置";
 "Meno needs Accessibility access to move items." = "Meno 需要辅助功能权限才能移动项目。";
 "Meno needs Accessibility access to open items." = "Meno 需要辅助功能权限才能打开项目。";
+"Meno put its divider back to the left of the Meno icon, so that hiding items does not hide the icon too." = "Meno 已把分隔符移回 Meno 图标左侧，这样隐藏项目时不会把图标本身也藏起来。";
 "Meno quits and opens again." = "Meno 会退出并重新打开。";
 "Meno quits and opens again. macOS then asks you to allow Meno in Accessibility again." = "Meno 会退出并重新打开，之后 macOS 会请你在“辅助功能”中重新允许 Meno。";
 "Meno reads and moves menu bar items through Accessibility." = "Meno 通过辅助功能读取和移动菜单栏项目。";
@@ -560,6 +561,8 @@
 "The download is signed differently than this copy of Meno." = "下载文件的签名与当前的 Meno 不一致。";
 "The download's code signature is not valid." = "下载文件的代码签名无效。";
 "The item is no longer in the menu bar." = "该项目已不在菜单栏中。";
+"The items left of the divider are hidden. To show them again, click the empty part of the menu bar where the divider was." = "分隔符左侧的项目已隐藏。要重新显示，请点菜单栏上分隔符原来所在的空白处。";
+"The items left of the divider are hidden. To show them again, click the Meno icon or the empty part of the menu bar where the divider was." = "分隔符左侧的项目已隐藏。要重新显示，请点 Meno 图标，或点菜单栏上分隔符原来所在的空白处。";
 "The layout could not be planned." = "无法规划布局。";
 "The Mac is offline" = "Mac 处于离线状态";
 "The Meno icon is hidden and no other way to show items is on. Turn one on below, or show the icon again." = "Meno 图标已隐藏，也没有开启其他显示项目的方式。请在下方开启一种，或重新显示图标。";

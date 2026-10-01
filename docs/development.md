@@ -37,7 +37,7 @@ scripts            App bundling, icon generation, localization check
 - `swift test` runs the MenoCore tests (they also run on Linux).
 - `scripts/check-localization.py` lists user-facing strings and checks the translations in `Resources/*.lproj`.
 - `scripts/generate-icon.py` renders `Resources/AppIcon.icns` (needs Pillow and numpy).
-- `scripts/measure-footprint.sh` measures what the built app costs while idle, and `scripts/check-hiding.sh` checks with a menu bar item of its own that hiding and showing work. CI runs both on macOS 15 and 26; they need a Mac where Meno has not been set up, and Accessibility for the app that runs them. With `MENO_DIAG=1` in its environment Meno prints its scans and its diagnostic report to standard error, and the report again on `SIGUSR1`.
+- `scripts/measure-footprint.sh` measures what the built app costs while idle, and `scripts/check-hiding.sh` checks with a menu bar item of its own that hiding and showing work, and that a Hidden divider right of the Meno icon is put back on its left. CI runs both on macOS 15 and 26; they need a Mac where Meno has not been set up, and Accessibility for the app that runs them. With `MENO_DIAG=1` in its environment Meno prints its scans and its diagnostic report to standard error, and the report again on `SIGUSR1`.
 
 ### Releases
 

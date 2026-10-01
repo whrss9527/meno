@@ -60,6 +60,12 @@ final class StatusBarController: NSObject {
     /// When Meno's items were first seen out of order, until they are in
     /// order again.
     private var outOfOrderSince: Date?
+    /// When Meno made its items; right after, macOS is still placing them.
+    private var installedAt = Date.distantFuture
+    private var repairNoticeShown = false
+    /// Whether clicking a divider has hidden items before, after which
+    /// Meno no longer says how to show them again.
+    private static let dividerHideHintKey = "DividerHideHintShown"
 
     init(model: AppModel) {
         self.model = model
@@ -84,13 +90,18 @@ final class StatusBarController: NSObject {
             NotificationCenter.default.addObserver(self, selector: #selector(itemWindowMoved(_:)), name: name, object: nil)
         }
         menuBarDisplay = screen.flatMap(ScreenGeometry.displayID(of:))
+        installedAt = Date()
     }
 
-    /// Rules can depend on the display whose menu bar has the items, which
-    /// changes as the person moves to another display.
+    /// Notices a divider dragged right of the Meno icon soon, before hiding
+    /// pushes the icon away with it, and the display whose menu bar has the
+    /// items, which rules can depend on.
     @objc private func itemWindowMoved(_ notification: Notification) {
         guard let window = notification.object as? NSWindow,
-              window === toggle?.button?.window || window === hiddenDivider?.button?.window else { return }
+              [toggle, hiddenDivider, stashDivider].contains(where: { $0?.button?.window === window }) else { return }
+        if !isInOrder {
+            model.inventory.scheduleRefresh(after: 1.5)
+        }
         let display = screen.flatMap(ScreenGeometry.displayID(of:))
         guard display != menuBarDisplay else { return }
         menuBarDisplay = display
@@ -229,6 +240,9 @@ final class StatusBarController: NSObject {
         guard let hiddenFrame = hiddenDividerFrame else { return }
         guard !isInOrder else {
             outOfOrderSince = nil
+            // Repairs are only counted while they do not work, so a divider
+            // dragged to the wrong side again later is still put back.
+            orderRepairs = 0
             return
         }
         // Only an order that lasts is repaired, not one of items that macOS
@@ -254,6 +268,16 @@ final class StatusBarController: NSObject {
             outOfOrderSince = nil
             apply(state)
             model.inventory.scheduleRefresh(after: 1.5)
+            // Most often someone dragged the divider there, so the jump is
+            // explained, unless Meno has only just started.
+            if !repairNoticeShown, now.timeIntervalSince(installedAt) > 10 {
+                repairNoticeShown = true
+                model.toasts.show(
+                    String(localized: "Meno put its divider back to the left of the Meno icon, so that hiding items does not hide the icon too."),
+                    symbol: "arrow.uturn.left",
+                    duration: 8
+                )
+            }
         } else if !orderHintShown {
             orderHintShown = true
             model.toasts.show(
@@ -275,6 +299,7 @@ final class StatusBarController: NSObject {
         guard orderRepairs < 2, let base = Self.preferredPosition(of: reference) else { return false }
         orderRepairs += 1
         Log.menuBar.info("Moving \(name, privacy: .public) back next to \(reference, privacy: .public)")
+        Diagnostics.event("repair \(name) left of \(reference)")
         if let old = self[keyPath: keyPath] {
             NSStatusBar.system.removeStatusItem(old)
         }
@@ -683,7 +708,20 @@ final class StatusBarController: NSObject {
             model.setZen(false)
             return
         }
+        let wasCollapsed = model.reveal.visibility == .collapsed
         model.reveal.emptyAreaClicked()
+        // The divider hides together with the items left of it, so the first
+        // time, Meno says how to show them again.
+        guard !wasCollapsed, model.reveal.visibility == .collapsed,
+              !UserDefaults.standard.bool(forKey: Self.dividerHideHintKey) else { return }
+        UserDefaults.standard.set(true, forKey: Self.dividerHideHintKey)
+        model.toasts.show(
+            model.settings.appearance.showsMenoIcon
+                ? String(localized: "The items left of the divider are hidden. To show them again, click the Meno icon or the empty part of the menu bar where the divider was.")
+                : String(localized: "The items left of the divider are hidden. To show them again, click the empty part of the menu bar where the divider was."),
+            symbol: "eye.slash",
+            duration: 10
+        )
     }
 
     /// Shows Meno's menu below the Meno icon, or at the pointer while the

@@ -4,7 +4,8 @@
 # version it builds on. With Meno running, a new menu bar item appears at
 # the left end, in the Stash, off the screen; showing all items brings it
 # on the screen and hiding them takes it off again. Meno also has to list
-# it in the Stash.
+# it in the Stash. Last, Meno starts with its Hidden divider right of the
+# Meno icon and has to put it back on the icon's left.
 #
 # Usage: scripts/check-hiding.sh [path/to/Meno.app]
 set -euo pipefail
@@ -145,7 +146,45 @@ echo "==> Asking Meno what it sees"
 report="$(meno_report)" || fail "Meno did not report"
 printf '%s\n' "$report" | grep -E '^  stash +x=.*E2E' >/dev/null || fail "Meno does not list the new item in the Stash"
 
-echo "Hiding works on macOS $(sw_vers -productVersion)."
 echo "::group::Meno's report"
 printf '%s\n' "$report"
 echo "::endgroup::"
+
+# Whether a report has the Hidden divider left of the Meno icon. Its line
+# reads "Meno icon x=… w=… · hidden divider x=… w=… · …".
+divider_in_order() {
+  printf '%s\n' "$1" | awk '/^Meno icon x=/ {
+    n = 0
+    for (i = 1; i <= NF; i++) if ($i ~ /^[xw]=/) { split($i, kv, "="); value[++n] = kv[2] }
+    found = 1
+    ok = (n >= 4 && value[3] + value[4] <= value[1] + 1)
+  } END { exit !(found && ok) }'
+}
+
+echo "==> Starting with the Hidden divider right of the Meno icon"
+kill "$meno" 2>/dev/null || true
+wait "$meno" 2>/dev/null || true
+# Positions count from the right end of the menu bar.
+defaults write io.github.whrss9527.meno "NSStatusItem Preferred Position meno.toggle" -float 400
+defaults write io.github.whrss9527.meno "NSStatusItem Preferred Position meno.divider.hidden" -float 300
+defaults write io.github.whrss9527.meno "NSStatusItem Preferred Position meno.divider.stash" -float 500
+: > "$LOG"
+MENO_DIAG=1 "$BINARY" > "$LOG" 2>&1 &
+meno=$!
+wait_for 60 log_has '^MENO_DIAG ready' || fail "Meno did not get ready again"
+in_order=0
+for _ in $(seq 1 20); do
+  if report="$(meno_report)" && divider_in_order "$report"; then
+    in_order=1
+    break
+  fi
+  sleep 1
+done
+[[ "$in_order" == 1 ]] || fail "The Hidden divider did not end up left of the Meno icon"
+if log_has '^MENO_DIAG repair meno.divider.hidden'; then
+  echo "Meno put the Hidden divider back left of the Meno icon."
+else
+  echo "macOS kept the Hidden divider left of the Meno icon, so there was nothing to put back."
+fi
+
+echo "Hiding works on macOS $(sw_vers -productVersion)."
