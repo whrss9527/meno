@@ -39,6 +39,14 @@
 
 需要 macOS 14 Sonoma 或更高版本，Apple 芯片和 Intel 都支持。
 
+用 [Homebrew](https://brew.sh) 安装：
+
+```sh
+brew install --cask whrss9527/tap/meno
+```
+
+或者手动安装：
+
 1. 从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.zip`，解压后把 Meno.app 移到“应用程序”。
 2. 打开后，在“系统设置 › 隐私与安全性 › 辅助功能”里允许 Meno。
 3. 有新版本时选“安装并重新打开”，Meno 会自己更新。
