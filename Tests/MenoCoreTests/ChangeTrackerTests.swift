@@ -3,7 +3,7 @@ import XCTest
 
 final class ChangeTrackerTests: XCTestCase {
     private let sync = MenuItemKey(owner: "com.example.sync", token: "solo")
-    private let vpn = MenuItemKey(owner: "com.example.vpn", token: "solo")
+    private let weather = MenuItemKey(owner: "com.example.weather", token: "solo")
     private let start = Date(timeIntervalSince1970: 1_000)
 
     private func at(_ seconds: TimeInterval) -> Date { start.addingTimeInterval(seconds) }
@@ -104,10 +104,10 @@ final class ChangeTrackerTests: XCTestCase {
 
     func testItemsAreTrackedSeparatelyAndForgotten() {
         var tracker = ChangeTracker(confirmations: 1)
-        _ = tracker.update([sync: .init(text: "a"), vpn: .init(text: "on")], at: at(0))
-        XCTAssertEqual(tracker.update([sync: .init(text: "b"), vpn: .init(text: "off")], at: at(3)), [sync, vpn])
+        _ = tracker.update([sync: .init(text: "a"), weather: .init(text: "on")], at: at(0))
+        XCTAssertEqual(tracker.update([sync: .init(text: "b"), weather: .init(text: "off")], at: at(3)), [sync, weather])
         // Unwatched, then watched again: the first check is a new baseline.
         _ = tracker.update([sync: .init(text: "b")], at: at(6))
-        XCTAssertEqual(tracker.update([sync: .init(text: "b"), vpn: .init(text: "on")], at: at(9)), [])
+        XCTAssertEqual(tracker.update([sync: .init(text: "b"), weather: .init(text: "on")], at: at(9)), [])
     }
 }

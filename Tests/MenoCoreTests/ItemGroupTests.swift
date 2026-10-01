@@ -3,19 +3,19 @@ import XCTest
 
 final class ItemGroupTests: XCTestCase {
     private let sync = MenuItemKey(owner: "com.example.sync", token: "solo")
-    private let vpn = MenuItemKey(owner: "com.example.vpn", token: "solo")
+    private let weather = MenuItemKey(owner: "com.example.weather", token: "solo")
 
     func testAnItemBelongsToOneGroup() {
         let tools = ItemGroup(name: "Tools")
         let network = ItemGroup(name: "Network", symbol: "network")
         var groups = [tools, network]
         groups.add(sync, to: tools.id)
-        groups.add(vpn, to: tools.id)
-        XCTAssertEqual(groups.group(containing: vpn)?.id, tools.id)
+        groups.add(weather, to: tools.id)
+        XCTAssertEqual(groups.group(containing: weather)?.id, tools.id)
 
-        groups.add(vpn, to: network.id)
+        groups.add(weather, to: network.id)
         XCTAssertEqual(groups[0].items, [sync])
-        XCTAssertEqual(groups[1].items, [vpn])
+        XCTAssertEqual(groups[1].items, [weather])
 
         groups.remove(sync)
         XCTAssertNil(groups.group(containing: sync))
@@ -45,7 +45,7 @@ final class ItemGroupTests: XCTestCase {
 
     func testGroupsSurviveSaving() throws {
         var settings = MenoSettings()
-        settings.groups = [ItemGroup(name: "Tools", symbol: "hammer", items: [sync, vpn], hotkey: KeyCombo(keyCode: 17, modifiers: [.control, .option]))]
+        settings.groups = [ItemGroup(name: "Tools", symbol: "hammer", items: [sync, weather], hotkey: KeyCombo(keyCode: 17, modifiers: [.control, .option]))]
         let decoded = try MenoSettings.decode(from: settings.encoded())
         XCTAssertEqual(decoded.groups, settings.groups)
         XCTAssertEqual(try MenoSettings.decode(from: Data("{}".utf8)).groups, [])

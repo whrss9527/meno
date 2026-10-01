@@ -104,11 +104,11 @@ final class RuleTests: XCTestCase {
         var settings = MenoSettings()
         settings.rules = [
             AutomationRule(name: "Battery", conditions: [.onBattery], action: .zen),
-            AutomationRule(name: "VPN", conditions: [.commandSucceeds(command: "vpn-up")], action: .revealAll),
+            AutomationRule(name: "Docker", conditions: [.commandSucceeds(command: "docker-up")], action: .revealAll),
         ]
         XCTAssertEqual(settings.effectiveRules, settings.rules)
         var evaluator = RuleEvaluator()
-        let context = RuleContext(isOnBattery: true, succeededCommands: ["vpn-up"])
+        let context = RuleContext(isOnBattery: true, succeededCommands: ["docker-up"])
         XCTAssertEqual(evaluator.update(rules: settings.effectiveRules, context: context).count, 2)
 
         settings.rulesPaused = true
@@ -137,22 +137,22 @@ final class RuleTests: XCTestCase {
     }
 
     func testCommandCondition() {
-        let vpn = RuleCondition.commandSucceeds(command: "scutil --nc list | grep -q Connected")
-        XCTAssertFalse(vpn.isSatisfied(by: RuleContext()))
-        XCTAssertTrue(vpn.isSatisfied(by: RuleContext(succeededCommands: ["scutil --nc list | grep -q Connected"])))
-        XCTAssertEqual(vpn.command, "scutil --nc list | grep -q Connected")
+        let docker = RuleCondition.commandSucceeds(command: "pgrep -x Docker")
+        XCTAssertFalse(docker.isSatisfied(by: RuleContext()))
+        XCTAssertTrue(docker.isSatisfied(by: RuleContext(succeededCommands: ["pgrep -x Docker"])))
+        XCTAssertEqual(docker.command, "pgrep -x Docker")
         XCTAssertNil(RuleCondition.commandSucceeds(command: "  ").command)
         XCTAssertNil(RuleCondition.onBattery.command)
     }
 
     func testCommandsOfEnabledRules() {
         let rules = [
-            AutomationRule(name: "VPN", conditions: [.commandSucceeds(command: "vpn-up")], action: .revealAll),
+            AutomationRule(name: "Docker", conditions: [.commandSucceeds(command: "docker-up")], action: .revealAll),
             AutomationRule(name: "Off", isEnabled: false, conditions: [.commandSucceeds(command: "off")], action: .zen),
-            AutomationRule(name: "Both", conditions: [.onBattery, .commandSucceeds(command: "vpn-up"), .commandSucceeds(command: " ")], action: .collapse),
+            AutomationRule(name: "Both", conditions: [.onBattery, .commandSucceeds(command: "docker-up"), .commandSucceeds(command: " ")], action: .collapse),
             AutomationRule(name: "Plain", conditions: [.onBattery], action: .collapse),
         ]
-        XCTAssertEqual(rules.commands, ["vpn-up"])
+        XCTAssertEqual(rules.commands, ["docker-up"])
         XCTAssertTrue(rules[0].runsCommands)
         XCTAssertFalse(rules[3].runsCommands)
 
@@ -171,7 +171,7 @@ final class RuleTests: XCTestCase {
             AutomationRule(name: "Office", conditions: [.displayConnected(name: "LG UltraFine")], action: .revealAll),
             AutomationRule(name: "Desk", conditions: [.menuBarOnExternalDisplay], action: .revealHidden),
             AutomationRule(name: "Laptop", conditions: [.menuBarOnDisplay(name: "Built-in Retina Display")], action: .zen),
-            AutomationRule(name: "VPN", conditions: [.commandSucceeds(command: "test -e ~/.vpn")], action: .revealAll),
+            AutomationRule(name: "Docker", conditions: [.commandSucceeds(command: "test -e ~/.docker")], action: .revealAll),
         ]
         let decoded = try MenoSettings.decode(from: settings.encoded())
         XCTAssertEqual(decoded.rules, settings.rules)
