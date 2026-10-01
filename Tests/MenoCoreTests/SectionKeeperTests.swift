@@ -3,7 +3,7 @@ import XCTest
 
 final class SectionKeeperTests: XCTestCase {
     private let dropbox = MenuItemKey(owner: "com.getdropbox.dropbox", token: "solo")
-    private let vpn = MenuItemKey(owner: "com.example.vpn", token: "solo")
+    private let backup = MenuItemKey(owner: "com.example.backup", token: "solo")
     private let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
 
     private func seen(_ key: MenuItemKey, _ section: ItemSection?, process: Int32 = 100) -> SectionKeeper.Observation {
@@ -12,10 +12,10 @@ final class SectionKeeperTests: XCTestCase {
 
     func testRemembersWhereItemsAreAtFirst() {
         var keeper = SectionKeeper()
-        let misplaced = keeper.observe([seen(dropbox, .hidden), seen(vpn, .visible)], at: now, includesStash: true)
+        let misplaced = keeper.observe([seen(dropbox, .hidden), seen(backup, .visible)], at: now, includesStash: true)
         XCTAssertEqual(misplaced, [])
         XCTAssertEqual(keeper.memory[dropbox.rawValue]?.section, .hidden)
-        XCTAssertEqual(keeper.memory[vpn.rawValue]?.section, .visible)
+        XCTAssertEqual(keeper.memory[backup.rawValue]?.section, .visible)
         XCTAssertTrue(keeper.hasUnsavedChanges)
     }
 
@@ -29,10 +29,10 @@ final class SectionKeeperTests: XCTestCase {
 
     func testAnItemThatComesBackElsewhereBelongsWhereItWasLeft() {
         var keeper = SectionKeeper()
-        _ = keeper.observe([seen(dropbox, .hidden), seen(vpn, .visible)], at: now, includesStash: true)
+        _ = keeper.observe([seen(dropbox, .hidden), seen(backup, .visible)], at: now, includesStash: true)
         // Dropbox quits, then comes back at the left end, in the Stash.
-        _ = keeper.observe([seen(vpn, .visible)], at: now, includesStash: true)
-        let misplaced = keeper.observe([seen(dropbox, .stash, process: 200), seen(vpn, .visible)], at: now, includesStash: true)
+        _ = keeper.observe([seen(backup, .visible)], at: now, includesStash: true)
+        let misplaced = keeper.observe([seen(dropbox, .stash, process: 200), seen(backup, .visible)], at: now, includesStash: true)
         XCTAssertEqual(misplaced, [SectionKeeper.Misplacement(key: dropbox, found: .stash, belongs: .hidden)])
         XCTAssertEqual(keeper.memory[dropbox.rawValue]?.section, .hidden)
 
@@ -61,7 +61,7 @@ final class SectionKeeperTests: XCTestCase {
         let timer = MenuItemKey(owner: "com.example.tools", token: "id:timer")
         let clock = MenuItemKey(owner: "com.example.tools", token: "id:clock")
         var keeper = SectionKeeper(memory: [timer.rawValue: .init(section: .visible, seen: now)])
-        _ = keeper.observe([seen(clock, .hidden, process: 42), seen(vpn, .visible)], at: now, includesStash: true)
+        _ = keeper.observe([seen(clock, .hidden, process: 42), seen(backup, .visible)], at: now, includesStash: true)
         let later = now.addingTimeInterval(SectionKeeper.appearanceWindow + 60)
         XCTAssertEqual(keeper.observe([seen(clock, .hidden, process: 42), seen(timer, .hidden, process: 42)], at: later, includesStash: true), [])
         XCTAssertEqual(keeper.memory[timer.rawValue]?.section, .hidden)
@@ -125,10 +125,10 @@ final class SectionKeeperTests: XCTestCase {
         // With the stepped engine, hidden items have no known place until
         // they are shown, which may be long after their app started.
         var keeper = SectionKeeper(memory: [dropbox.rawValue: .init(section: .hidden, seen: now)])
-        _ = keeper.observe([seen(vpn, .visible, process: 1)], at: now, includesStash: true)
-        _ = keeper.observe([seen(vpn, .visible, process: 1), seen(dropbox, nil, process: 9)], at: now, includesStash: true)
+        _ = keeper.observe([seen(backup, .visible, process: 1)], at: now, includesStash: true)
+        _ = keeper.observe([seen(backup, .visible, process: 1), seen(dropbox, nil, process: 9)], at: now, includesStash: true)
         let later = now.addingTimeInterval(SectionKeeper.appearanceWindow * 10)
-        let misplaced = keeper.observe([seen(vpn, .visible, process: 1), seen(dropbox, .stash, process: 9)], at: later, includesStash: true)
+        let misplaced = keeper.observe([seen(backup, .visible, process: 1), seen(dropbox, .stash, process: 9)], at: later, includesStash: true)
         XCTAssertEqual(misplaced, [SectionKeeper.Misplacement(key: dropbox, found: .stash, belongs: .hidden)])
     }
 
@@ -162,11 +162,11 @@ final class SectionKeeperTests: XCTestCase {
         let old = now.addingTimeInterval(-200 * 86_400)
         var keeper = SectionKeeper(memory: [
             dropbox.rawValue: .init(section: .hidden, seen: old),
-            vpn.rawValue: .init(section: .visible, seen: now),
+            backup.rawValue: .init(section: .visible, seen: now),
         ])
         keeper.forget(notSeenSince: now.addingTimeInterval(-180 * 86_400))
         XCTAssertNil(keeper.memory[dropbox.rawValue])
-        XCTAssertNotNil(keeper.memory[vpn.rawValue])
+        XCTAssertNotNil(keeper.memory[backup.rawValue])
         XCTAssertTrue(keeper.hasUnsavedChanges)
     }
 

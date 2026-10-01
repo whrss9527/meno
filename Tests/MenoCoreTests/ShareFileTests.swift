@@ -3,14 +3,14 @@ import XCTest
 
 final class ShareFileTests: XCTestCase {
     private let slack = MenuItemKey(owner: "com.tinyspeck.slackmacgap", token: "solo")
-    private let vpn = MenuItemKey(owner: "com.example.vpn", token: "solo")
+    private let backup = MenuItemKey(owner: "com.example.backup", token: "solo")
     private let shortcut = KeyCombo(keyCode: 17, modifiers: [.command, .option])
 
     private func scene(_ name: String) -> LayoutScene {
         LayoutScene(
             name: name,
             symbol: "briefcase",
-            layout: SceneLayout(visible: [slack], hidden: [vpn]),
+            layout: SceneLayout(visible: [slack], hidden: [backup]),
             createdAt: Date(timeIntervalSince1970: 1_000),
             updatedAt: Date(timeIntervalSince1970: 2_000),
             hotkey: shortcut
@@ -90,14 +90,14 @@ final class ShareFileTests: XCTestCase {
     }
 
     func testImportTurnsOffRulesThatRunCommands() {
-        let vpnRule = AutomationRule(name: "VPN", conditions: [.commandSucceeds(command: "pgrep openvpn")], action: .revealAll)
+        let dockerRule = AutomationRule(name: "Docker", conditions: [.commandSucceeds(command: "pgrep -x Docker")], action: .revealAll)
         let unnamed = AutomationRule(name: "", conditions: [.offline], action: .revealHidden)
-        let file = ShareFile(createdBy: "0.11.0", scenes: [], rules: [vpnRule, unnamed])
+        let file = ShareFile(createdBy: "0.11.0", scenes: [], rules: [dockerRule, unnamed])
 
-        let result = file.importing(scenes: [], rules: [vpnRule.id, unnamed.id], existingScenes: [], existingRules: [unnamed])
+        let result = file.importing(scenes: [], rules: [dockerRule.id, unnamed.id], existingScenes: [], existingRules: [unnamed])
         XCTAssertTrue(result.disabledCommands)
         XCTAssertEqual(result.rules.map(\.isEnabled), [false, true])
-        XCTAssertEqual(result.rules.map(\.name), ["VPN", ""])
+        XCTAssertEqual(result.rules.map(\.name), ["Docker", ""])
         XCTAssertTrue(result.scenes.isEmpty)
     }
 

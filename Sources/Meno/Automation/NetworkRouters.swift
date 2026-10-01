@@ -17,8 +17,8 @@ enum NetworkRouters {
 
     /// The networks of the Wi-Fi and Ethernet interfaces, the one the Mac
     /// uses to go online first. Each interface is asked for its own default
-    /// route, so that a VPN, which takes over the Mac's default route, does
-    /// not hide them.
+    /// route, so that another interface (a virtual one, say) taking over the
+    /// Mac's default route does not hide them.
     static func current() async -> [Network] {
         await withCheckedContinuation { continuation in
             queue.async {
