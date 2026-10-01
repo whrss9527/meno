@@ -39,6 +39,14 @@ And **Meno** is just one letter away from **Menu** — a little less, just right
 
 Meno runs on macOS 14 Sonoma or later, on Apple silicon and Intel.
 
+With [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask whrss9527/tap/meno
+```
+
+Or by hand:
+
 1. Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/releases/latest), unzip it and move Meno.app to *Applications*.
 2. Open it and allow Meno in *System Settings › Privacy & Security › Accessibility*.
 3. When a new version is out, choose *Install and Relaunch* and Meno updates itself.
