@@ -3,14 +3,14 @@ import XCTest
 
 final class ShareFileTests: XCTestCase {
     private let slack = MenuItemKey(owner: "com.tinyspeck.slackmacgap", token: "solo")
-    private let backup = MenuItemKey(owner: "com.example.backup", token: "solo")
+    private let weather = MenuItemKey(owner: "com.example.weather", token: "solo")
     private let shortcut = KeyCombo(keyCode: 17, modifiers: [.command, .option])
 
     private func scene(_ name: String) -> LayoutScene {
         LayoutScene(
             name: name,
             symbol: "briefcase",
-            layout: SceneLayout(visible: [slack], hidden: [backup]),
+            layout: SceneLayout(visible: [slack], hidden: [weather]),
             createdAt: Date(timeIntervalSince1970: 1_000),
             updatedAt: Date(timeIntervalSince1970: 2_000),
             hotkey: shortcut
