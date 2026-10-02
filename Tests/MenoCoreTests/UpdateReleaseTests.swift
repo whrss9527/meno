@@ -10,6 +10,9 @@ final class UpdateReleaseTests: XCTestCase {
           "tag_name": "v0.7.0",
           "html_url": "https://github.com/whrss9527/meno/releases/tag/v0.7.0",
           "draft": false,
+          "prerelease": false,
+          "published_at": "2026-10-01T09:05:20Z",
+          "body": "Meno 0.7.0 installs updates itself.",
           "assets": [
             {
               "name": "Meno.zip",
@@ -22,6 +25,10 @@ final class UpdateReleaseTests: XCTestCase {
         """
         let release = try JSONDecoder().decode(UpdateRelease.self, from: Data(json.utf8))
         XCTAssertEqual(release.version, AppVersion("0.7.0"))
+        XCTAssertEqual(release.body, "Meno 0.7.0 installs updates itself.")
+        XCTAssertEqual(release.publishedAt, Date(timeIntervalSince1970: 1_790_845_520))
+        XCTAssertFalse(release.isDraft)
+        XCTAssertFalse(release.isPrerelease)
         let archive = try XCTUnwrap(release.appArchive(repository: repository))
         XCTAssertEqual(archive.size, 4_178_208)
         XCTAssertEqual(archive.sha256, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08")
@@ -34,6 +41,8 @@ final class UpdateReleaseTests: XCTestCase {
         let release = try JSONDecoder().decode(UpdateRelease.self, from: Data(json.utf8))
         XCTAssertEqual(release.assets, [])
         XCTAssertNil(release.appArchive(repository: repository))
+        XCTAssertNil(release.body)
+        XCTAssertNil(release.publishedAt)
 
         let asset = UpdateRelease.Asset(name: "Meno.zip", downloadURL: URL(string: "https://github.com/x")!)
         XCTAssertNil(asset.sha256)

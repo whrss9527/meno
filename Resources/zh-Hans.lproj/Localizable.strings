@@ -52,6 +52,7 @@
 "Advanced" = "高级";
 "After" = "延迟";
 "After an update, System Settings can still list an earlier build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "更新之后，系统设置里可能还留着旧版本 Meno 的记录，它对新版本不生效。先清除这条记录，再在系统提示时打开 Meno 的开关。";
+"All Releases" = "所有版本";
 "Already switched on?" = "开关已经打开了？";
 "Also at %@. Keep one: each copy needs its own permissions, and a login item may open the other one." = "另一份在 %@。建议只保留一份：每一份都需要单独授权，登录项也可能打开另一份。";
 "Also hide the items in the Visible section" = "同时隐藏“常显”分区中的项目";
@@ -162,6 +163,7 @@
 "Drop items here" = "拖到这里";
 "Duplicate…" = "创建副本…";
 "Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items by dragging them onto a group, or with Group in their menu. Hold ⌘ and drag a group's icon to move it." = "每个分组在菜单栏里都有自己的图标，点按即可在托盘中显示组内的项目。把项目拖到分组上，或在项目菜单的“分组”里加入；按住 ⌘ 拖移分组图标可以调整它的位置。";
+"Earlier versions are not listed here." = "更早的版本没有列在这里。";
 "Edit Groups…" = "编辑分组…";
 "Edit Rule" = "编辑规则";
 "Edit…" = "编辑…";
@@ -583,6 +585,7 @@
 "This copy of Meno does not run from an app bundle." = "当前的 Meno 不是以 App 包的形式运行的。";
 "This Mac" = "这台 Mac";
 "This shortcut is used more than once in Meno. Only one of its uses works." = "这个快捷键在 Meno 中被多次使用，只有其中一处会生效。";
+"This update includes changes from %lld versions." = "这次更新包含 %lld 个版本的改动。";
 "This version does not run on this Mac's processor." = "这个版本不能在这台 Mac 的处理器上运行。";
 "This version needs macOS %@ or later." = "这个版本需要 macOS %@ 或更高版本。";
 "This week" = "本周";

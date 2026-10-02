@@ -8,7 +8,7 @@ Meno runs on macOS 14 Sonoma or later. Liquid Glass needs macOS 26 and a build m
 
 Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/releases/latest), unzip it and move Meno.app to *Applications*. The app is universal (Apple silicon and Intel). From 0.10.0 on it is signed with a Developer ID and notarized by Apple, so it opens with a double-click. Versions before 0.10.0 are signed ad hoc: right-click Meno.app and choose *Open*, or run `xattr -dr com.apple.quarantine /Applications/Meno.app`.
 
-Meno installs updates itself: when a check finds a newer release, choose *Install and Relaunch* in the notice, in *Settings › About* or in Meno's menu. Meno downloads the release from GitHub, checks its checksum, version and code signature, replaces itself and opens again. When Meno runs from a folder it cannot write to, it offers the download instead.
+Meno installs updates itself: when a check finds a newer release, choose *Install and Relaunch* in the notice, in *Settings › About* or in Meno's menu. *Settings › About* also lists what changed in every version since yours, newest first. Meno downloads the release from GitHub, checks its checksum, version and code signature, replaces itself and opens again. When Meno runs from a folder it cannot write to, it offers the download instead.
 
 After an update, macOS may keep an entry for the previous build in the Accessibility list that no longer counts. Meno then opens *Settings › Permissions*, replaces the entry and macOS asks again; *Reset and Grant Again* does the same by hand. Releases from 0.10.0 on are signed with the same Developer ID certificate, so later updates keep the permission; only the update from an ad hoc version asks once more.
 
@@ -99,7 +99,7 @@ Rules about a microphone or camera in use only ask macOS whether a device is run
 
 A rule condition that runs a command runs exactly the command you typed, every 10 seconds with zsh, and only while the rule is on. While a rule depends on a network, Meno runs `route` and `arp` when the network changes and every 30 seconds, which read the router of each connection from what macOS already knows and send nothing. Rules with commands are turned off when you import settings, so a settings file cannot run anything before you have looked at it.
 
-Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*; and to download a release you chose to install. Settings and statistics live in `~/Library/Application Support/Meno`.
+Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release and the notes of the versions since yours: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*; and to download a release you chose to install. Settings and statistics live in `~/Library/Application Support/Meno`.
 
 ## Troubleshooting
 

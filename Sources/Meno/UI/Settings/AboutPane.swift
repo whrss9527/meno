@@ -147,6 +147,9 @@ private struct UpdateCard: View {
                         }
                     }
                 }
+                if let notes = updates.notes {
+                    UpdateNotesList(notes: notes)
+                }
             }
         }
     }
@@ -162,6 +165,74 @@ private struct UpdateCard: View {
             return Text("Meno quits and opens again. macOS then asks you to allow Meno in Accessibility again.")
         }
         return Text("Meno quits and opens again.")
+    }
+}
+
+/// What changed in every version after this copy's, newest first.
+private struct UpdateNotesList: View {
+    let notes: UpdateNotes
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Divider()
+            if notes.versions.count > 1 {
+                Text("This update includes changes from \(notes.versions.count) versions.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(notes.versions, id: \.version.description) { entry in
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(verbatim: entry.version.description)
+                            .font(.system(size: 13, weight: .semibold))
+                        if let date = entry.date {
+                            Text(verbatim: date.formatted(date: .abbreviated, time: .omitted))
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    ForEach(Array(entry.blocks.enumerated()), id: \.offset) { _, block in
+                        blockView(block)
+                    }
+                }
+            }
+            if !notes.isComplete {
+                HStack(spacing: 6) {
+                    Text("Earlier versions are not listed here.")
+                        .foregroundStyle(.secondary)
+                    Link("All Releases", destination: AppInfo.repositoryURL.appendingPathComponent("releases"))
+                }
+                .font(.system(size: 11))
+            }
+        }
+        .textSelection(.enabled)
+    }
+
+    @ViewBuilder
+    private func blockView(_ block: UpdateNotes.Block) -> some View {
+        switch block {
+        case .heading(let text):
+            Text(Self.markdown(text))
+                .font(.system(size: 12, weight: .semibold))
+                .padding(.top, 2)
+        case .item(let text):
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(verbatim: "•")
+                Text(Self.markdown(text))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .font(.system(size: 12))
+        case .paragraph(let text):
+            Text(Self.markdown(text))
+                .font(.system(size: 12))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// Bold, italics, code and links in a line of the notes.
+    private static func markdown(_ text: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        return (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
     }
 }
 
