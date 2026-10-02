@@ -7,6 +7,10 @@ Before you open a pull request:
 - Run `swift test`.
 - Run `python3 scripts/check-localization.py`, and add a Simplified and a Traditional Chinese translation for every new user-facing string to `Resources/zh-Hans.lproj/Localizable.strings` and `Resources/zh-Hant.lproj/Localizable.strings`. The Traditional Chinese strings follow the wording of macOS in Taiwan (選單列, 輔助使用, 快速鍵, 按一下).
 
+## Release notes
+
+The notes of each version are in `.github/releases/v<version>.md`: in English, then the same in Simplified Chinese after a `---` line. When a check finds a newer version, the update card in *Settings › About* lists the notes of every version since the one installed, so someone a dozen versions behind reads them all there. Keep them short: one or two sentences per item about what people notice, without implementation details or lists of examples. Meno leaves out the *Install or update* and *Known limitations* sections (安装与更新, 已知限制) by their headings, so keep those headings as they are.
+
 ## Contributor license agreement
 
 By submitting a contribution to this repository (code, documentation, artwork or anything else, for example by opening a pull request), you agree that:
