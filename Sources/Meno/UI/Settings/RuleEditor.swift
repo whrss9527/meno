@@ -10,6 +10,13 @@ struct RuleEditor: View {
     @State private var action: RuleAction
     @State private var reverts: Bool
     @State private var requiresAll: Bool
+    @State private var minimumDuration: TimeInterval
+    /// Whether the minimum duration follows the conditions, as suggested for
+    /// them, until it is picked by hand.
+    @State private var waitFollowsConditions: Bool
+
+    /// The minimum durations to pick from, in seconds.
+    private static let waits: [TimeInterval] = [0, 3, 10, 30, 60, 300]
 
     private let ruleID: UUID
     private let isEnabled: Bool
@@ -38,6 +45,8 @@ struct RuleEditor: View {
         _action = State(initialValue: draft.action)
         _reverts = State(initialValue: draft.revertsWhenInactive)
         _requiresAll = State(initialValue: draft.requiresAll)
+        _minimumDuration = State(initialValue: draft.minimumDuration)
+        _waitFollowsConditions = State(initialValue: draft.minimumDuration == AutomationRule.suggestedMinimumDuration(for: draft.conditions))
         ruleID = draft.id
         isEnabled = draft.isEnabled
         self.isNew = isNew
@@ -112,6 +121,29 @@ struct RuleEditor: View {
                         .foregroundStyle(met ? Color.green : Color.secondary)
                     }
                 }
+                Picker(selection: Binding(get: { minimumDuration }, set: {
+                    minimumDuration = $0
+                    waitFollowsConditions = false
+                })) {
+                    ForEach(waitChoices, id: \.self) { seconds in
+                        Text(verbatim: seconds == 0 ? String(localized: "Off") : Formatters.duration(seconds)).tag(seconds)
+                    }
+                } label: {
+                    Text("Ignore changes shorter than")
+                }
+                .pickerStyle(.menu)
+                .fixedSize()
+                if minimumDuration > 0 {
+                    Text("The rule acts once its conditions have held this long, and ends once they have stopped as long, so that a quick switch between apps or a short pause does not move items back and forth.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .onChange(of: conditions.map(\.condition)) { _, conditions in
+                if waitFollowsConditions {
+                    minimumDuration = AutomationRule.suggestedMinimumDuration(for: conditions)
+                }
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -165,12 +197,19 @@ struct RuleEditor: View {
             conditions: conditions.map(\.condition),
             action: action,
             revertsWhenInactive: reverts,
-            requiresAll: requiresAll
+            requiresAll: requiresAll,
+            minimumDuration: minimumDuration
         )
         if trimmed.isEmpty {
             rule.name = RuleDescriber.describe(action, scenes: scenes, items: items).capitalizedFirstLetter
         }
         return rule
+    }
+
+    /// The minimum durations to pick from, with the rule's own if it is
+    /// another one, such as from a file of someone else's.
+    private var waitChoices: [TimeInterval] {
+        Self.waits.contains(minimumDuration) ? Self.waits : (Self.waits + [minimumDuration]).sorted()
     }
 
     /// Whether the conditions hold now, when Meno knows.
