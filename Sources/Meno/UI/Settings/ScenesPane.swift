@@ -1,3 +1,4 @@
+import AppKit
 import MenoCore
 import SwiftUI
 
@@ -83,6 +84,37 @@ struct ScenesPane: View {
                 }
             }
 
+            if !model.settings.scenes.isEmpty {
+                SettingsCard(
+                    "Scenes for displays",
+                    symbol: "display.2",
+                    footnote: "macOS shows the same items in the same order on the menu bar of every display, so Meno arranges them for the display you use: whenever its menu bar has the items, its scene applies. Each choice is a rule, which Rules lists as well."
+                ) {
+                    ForEach(displayNames, id: \.self) { display in
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(verbatim: display)
+                                    .font(.system(size: 13))
+                                if !connectedDisplays.contains(display) {
+                                    Text("Not connected")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                            Picker("Scene", selection: displayScene(display)) {
+                                Text("No Scene").tag(UUID?.none)
+                                ForEach(model.settings.scenes) { scene in
+                                    Text(verbatim: scene.name).tag(UUID?.some(scene.id))
+                                }
+                            }
+                            .labelsHidden()
+                            .fixedSize()
+                        }
+                    }
+                }
+            }
+
             SettingsCard(
                 "Share scenes and rules",
                 symbol: "square.and.arrow.up.on.square",
@@ -115,6 +147,36 @@ struct ScenesPane: View {
                 renaming = nil
             }
             Button("Cancel", role: .cancel) { renaming = nil }
+        }
+    }
+
+    /// The connected displays, by the names rules know them by.
+    private var connectedDisplays: [String] {
+        var names: [String] = []
+        for screen in NSScreen.screens where !names.contains(screen.localizedName) {
+            names.append(screen.localizedName)
+        }
+        return names
+    }
+
+    /// The connected displays, then those that are not connected but have a
+    /// scene.
+    private var displayNames: [String] {
+        var names = connectedDisplays
+        for name in model.settings.rules.displaysWithScenes where !names.contains(name) {
+            names.append(name)
+        }
+        return names
+    }
+
+    /// The scene of a display; one that was deleted counts as none.
+    private func displayScene(_ display: String) -> Binding<UUID?> {
+        Binding {
+            model.settings.rules.displayScene(for: display).flatMap { id in
+                model.settings.scenes.contains { $0.id == id } ? id : nil
+            }
+        } set: { scene in
+            model.setDisplayScene(scene, for: display)
         }
     }
 

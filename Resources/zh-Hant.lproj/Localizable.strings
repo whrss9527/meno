@@ -290,6 +290,7 @@
 "macOS has no symbol with this name." = "macOS 中沒有這個名稱的符號。";
 "macOS keeps this item in place" = "macOS 固定了這個項目的位置";
 "macOS runs Meno from a temporary copy. Move Meno to the Applications folder, open it from there and try again." = "macOS 正從暫存副本執行 Meno。請把 Meno 移到「應用程式」資料夾，從那裡打開後再試一次。";
+"macOS shows the same items in the same order on the menu bar of every display, so Meno arranges them for the display you use: whenever its menu bar has the items, its scene applies. Each choice is a rule, which Rules lists as well." = "macOS 在每個顯示器的選單列上顯示同樣的項目、同樣的順序，所以 Meno 依你正在使用的顯示器來排列：哪個顯示器的選單列上有這些項目，就套用它的場景。每個選擇都是一條規則，在「規則」裡也看得到。";
 "Made with Meno %@" = "由 Meno %@ 製作";
 "Makes room by hiding the menus of the frontmost app while items are shown." = "顯示項目時暫時隱藏最前方 App 的選單，騰出空間。";
 "Manage Scenes…" = "管理場景…";
@@ -637,6 +638,10 @@
 "When the pointer leaves the menu bar" = "指標離開選單列時";
 "When you switch to another app or click elsewhere" = "切換到其他 App 或按一下別處時";
 "Meno moves items without the pointer where it can. On macOS 27, or when that does not work, it briefly takes over the pointer and puts it back when it is done." = "Meno 會盡量不佔用指標來移動項目；在 macOS 27 上，或者這樣做不成功時，才會短暫接管指標，完成後放回原處。";
+"No Scene" = "不使用場景";
+"Not connected" = "未連接";
+"Scene" = "場景";
+"Scenes for displays" = "各顯示器的場景";
 "The copy of your previous settings could not be read. It is in ~/Library/Application Support/Meno." = "無法讀取先前設定的副本。它儲存在 ~/Library/Application Support/Meno 中。";
 "While rules are paused, none of them applies. Rules that undo their action when it ends have undone it." = "規則暫停期間，任何規則都不會生效；設為「條件不再滿足時還原」的規則已還原了它們的動作。";
 "Wide divider" = "寬分隔線";
@@ -657,5 +662,6 @@
 "“%@” holds %lld scenes, %lld rules and %lld shortcuts. It replaces all your current settings. Meno keeps a copy of them, and Undo in the notice puts them back." = "「%@」包含 %lld 個場景、%lld 條規則和 %lld 個快速鍵，會取代你目前的全部設定。Meno 會保留目前設定的副本，按一下提示裡的「還原」即可回復。";
 "“%@” is connected" = "已連接「%@」";
 "“%@” is not in the menu bar right now." = "「%@」現在不在選單列中。";
+"“%@” on %@" = "「%@」用於 %@";
 "“%@” succeeds" = "「%@」執行成功";
 "⌥-click it to include the Stash." = "按住 ⌥ 按一下它可同時顯示暗格。";
