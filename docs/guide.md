@@ -114,7 +114,7 @@ Meno has no analytics or accounts. It only goes online to ask GitHub for the lat
 
 ## Good to know
 
-- Moving items simulates ⌘-drags, so Meno briefly takes over the pointer and puts it back afterwards. Items that are not currently on screen cannot be dragged; reveal them first. The clock and the Control Center icon cannot be moved.
+- Moving items simulates ⌘-drags, so Meno briefly takes over the pointer and puts it back afterwards. Items the pointer cannot reach, behind the camera housing or off the screen, are dragged through their own windows instead on macOS 14–26; on macOS 27 they have to fit in the menu bar first. The clock and the Control Center icon cannot be moved.
 - Icon spacing uses the `NSStatusItemSpacing` and `NSStatusItemSelectionPadding` preferences, which apps read at launch. Applying it relaunches apps that own menu bar items.
 - The menu bar tint is drawn behind the menu bar and is most visible with the transparent menu bar of macOS 26 and later.
 - With several displays, every menu bar shows the same items in the same order: macOS keeps them on the menu bar of the display you are using and shows them on the others as well. Meno hides and shows them alike on all displays. For more room on a large display, add the rule *Show hidden items on an external display*, or use the condition *The menu bar is on a specific display*.
