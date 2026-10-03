@@ -14,7 +14,7 @@ public struct MenoSettings: Codable, Equatable, Sendable {
     public var tint = MenuBarTint()
     public var spacing = IconSpacing()
     public var hotkeys = HotkeyBindings()
-    public var itemHotkeys: [ItemHotkey] = []
+    @LossyArray public var itemHotkeys: [ItemHotkey] = []
     /// Names given to items in Meno, by item key.
     public var itemNames: [String: String] = [:]
     /// SF Symbols chosen to stand for items in Meno, by item key.
@@ -26,7 +26,7 @@ public struct MenoSettings: Codable, Equatable, Sendable {
     @LossyArray public var groups: [ItemGroup] = []
     /// Items shown in the menu bar for a while.
     @LossyArray public var temporaryPlacements: [TemporaryPlacement] = []
-    public var scenes: [LayoutScene] = []
+    @LossyArray public var scenes: [LayoutScene] = []
     @LossyArray public var rules: [AutomationRule] = []
     /// Stops all rules for a while without turning each one off.
     public var rulesPaused = false
@@ -62,6 +62,32 @@ public struct MenoSettings: Codable, Equatable, Sendable {
     /// Decodes settings, filling in defaults for anything missing.
     public static func decode(from data: Data) throws -> MenoSettings {
         try TolerantJSON.decode(MenoSettings.self, from: data, defaults: MenoSettings())
+    }
+
+    /// Why a file picked for importing settings was not imported.
+    public enum ImportError: Error, Equatable {
+        /// The file holds no Meno settings, for example `{}`.
+        case notSettings
+        /// The file is a `.meno` file of scenes and rules.
+        case shareFile
+    }
+
+    /// Decodes a file someone picked to import. Unlike ``decode(from:)``,
+    /// which fills in whatever is missing, it only takes a file with Meno's
+    /// settings in it, so that importing a `.meno` file or `{}` does not
+    /// turn every setting back to its default.
+    public static func decodeImport(from data: Data) throws -> MenoSettings {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ImportError.notSettings
+        }
+        if object["format"] != nil {
+            throw ImportError.shareFile
+        }
+        let sections = ["general", "reveal", "appearance", "shelf", "zen", "hotkeys"]
+        guard sections.contains(where: { object[$0] is [String: Any] }) else {
+            throw ImportError.notSettings
+        }
+        return try decode(from: data)
     }
 
     /// Encodes settings as pretty-printed JSON with stable key order.
@@ -457,3 +483,19 @@ public enum MarkerKind: String, Codable, CaseIterable, Sendable {
     case symbol
     case text
 }
+
+// MARK: - Values from newer versions
+
+// A value a newer version of Meno wrote reads as the setting's default.
+extension RevealStyle: SettingChoice { public static let fallback = RevealStyle.automatic }
+extension AppMenuHiding: SettingChoice { public static let fallback = AppMenuHiding.whenNeeded }
+extension NewItemPolicy: SettingChoice { public static let fallback = NewItemPolicy.notify }
+extension HidingEngine: SettingChoice { public static let fallback = HidingEngine.automatic }
+extension HoverModifier: SettingChoice { public static let fallback = HoverModifier.none }
+extension MenoIcon: SettingChoice { public static let fallback = MenoIcon.meno }
+extension DividerGlyph: SettingChoice { public static let fallback = DividerGlyph.chevron }
+extension GlassMaterial: SettingChoice { public static let fallback = GlassMaterial.regular }
+extension ShelfPlacement: SettingChoice { public static let fallback = ShelfPlacement.underIcon }
+extension TintColorSource: SettingChoice { public static let fallback = TintColorSource.custom }
+extension TintFill: SettingChoice { public static let fallback = TintFill.gradient }
+extension TintShape: SettingChoice { public static let fallback = TintShape.full }

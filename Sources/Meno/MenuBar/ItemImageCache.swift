@@ -28,10 +28,6 @@ final class ItemImageCache: ObservableObject {
         AppInfo.osMajorVersion < 27
     }
 
-    func capturedImage(for key: MenuItemKey) -> NSImage? {
-        captured[key]
-    }
-
     /// The best available image for an item: a symbol the person picked,
     /// the captured artwork, or a fallback.
     func image(for item: MenuBarItem) -> NSImage {

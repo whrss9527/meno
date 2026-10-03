@@ -54,6 +54,10 @@ final class AutomationController: ObservableObject {
     private final class Snapshot {
         var section: ItemSection?
         var layout: SceneLayout?
+        /// Whether the rule's moves started, so that there is something to
+        /// undo. A rule that ends while its moves wait for an idle moment
+        /// calls them off and has nothing to put back.
+        var acted = false
     }
 
     /// What an active rule did, and how to undo it.
@@ -290,15 +294,22 @@ final class AutomationController: ObservableObject {
 
     func evaluate() {
         guard isStarted else { return }
-        context = SystemSignals.snapshot(
+        let current = SystemSignals.snapshot(
             isOnline: isOnline,
             capture: capture,
             succeededCommands: succeededCommands,
             routers: routers,
             menuBarScreen: model.statusBar.screen
         )
-        let transitions = evaluator.update(rules: model.settings.effectiveRules, context: context)
-        activeRuleIDs = evaluator.activeRuleIDs
+        // Published only when they change, so the Rules pane does not draw
+        // again on every app switch.
+        if current != context {
+            context = current
+        }
+        let transitions = evaluator.update(rules: model.settings.effectiveRules, context: current)
+        if evaluator.activeRuleIDs != activeRuleIDs {
+            activeRuleIDs = evaluator.activeRuleIDs
+        }
         for transition in transitions {
             switch transition {
             case .activated(let rule): activate(rule)
@@ -361,11 +372,14 @@ final class AutomationController: ObservableObject {
                     await self.model.inventory.refresh()
                     snapshot.layout = self.model.inventory.currentLayout()
                 }
-                await self.model.applyScene(scene, automatic: true)
+                await self.model.applyScene(scene, automatic: true) {
+                    snapshot.acted = true
+                    return true
+                }
             }
             entry.revert = { [weak self] in
                 self?.scheduleRevert(id, action: rule.action, snapshot: snapshot) { model in
-                    guard let layout = snapshot.layout else { return }
+                    guard snapshot.acted, let layout = snapshot.layout else { return }
                     try await model.mover.apply(layout, automatic: true)
                 }
             }
@@ -381,7 +395,10 @@ final class AutomationController: ObservableObject {
                     snapshot.section = self.model.temporary.returnSection(of: key) ?? item.section
                 }
                 do {
-                    try await self.model.mover.move(key, to: target, automatic: true)
+                    try await self.model.mover.move(key, to: target, automatic: true) {
+                        snapshot.acted = true
+                        return true
+                    }
                 } catch is CancellationError {
                 } catch {
                     Log.rules.error("Rule move failed: \(error.localizedDescription, privacy: .public)")
@@ -389,7 +406,7 @@ final class AutomationController: ObservableObject {
             }
             entry.revert = { [weak self] in
                 self?.scheduleRevert(id, action: rule.action, snapshot: snapshot) { model in
-                    guard let section = snapshot.section else { return }
+                    guard snapshot.acted, let section = snapshot.section else { return }
                     try await model.mover.move(key, to: section, automatic: true)
                 }
             }

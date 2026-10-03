@@ -99,7 +99,10 @@ final class StatusBarController: NSObject {
     @objc private func itemWindowMoved(_ notification: Notification) {
         guard let window = notification.object as? NSWindow,
               [toggle, hiddenDivider, stashDivider].contains(where: { $0?.button?.window === window }) else { return }
-        if !isInOrder {
+        // A Hidden divider without width (hidden dividers, items shown) is
+        // not out of order, and a scan here would only delay the one after
+        // showing the items.
+        if hiddenDividerFrame != nil, !isInOrder {
             model.inventory.scheduleRefresh(after: 1.5)
         }
         let display = screen.flatMap(ScreenGeometry.displayID(of:))
@@ -210,18 +213,6 @@ final class StatusBarController: NSObject {
         return menu
     }
 
-    func uninstall() {
-        applyTask?.cancel()
-        for group in SpacerGroup.allCases { removeSpacers(group) }
-        for item in [toggle, hiddenDivider, stashDivider].compactMap({ $0 }) + Array(groupItems.values) {
-            NSStatusBar.system.removeStatusItem(item)
-        }
-        groupItems = [:]
-        toggle = nil
-        hiddenDivider = nil
-        stashDivider = nil
-    }
-
     /// Whether the dividers sit left of the Meno icon, and the Stash divider
     /// left of the Hidden divider. Right after launch macOS may not have
     /// placed them yet, and where their windows are then says otherwise.
@@ -306,7 +297,9 @@ final class StatusBarController: NSObject {
         // The stepped engine's spacers belong next to the divider, so they
         // are made again where it goes.
         removeSpacers(name == Name.stashDivider ? .stash : .hidden)
-        let width = Double(item.button?.window?.frame.width ?? 20)
+        // A grown divider is thousands of points wide; half of that would put
+        // the repaired one far past the items it should sit next to.
+        let width = min(Double(item.button?.window?.frame.width ?? 20), 40)
         UserDefaults.standard.set(base + max(width / 2, 4), forKey: Self.positionKey(name))
         let replacement = makeItem(name: name, action: #selector(dividerClicked(_:)))
         self[keyPath: keyPath] = replacement

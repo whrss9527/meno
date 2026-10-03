@@ -72,6 +72,8 @@ final class ItemMover: ObservableObject {
 
     @Published private(set) var isMoving = false
     @Published private(set) var progress: (done: Int, total: Int)?
+    /// The item being dragged right now.
+    @Published private(set) var movingKey: MenuItemKey?
     /// The arrangements before the latest changes the person made through
     /// Meno, oldest first.
     @Published private(set) var undoStack: [SceneLayout] = []
@@ -123,8 +125,8 @@ final class ItemMover: ObservableObject {
     }
 
     /// Arranges the menu bar like `layout`.
-    func apply(_ layout: SceneLayout, automatic: Bool = false) async throws {
-        try await perform(.layout(layout), automatic: automatic)
+    func apply(_ layout: SceneLayout, automatic: Bool = false, proceeds: (() -> Bool)? = nil) async throws {
+        try await perform(.layout(layout), automatic: automatic, proceeds: proceeds)
     }
 
     /// Puts the items back where they were before the last change. Undoing
@@ -150,12 +152,26 @@ final class ItemMover: ObservableObject {
         if let proceeds, !proceeds() {
             throw MoveError.skipped
         }
+        // Nothing to drag: the menu bar does not have to open for it.
+        if isAlreadyDone(request) {
+            // Rules and items put back are not undone by the person's undo,
+            // so the snapshots follow them.
+            if automatic || restoring {
+                keepUndoInStep(with: request, restoring: restoring)
+            }
+            if !restoring {
+                model.temporary.forget(Self.keys(of: request))
+            }
+            model.keeper.menoPlaced(Self.keys(of: request))
+            return
+        }
         guard !isMoving else { throw MoveError.busy }
         isMoving = true
         model.reveal.beginLayoutSession()
         defer {
             isMoving = false
             progress = nil
+            movingKey = nil
         }
         var before: SceneLayout?
         var moved = false
@@ -171,6 +187,7 @@ final class ItemMover: ObservableObject {
                 if automatic && index > 0 {
                     try await waitForIdleInput(duringMove: true)
                 }
+                movingKey = move.key
                 if try await execute(move) {
                     moved = true
                 }
@@ -180,7 +197,9 @@ final class ItemMover: ObservableObject {
             if isUndo, !undoStack.isEmpty {
                 undoStack.removeLast()
             }
-            if automatic {
+            // Rules and items put back are not undone by the person's undo,
+            // so the snapshots follow them.
+            if automatic || restoring {
                 keepUndoInStep(with: request, restoring: restoring)
             }
             if !restoring {
@@ -191,10 +210,35 @@ final class ItemMover: ObservableObject {
             Diagnostics.event("move failed: \(error.localizedDescription)")
             model.keeper.menoPlaced(placed)
             finish(before: before, moved: moved, automatic: automatic || restoring, isUndo: isUndo)
+            if moved, !restoring {
+                model.forgetActiveScene()
+            }
             throw error
         }
         model.keeper.menoPlaced(placed)
         finish(before: before, moved: moved, automatic: automatic || restoring, isUndo: isUndo)
+        // Applying a scene marks it again once this returns; any other change
+        // leaves the scene behind. Putting items back keeps it.
+        if moved, !restoring {
+            model.forgetActiveScene()
+        }
+    }
+
+    /// Whether every item of a request is already where it puts it, going
+    /// by the last scan. Only single moves are judged; whole arrangements
+    /// are planned once everything is shown.
+    private func isAlreadyDone(_ request: Request) -> Bool {
+        guard case .moves(let moves) = request else { return false }
+        return moves.allSatisfy { move in
+            guard let item = model.inventory.item(for: move.key) else { return false }
+            switch move {
+            case .section:
+                return model.inventory.knowsSection(of: move.key) && remainingPlacement(for: move, item: item) == nil
+            case .step:
+                // Positions of hidden items are only known with the wide engine.
+                return model.inventory.framesAreReliable && remainingPlacement(for: move, item: item) == nil
+            }
+        }
     }
 
     /// Waits for the moves under way to finish, for up to half a minute.
@@ -321,7 +365,8 @@ final class ItemMover: ObservableObject {
         placement: Placement
     ) -> (window: WindowCapture.WindowInfo, target: WindowCapture.WindowInfo, end: CGPoint)? {
         let windows = WindowCapture.itemWindows(at: [item.frame, reference])
-        guard let window = windows[0] else { return nil }
+        // The release has to name the window it lands next to.
+        guard let window = windows[0], let target = windows[1] else { return nil }
         // The edge of the reference it goes next to, which works wherever
         // that edge is, even off the screen.
         let x: CGFloat
@@ -329,7 +374,7 @@ final class ItemMover: ObservableObject {
         case .rightOf: x = reference.maxX
         case .leftOf: x = reference.minX
         }
-        return (window, windows[1] ?? window, CGPoint(x: x, y: reference.midY))
+        return (window, target, CGPoint(x: x, y: reference.midY))
     }
 
     /// Where the item still has to be dropped, or `nil` when the move is done.

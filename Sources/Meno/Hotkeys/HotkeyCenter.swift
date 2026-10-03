@@ -10,7 +10,6 @@ final class HotkeyCenter {
     private var registrations: [UInt32: EventHotKeyRef] = [:]
     private var actions: [UInt32: () -> Void] = [:]
     private var nextID: UInt32 = 1
-    private var suspendCount = 0
 
     private static let signature: OSType = 0x4D45_4E4F // "MENO"
 
@@ -58,17 +57,8 @@ final class HotkeyCenter {
         return true
     }
 
-    /// Ignores shortcuts while one is being recorded.
-    func suspend() {
-        suspendCount += 1
-    }
-
-    func resume() {
-        suspendCount = max(suspendCount - 1, 0)
-    }
-
     fileprivate func handle(id: UInt32) {
-        guard suspendCount == 0, let action = actions[id] else { return }
+        guard let action = actions[id] else { return }
         action()
     }
 }

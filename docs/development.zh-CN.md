@@ -1,6 +1,6 @@
 # Meno 开发指南
 
-[← 回到 README](../README.zh-CN.md) · [English](guide.md)
+[← 回到 README](../README.zh-CN.md) · [English](development.md)
 
 ## 开发
 

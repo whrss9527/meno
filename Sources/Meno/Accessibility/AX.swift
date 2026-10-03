@@ -13,9 +13,6 @@ enum AX {
         static let description = "AXDescription"
         static let identifier = "AXIdentifier"
         static let help = "AXHelp"
-        static let role = "AXRole"
-        static let enabled = "AXEnabled"
-        static let selected = "AXSelected"
     }
 
     enum Action {
@@ -79,13 +76,6 @@ enum AX {
         }
     }
 
-    static func bool(_ element: AXUIElement, _ attribute: String) -> Bool? {
-        guard let value = value(element, attribute), CFGetTypeID(value) == CFBooleanGetTypeID() else {
-            return nil
-        }
-        return CFBooleanGetValue(unsafeBitCast(value, to: CFBoolean.self))
-    }
-
     static func point(_ element: AXUIElement, _ attribute: String = Attribute.position) -> CGPoint? {
         guard let value = value(element, attribute), CFGetTypeID(value) == AXValueGetTypeID() else {
             return nil
@@ -108,12 +98,6 @@ enum AX {
     static func frame(of element: AXUIElement) -> CGRect? {
         guard let origin = point(element), let size = size(element) else { return nil }
         return CGRect(origin: origin, size: size)
-    }
-
-    static func actions(of element: AXUIElement) -> [String] {
-        var names: CFArray?
-        guard AXUIElementCopyActionNames(element, &names) == .success, let names else { return [] }
-        return (names as? [String]) ?? []
     }
 
     static func setTimeout(_ element: AXUIElement, seconds: Float) {

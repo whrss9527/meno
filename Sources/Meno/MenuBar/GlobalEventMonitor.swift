@@ -12,8 +12,6 @@ final class GlobalEventMonitor {
         self.handler = handler
     }
 
-    var isRunning: Bool { token != nil }
-
     func start() {
         guard token == nil else { return }
         token = NSEvent.addGlobalMonitorForEvents(matching: mask) { [weak self] event in

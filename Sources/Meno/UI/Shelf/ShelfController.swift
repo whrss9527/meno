@@ -29,6 +29,8 @@ final class ShelfController: ObservableObject {
     private var presentedTrigger: RevealTrigger?
     private var hideTask: Task<Void, Never>?
     private var hostingView: NSHostingView<ShelfView>?
+    /// Where the pointer was when the Shelf opened.
+    private var pointerAnchor: CGFloat?
     private var subscriptions: Set<AnyCancellable> = []
     private lazy var outsideClickMonitor = GlobalEventMonitor(mask: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
         self?.clickedOutside()
@@ -98,6 +100,9 @@ final class ShelfController: ObservableObject {
         model.quickOpen.hide()
         includesStash = includeStash
         presentedTrigger = trigger
+        // Opened at the pointer, the Shelf stays where it opened while the
+        // pointer moves to an item.
+        pointerAnchor = NSEvent.mouseLocation.x
         if let screen = model.statusBar.screen ?? NSScreen.main {
             // The panel keeps 8 pt from the screen edges; the view adds
             // 24 pt of padding on each side.
@@ -303,7 +308,7 @@ final class ShelfController: ObservableObject {
         case .center:
             x = screen.frame.midX - size.width / 2
         case .pointer:
-            x = NSEvent.mouseLocation.x - size.width / 2
+            x = (pointerAnchor ?? NSEvent.mouseLocation.x) - size.width / 2
         }
         x = min(max(x, screen.frame.minX + 8), screen.frame.maxX - size.width - 8)
         let frame = NSRect(x: x, y: menuBarBottom - size.height - 6, width: size.width, height: size.height)

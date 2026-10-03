@@ -5,6 +5,14 @@ import MenoCore
 @MainActor
 final class ItemActivator {
     unowned let model: AppModel
+    /// When Meno last clicked an item itself, which is not a click of the
+    /// person's to count.
+    private var lastClick: Date?
+
+    /// Whether Meno clicked an item a moment ago.
+    var clickedRecently: Bool {
+        lastClick.map { Date().timeIntervalSince($0) < 1 } ?? false
+    }
 
     init(model: AppModel) {
         self.model = model
@@ -50,7 +58,10 @@ final class ItemActivator {
         if let frame = await MenuBarScanner.frame(of: element) {
             target.frame = frame
         }
-        guard target.isOnScreen else { return false }
-        return EventSynthesizer.click(at: CGPoint(x: target.frame.midX, y: target.frame.midY), secondary: click == .secondary)
+        // Behind the camera housing the click would land on the housing.
+        let point = CGPoint(x: target.frame.midX, y: target.frame.midY)
+        guard ScreenGeometry.isReachable(point) else { return false }
+        lastClick = Date()
+        return EventSynthesizer.click(at: point, secondary: click == .secondary)
     }
 }

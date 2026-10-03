@@ -77,11 +77,6 @@ struct LayoutPane: View {
                 }
             }
         }
-        .overlay {
-            if mover.isMoving {
-                movingOverlay
-            }
-        }
         .alert("Save Layout as Scene", isPresented: $savingScene) {
             TextField("Name", text: $sceneName)
             Button("Save") {
@@ -89,7 +84,7 @@ struct LayoutPane: View {
                 model.saveScene(named: name.isEmpty ? String(localized: "My Layout") : name, symbol: "square.grid.2x2")
                 sceneName = ""
             }
-            Button("Cancel", role: .cancel) {}
+            Button("Cancel", role: .cancel) { sceneName = "" }
         } message: {
             Text("A scene remembers which items are visible, hidden or stashed.")
         }
@@ -180,6 +175,8 @@ struct LayoutPane: View {
                 Label("Save as Scene…", systemImage: "square.stack.3d.up")
             }
             .menoGlassButtonStyle()
+            // A scene saved halfway through a move would be half of each.
+            .disabled(mover.isMoving)
 
             Button {
                 model.undoLayoutChange()
@@ -280,6 +277,8 @@ struct LayoutPane: View {
                             left: index > 0 ? items[index - 1] : nil,
                             right: index + 1 < items.count ? items[index + 1] : nil,
                             draggedKey: $draggedKey,
+                            isBusy: mover.isMoving,
+                            isMoving: mover.movingKey == item.key,
                             moveToSection: { model.move(item.key, to: $0) },
                             place: { key, placement in model.move(key, placement: placement) },
                             rename: {
@@ -336,11 +335,10 @@ struct LayoutPane: View {
             tint: targetedSection == section ? section.color.opacity(0.6) : nil
         )
         .onDrop(of: [.plainText], isTargeted: targetBinding(for: section)) { _ in
-            guard let key = draggedKey else { return false }
+            // Dropped where it already is, the item goes back to its place.
+            guard let key = draggedKey, !mover.isMoving, inventory.item(for: key)?.section != section else { return false }
             draggedKey = nil
-            if inventory.item(for: key)?.section != section {
-                model.move(key, to: section)
-            }
+            model.move(key, to: section)
             return true
         }
         .animation(.easeOut(duration: 0.15), value: targetedSection)
@@ -350,7 +348,9 @@ struct LayoutPane: View {
         Binding {
             targetedSection == section
         } set: { isTargeted in
-            if isTargeted {
+            // Only a section the dragged item would move to lights up.
+            let isOwnSection = draggedKey.flatMap { inventory.item(for: $0)?.section } == section
+            if isTargeted, !isOwnSection, !mover.isMoving {
                 targetedSection = section
             } else if targetedSection == section {
                 targetedSection = nil
@@ -368,24 +368,5 @@ struct LayoutPane: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-    }
-
-    private var movingOverlay: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-                .controlSize(.large)
-            if let progress = mover.progress, progress.total > 1 {
-                Text("Moving item \(min(progress.done + 1, progress.total)) of \(progress.total)…")
-                    .font(.system(size: 14, weight: .semibold))
-            } else {
-                Text("Moving…")
-                    .font(.system(size: 14, weight: .semibold))
-            }
-            Text("Please leave the mouse alone for a moment.")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-        }
-        .padding(28)
-        .menoGlassCard(cornerRadius: 22)
     }
 }
