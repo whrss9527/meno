@@ -58,8 +58,8 @@ Releases from 0.10.0 on are signed with a Developer ID and notarized, so they op
 | Do this | And |
 | --- | --- |
 | Hold ⌘ and drag icons across Meno's dividers | Sort them into Visible, Hidden and the Stash |
-| Click the Meno icon, or hover or swipe down over the menu bar | Hidden items come back |
-| Press the Quick Open shortcut | Find and open any menu bar item from the keyboard |
+| Click the Meno icon or an empty part of the menu bar (hovering and swiping down can be turned on in Settings) | Hidden items come back |
+| Set a Quick Open shortcut in *Settings › Hotkeys* and press it | Find and open any menu bar item from the keyboard |
 | Turn on Zen | Every app icon is gone, for screenshots, recordings and talks |
 | Add a rule in Meno's Settings | The menu bar follows your mic, displays, power or network |
 

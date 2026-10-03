@@ -15,6 +15,10 @@ struct LayoutChip: View {
     let right: MenuBarItem?
     /// The item being dragged in the editor.
     @Binding var draggedKey: MenuItemKey?
+    /// Whether Meno is moving items, when nothing else can be dragged.
+    let isBusy: Bool
+    /// Whether Meno is moving this item right now.
+    let isMoving: Bool
     let moveToSection: (ItemSection) -> Void
     let place: (MenuItemKey, Placement) -> Void
     let rename: () -> Void
@@ -67,9 +71,14 @@ struct LayoutChip: View {
                     .foregroundStyle(.secondary)
                     .help(Text("In the group “\(group.name)”"))
             }
-            Image(systemName: item.isMovable ? "chevron.down" : "lock.fill")
-                .font(.system(size: item.isMovable ? 8 : 9, weight: item.isMovable ? .bold : .regular))
-                .foregroundStyle(.secondary)
+            if isMoving {
+                ProgressView()
+                    .controlSize(.mini)
+            } else {
+                Image(systemName: item.isMovable ? "chevron.down" : "lock.fill")
+                    .font(.system(size: item.isMovable ? 8 : 9, weight: item.isMovable ? .bold : .regular))
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
@@ -78,6 +87,8 @@ struct LayoutChip: View {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(Color.primary.opacity(isHovering ? 0.12 : 0.07))
         }
+        // The item being dragged stays where it is, faded, until it lands.
+        .opacity(draggedKey == item.key ? 0.4 : 1)
         .overlay(alignment: dropEdge == .leading ? .leading : .trailing) {
             if dropEdge != nil {
                 Capsule()
@@ -92,6 +103,8 @@ struct LayoutChip: View {
                 key: item.key,
                 label: accessibilityLabel,
                 toolTip: item.isMovable ? (item.bundleID ?? item.appName) : String(localized: "macOS keeps this item in place"),
+                canDrag: item.isMovable && !isBusy,
+                accepts: { accepts($0, on: $1) },
                 makeMenu: makeMenu,
                 makeDragImage: { ChipMouseView.dragImage(icon: image, name: item.displayName) },
                 onHover: { isHovering = $0 },
@@ -102,6 +115,17 @@ struct LayoutChip: View {
                     place(key, edge == .leading ? .leftOf(item.layoutToken) : .rightOf(item.layoutToken))
                 }
             )
+        }
+    }
+
+    /// Whether dropping `dragged` on a side of this item would move it: not
+    /// next to where it already is, and not right of an item macOS keeps at
+    /// the right end.
+    private func accepts(_ dragged: MenuItemKey, on edge: HorizontalEdge) -> Bool {
+        guard !isBusy else { return false }
+        switch edge {
+        case .leading: return left?.key != dragged
+        case .trailing: return item.isMovable && right?.key != dragged
         }
     }
 

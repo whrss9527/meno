@@ -60,13 +60,20 @@ final class TintOverlayController {
             panel.setFrame(frame, display: false)
             let isMenoScreen = screen == model.statusBar.screen
             let islands = isMenoScreen ? islandSpans(on: screen) : nil
-            panel.contentView = NSHostingView(rootView: TintView(
+            let view = TintView(
                 tint: tint,
                 wallpaper: usesWallpaper ? wallpaper.reading(for: screen) : .pending,
                 barHeight: barRect.height,
                 shadowRoom: shadowRoom,
                 islands: islands
-            ))
+            )
+            // Updates come with every scan and app switch; the view is kept
+            // and only its content changes.
+            if let hosting = panel.contentView as? NSHostingView<TintView> {
+                hosting.rootView = view
+            } else {
+                panel.contentView = NSHostingView(rootView: view)
+            }
             panel.orderFrontRegardless()
         }
         for (id, panel) in panels where !seen.contains(id) {

@@ -100,6 +100,8 @@ final class QuickOpenController: ObservableObject {
         isVisible = true
         shownAt = Date()
         presentation += 1
+        // It stays on the screen it opened on while results change.
+        screen = ScreenGeometry.screen(containingCocoa: NSEvent.mouseLocation)
         layoutSoon()
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
@@ -495,11 +497,14 @@ final class QuickOpenController: ObservableObject {
         }
     }
 
+    /// The screen Quick Open opened on.
+    private var screen: NSScreen?
+
     private func layout() {
         guard isVisible, let panel, let hostingView else { return }
         let size = hostingView.fittingSize
         guard size.width > 0, size.height > 0 else { return }
-        guard let screen = ScreenGeometry.screen(containingCocoa: NSEvent.mouseLocation) ?? NSScreen.main ?? NSScreen.screens.first else {
+        guard let screen = self.screen ?? NSScreen.main ?? NSScreen.screens.first else {
             return
         }
         let top = screen.frame.maxY - screen.frame.height * 0.2

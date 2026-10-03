@@ -81,6 +81,53 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(decoded.onboardingCompleted, settings.onboardingCompleted)
     }
 
+    func testValuesFromNewerVersionsReadAsDefaults() throws {
+        var settings = MenoSettings()
+        settings.general.revealStyle = .shelf
+        settings.reveal.onHover = true
+        settings.scenes = [
+            LayoutScene(name: "Work", layout: SceneLayout()),
+            LayoutScene(name: "Home", layout: SceneLayout()),
+        ]
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: settings.encoded()) as? [String: Any])
+        var general = try XCTUnwrap(object["general"] as? [String: Any])
+        general["hidingEngine"] = "futureEngine"
+        object["general"] = general
+        var appearance = try XCTUnwrap(object["appearance"] as? [String: Any])
+        appearance["dividerGlyph"] = "futureGlyph"
+        object["appearance"] = appearance
+        var scenes = try XCTUnwrap(object["scenes"] as? [[String: Any]])
+        scenes[0]["layout"] = "not a layout"
+        object["scenes"] = scenes
+        let data = try JSONSerialization.data(withJSONObject: object)
+
+        // Everything else stays as it was.
+        let decoded = try MenoSettings.decode(from: data)
+        XCTAssertEqual(decoded.general.hidingEngine, .automatic)
+        XCTAssertEqual(decoded.appearance.dividerGlyph, .chevron)
+        XCTAssertEqual(decoded.general.revealStyle, .shelf)
+        XCTAssertTrue(decoded.reveal.onHover)
+        XCTAssertEqual(decoded.scenes.map(\.name), ["Home"])
+    }
+
+    func testImportTakesOnlySettingsFiles() throws {
+        var settings = MenoSettings()
+        settings.reveal.onHover = true
+        XCTAssertTrue(try MenoSettings.decodeImport(from: settings.encoded()).reveal.onHover)
+        XCTAssertTrue(try MenoSettings.decodeImport(from: Data(#"{"reveal": {"onHover": true}}"#.utf8)).reveal.onHover)
+
+        // Nothing to import would turn every setting back to its default.
+        for json in ["{}", "[]", "not json", #"{"scenes": []}"#] {
+            XCTAssertThrowsError(try MenoSettings.decodeImport(from: Data(json.utf8))) { error in
+                XCTAssertEqual(error as? MenoSettings.ImportError, .notSettings, json)
+            }
+        }
+        let share = try ShareFile(createdBy: "0.12.2", scenes: [], rules: []).encoded()
+        XCTAssertThrowsError(try MenoSettings.decodeImport(from: share)) { error in
+            XCTAssertEqual(error as? MenoSettings.ImportError, .shareFile)
+        }
+    }
+
     func testLossyArraysKeepTheirShape() throws {
         var settings = MenoSettings()
         settings.rules = [AutomationRule(name: "Known", conditions: [.onBattery], action: .zen)]

@@ -18,8 +18,26 @@ public struct ItemUsage: Codable, Equatable, Sendable {
     public var lastUsed: Date?
     /// Opens per day, keyed by `yyyy-MM-dd`.
     public var daily: [String: Int] = [:]
+    /// Opens per day while the item was in the Hidden section or the Stash,
+    /// keyed by `yyyy-MM-dd`.
+    public var dailyConcealed: [String: Int] = [:]
 
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case total, whileConcealed, lastUsed, daily, dailyConcealed
+    }
+
+    /// Reads what is there, so that a record written by another version of
+    /// Meno, with fields added or missing, is not lost.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        total = try container.decodeIfPresent(Int.self, forKey: .total) ?? 0
+        whileConcealed = try container.decodeIfPresent(Int.self, forKey: .whileConcealed) ?? 0
+        lastUsed = try container.decodeIfPresent(Date.self, forKey: .lastUsed)
+        daily = try container.decodeIfPresent([String: Int].self, forKey: .daily) ?? [:]
+        dailyConcealed = try container.decodeIfPresent([String: Int].self, forKey: .dailyConcealed) ?? [:]
+    }
 }
 
 /// A local, private record of how the menu bar is used. Nothing leaves the Mac.
@@ -56,10 +74,14 @@ public struct UsageLog: Codable, Equatable, Sendable {
     ) {
         if firstRecorded == nil { firstRecorded = date }
         var usage = items[key.rawValue] ?? ItemUsage()
+        let day = Self.dayKey(for: date, calendar: calendar)
         usage.total += 1
-        if let section, section != .visible { usage.whileConcealed += 1 }
+        if let section, section != .visible {
+            usage.whileConcealed += 1
+            usage.dailyConcealed[day, default: 0] += 1
+        }
         usage.lastUsed = date
-        usage.daily[Self.dayKey(for: date, calendar: calendar), default: 0] += 1
+        usage.daily[day, default: 0] += 1
         items[key.rawValue] = usage
     }
 
@@ -88,6 +110,15 @@ public struct UsageLog: Codable, Equatable, Sendable {
         guard let usage = items[key.rawValue] else { return 0 }
         return Self.recentDayKeys(days, now: now, calendar: calendar).reduce(0) { sum, day in
             sum + (usage.daily[day.key] ?? 0)
+        }
+    }
+
+    /// Opens of an item during the last `days` days while it was in the
+    /// Hidden section or the Stash.
+    public func concealedCount(of key: MenuItemKey, lastDays days: Int, now: Date, calendar: Calendar = .current) -> Int {
+        guard let usage = items[key.rawValue] else { return 0 }
+        return Self.recentDayKeys(days, now: now, calendar: calendar).reduce(0) { sum, day in
+            sum + (usage.dailyConcealed[day.key] ?? 0)
         }
     }
 
@@ -132,6 +163,7 @@ public struct UsageLog: Codable, Equatable, Sendable {
         for (raw, usage) in items {
             var trimmed = usage
             trimmed.daily = usage.daily.filter { keep.contains($0.key) }
+            trimmed.dailyConcealed = usage.dailyConcealed.filter { keep.contains($0.key) }
             items[raw] = trimmed
         }
     }
@@ -167,9 +199,9 @@ public struct UsageLog: Codable, Equatable, Sendable {
         }
         var result: [UsageSuggestion] = []
         for (key, section) in sections.sorted(by: { $0.key < $1.key }) where movable.contains(key) {
-            let uses = count(of: key, lastDays: 7, now: now, calendar: calendar)
             switch section {
             case .hidden, .stash:
+                let uses = concealedCount(of: key, lastDays: 7, now: now, calendar: calendar)
                 if uses >= promoteThreshold {
                     result.append(.promote(key, uses: uses))
                 } else if section == .hidden, includesStash, let days = idle(key, atLeast: stashIdleDays) {

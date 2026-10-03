@@ -21,6 +21,10 @@ struct SettingsRootView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
             }
             .scrollContentBackground(.hidden)
+            // Over whichever pane is open and wherever it is scrolled to.
+            .overlay(alignment: .bottom) {
+                MovingCard(mover: model.mover)
+            }
         }
         .background {
             ZStack {
@@ -51,6 +55,35 @@ struct SettingsRootView: View {
         case .insights: InsightsPane(inventory: model.inventory, images: model.images)
         case .permissions: PermissionsPane(permissions: model.permissions)
         case .about: AboutPane()
+        }
+    }
+}
+
+/// Says that Meno is moving items, while it is.
+private struct MovingCard: View {
+    @ObservedObject var mover: ItemMover
+
+    var body: some View {
+        if mover.isMoving {
+            VStack(spacing: 12) {
+                ProgressView()
+                    .controlSize(.large)
+                if let progress = mover.progress, progress.total > 1 {
+                    Text("Moving item \(min(progress.done + 1, progress.total)) of \(progress.total)…")
+                        .font(.system(size: 14, weight: .semibold))
+                } else {
+                    Text("Moving…")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                Text("Please leave the mouse alone for a moment.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(28)
+            .menoGlassCard(cornerRadius: 22)
+            .padding(.bottom, 28)
+            .allowsHitTesting(false)
+            .transition(.opacity)
         }
     }
 }

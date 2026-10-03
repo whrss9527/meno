@@ -174,7 +174,8 @@ private struct ShelfItemButton: View {
             Button("Open") { shelf.open(item, secondary: false) }
             Button("Open Secondary Menu") { shelf.open(item, secondary: true) }
             Divider()
-            if item.section != .visible {
+            // macOS keeps some items in place, such as the clock.
+            if item.isMovable, item.section != .visible {
                 Button("Keep Visible") {
                     shelf.hide()
                     shelf.model.move(item.key, to: .visible)
@@ -188,13 +189,13 @@ private struct ShelfItemButton: View {
                     }
                 }
             }
-            if item.section != .hidden {
+            if item.isMovable, item.section != .hidden {
                 Button("Move to Hidden") {
                     shelf.hide()
                     shelf.model.move(item.key, to: .hidden)
                 }
             }
-            if item.section != .stash, shelf.model.settings.general.stashEnabled {
+            if item.isMovable, item.section != .stash, shelf.model.settings.general.stashEnabled {
                 Button("Move to Stash") {
                     shelf.hide()
                     shelf.model.move(item.key, to: .stash)

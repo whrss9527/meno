@@ -351,7 +351,7 @@ final class AppModel: ObservableObject {
         NSApp.activate()
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            var imported = try MenoSettings.decode(from: Data(contentsOf: url))
+            var imported = try MenoSettings.decodeImport(from: Data(contentsOf: url))
             imported.onboardingCompleted = true
             // Commands in a settings file only run once the person has
             // looked at them and turned their rules back on.
@@ -368,6 +368,9 @@ final class AppModel: ObservableObject {
             } else {
                 toasts.show(String(localized: "Settings imported."), symbol: "square.and.arrow.down")
             }
+        } catch MenoSettings.ImportError.shareFile {
+            // Scenes and rules to share: shown before anything is imported.
+            openShareFile(url)
         } catch {
             toasts.show(String(localized: "That file does not contain Meno settings."), symbol: "exclamationmark.triangle.fill")
         }
@@ -603,15 +606,26 @@ final class AppModel: ObservableObject {
         toasts.show(String(localized: "Updated “\(settings.scenes[index].name)”."), symbol: "arrow.triangle.2.circlepath")
     }
 
+    /// The menu bar no longer looks like the scene applied last, after
+    /// items were moved some other way.
+    func forgetActiveScene() {
+        activeSceneID = nil
+    }
+
     func deleteScene(id: UUID) {
         settings.scenes.removeAll { $0.id == id }
         if activeSceneID == id { activeSceneID = nil }
     }
 
     @discardableResult
-    func applyScene(_ scene: LayoutScene, announce: Bool = true, automatic: Bool = false) async -> Bool {
+    func applyScene(
+        _ scene: LayoutScene,
+        announce: Bool = true,
+        automatic: Bool = false,
+        proceeds: (() -> Bool)? = nil
+    ) async -> Bool {
         do {
-            try await mover.apply(scene.layout, automatic: automatic)
+            try await mover.apply(scene.layout, automatic: automatic, proceeds: proceeds)
             activeSceneID = scene.id
             if announce {
                 toasts.show(String(localized: "Scene “\(scene.name)” applied."), symbol: scene.symbol)
@@ -660,6 +674,8 @@ final class AppModel: ObservableObject {
 
     /// Counts clicks on items directly in the menu bar.
     private func recordDirectClick() {
+        // Meno's own drags and clicks are not uses of the items.
+        guard !mover.isMoving, !activator.clickedRecently else { return }
         let location = NSEvent.mouseLocation
         guard ScreenGeometry.isInMenuBar(cocoa: location) else { return }
         let point = ScreenGeometry.quartzPoint(fromCocoa: location)

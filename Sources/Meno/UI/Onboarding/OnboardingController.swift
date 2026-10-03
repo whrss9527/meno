@@ -31,10 +31,12 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         let view = OnboardingView(permissions: model.permissions) { [weak self] openLayout in
             guard let self else { return }
             self.model.completeOnboarding()
-            self.close()
+            // Settings opens first, so closing this window does not hide Meno
+            // on its way there.
             if openLayout {
                 self.model.openSettings(.layout)
             }
+            self.close()
         }
         .environmentObject(model)
         let window = NSWindow(

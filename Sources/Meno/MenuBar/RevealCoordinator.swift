@@ -252,6 +252,12 @@ final class RevealCoordinator: ObservableObject {
     private static let personTriggers: Set<RevealTrigger> = [.click, .emptyArea, .hover, .scroll, .hotkey, .menu, .link, .drag]
 
     func collapse(trigger: RevealTrigger) {
+        // Items stay shown while Meno moves them, or later moves would find
+        // them gone; they fold once the moves are done.
+        if layoutSessions > 0 {
+            visibilityBeforeLayout = .collapsed
+            return
+        }
         rehideTask?.cancel()
         hoverTask?.cancel()
         hoverTask = nil
@@ -346,6 +352,11 @@ final class RevealCoordinator: ObservableObject {
             // opened item folds back to what was shown before the move.
             if activations > 0, visibilityBeforeLayout == .collapsed {
                 visibilityBeforeActivation = .collapsed
+            }
+            // A rule keeping the Hidden section shown does not keep the
+            // Stash shown too, unless an item in it is being opened.
+            if activations == 0, visibilityBeforeLayout == .revealed {
+                visibility = .revealed
             }
             apply()
             return
@@ -522,8 +533,9 @@ final class RevealCoordinator: ObservableObject {
     private func clickedElsewhere(_ event: NSEvent) {
         let location = NSEvent.mouseLocation
         let point = ScreenGeometry.quartzPoint(fromCocoa: location)
-        // An item clicked right in the menu bar has been seen.
-        if !model.changes.changedItems.isEmpty, ScreenGeometry.isInMenuBar(cocoa: location),
+        // An item clicked right in the menu bar has been seen, unless Meno
+        // clicked it while moving items.
+        if !model.changes.changedItems.isEmpty, !model.mover.isMoving, ScreenGeometry.isInMenuBar(cocoa: location),
            let item = model.inventory.items.first(where: { $0.kind != .marker && $0.frame.contains(point) }) {
             model.changes.markSeen([item.key])
         }

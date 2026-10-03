@@ -74,6 +74,33 @@ final class UsageLogTests: XCTestCase {
         XCTAssertFalse(early.contains { if case .demote = $0 { return true } else { return false } })
     }
 
+    func testOnlyOpensWhileConcealedSuggestKeepingVisible() {
+        var log = UsageLog()
+        // Opened often while visible, then hidden.
+        for offset in 0..<6 {
+            log.recordItemUse(dropbox, section: .visible, source: .menuBar, at: day(28 + offset % 3), calendar: calendar)
+        }
+        log.recordItemUse(dropbox, section: .hidden, source: .shelf, at: day(30), calendar: calendar)
+        XCTAssertEqual(log.count(of: dropbox, lastDays: 7, now: day(30), calendar: calendar), 7)
+        XCTAssertEqual(log.concealedCount(of: dropbox, lastDays: 7, now: day(30), calendar: calendar), 1)
+        XCTAssertEqual(log.suggestions(sections: [dropbox: .hidden], movable: [dropbox], now: day(30), calendar: calendar), [])
+
+        // Concealed opens are pruned with the other days.
+        log.prune(keepingDays: 2, now: day(40), calendar: calendar)
+        XCTAssertEqual(log.usage(of: dropbox)?.dailyConcealed, [:])
+    }
+
+    func testUsageFromOtherVersionsIsKept() throws {
+        // A record without the per-day concealed opens, and with a field
+        // this version does not know.
+        let json = #"{"items": {"com.getdropbox.dropbox#solo": {"total": 3, "daily": {"2026-05-28": 3}, "future": 1}}}"#
+        let log = try TolerantJSON.decode(UsageLog.self, from: Data(json.utf8), defaults: UsageLog())
+        XCTAssertEqual(log.usage(of: dropbox)?.total, 3)
+        XCTAssertEqual(log.usage(of: dropbox)?.whileConcealed, 0)
+        XCTAssertEqual(log.usage(of: dropbox)?.daily, ["2026-05-28": 3])
+        XCTAssertEqual(log.usage(of: dropbox)?.dailyConcealed, [:])
+    }
+
     func testStashSuggestions() {
         var log = UsageLog()
         let forgotten = MenuItemKey(owner: "com.example.forgotten", token: "solo")

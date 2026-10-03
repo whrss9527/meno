@@ -19,29 +19,12 @@ enum ScreenGeometry {
         CGRect(x: rect.minX, y: primaryHeight - rect.maxY, width: rect.width, height: rect.height)
     }
 
-    static func cocoaRect(fromQuartz rect: CGRect) -> NSRect {
-        NSRect(x: rect.minX, y: primaryHeight - rect.maxY, width: rect.width, height: rect.height)
-    }
-
     static func quartzPoint(fromCocoa point: NSPoint) -> CGPoint {
         CGPoint(x: point.x, y: primaryHeight - point.y)
     }
 
-    static func cocoaPoint(fromQuartz point: CGPoint) -> NSPoint {
-        NSPoint(x: point.x, y: primaryHeight - point.y)
-    }
-
-    /// The current pointer location in Quartz coordinates.
-    static var pointerLocation: CGPoint {
-        quartzPoint(fromCocoa: NSEvent.mouseLocation)
-    }
-
     static func screen(containingCocoa point: NSPoint) -> NSScreen? {
         NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) }
-    }
-
-    static func screen(containingQuartz point: CGPoint) -> NSScreen? {
-        screen(containingCocoa: cocoaPoint(fromQuartz: point))
     }
 
     /// Height of the menu bar on `screen`, including the camera housing area.

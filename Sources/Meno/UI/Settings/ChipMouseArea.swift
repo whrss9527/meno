@@ -13,6 +13,11 @@ struct ChipMouseArea: NSViewRepresentable {
     /// What VoiceOver reads for the item.
     let label: String
     let toolTip: String
+    /// Whether the item can be dragged: macOS keeps some items in place, and
+    /// nothing is dragged while Meno moves items.
+    let canDrag: Bool
+    /// Whether dropping an item on a side would move it anywhere.
+    let accepts: (MenuItemKey, HorizontalEdge) -> Bool
     let makeMenu: () -> NSMenu
     let makeDragImage: () -> NSImage
     let onHover: (Bool) -> Void
@@ -31,6 +36,8 @@ struct ChipMouseArea: NSViewRepresentable {
         view.key = key
         view.label = label
         view.toolTip = toolTip
+        view.canDrag = canDrag
+        view.accepts = accepts
         view.makeMenu = makeMenu
         view.makeDragImage = makeDragImage
         view.onHover = onHover
@@ -44,6 +51,8 @@ struct ChipMouseArea: NSViewRepresentable {
 final class ChipMouseView: NSView, NSDraggingSource {
     var key: MenuItemKey?
     var label = ""
+    var canDrag = true
+    var accepts: (MenuItemKey, HorizontalEdge) -> Bool = { _, _ in true }
     var makeMenu: () -> NSMenu = { NSMenu() }
     var makeDragImage: () -> NSImage = { NSImage() }
     var onHover: (Bool) -> Void = { _ in }
@@ -89,7 +98,7 @@ final class ChipMouseView: NSView, NSDraggingSource {
     }
 
     override func mouseDragged(with event: NSEvent) {
-        guard !isDragging, let start = mouseDownPoint, let key else { return }
+        guard canDrag, !isDragging, let start = mouseDownPoint, let key else { return }
         let point = convert(event.locationInWindow, from: nil)
         guard hypot(point.x - start.x, point.y - start.y) > 3 else { return }
         isDragging = true
@@ -156,17 +165,20 @@ final class ChipMouseView: NSView, NSDraggingSource {
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         onDropEdge(nil)
-        guard let dragged = draggedKey(sender), dragged != key else { return false }
-        onDrop(dragged, edge(of: sender))
+        let side = edge(of: sender)
+        guard let dragged = draggedKey(sender), dragged != key, accepts(dragged, side) else { return false }
+        onDrop(dragged, side)
         return true
     }
 
+    /// Shows the side a drop would land on, where it would move the item.
     private func track(_ sender: NSDraggingInfo) -> NSDragOperation {
-        guard let dragged = draggedKey(sender), dragged != key else {
+        let side = edge(of: sender)
+        guard let dragged = draggedKey(sender), dragged != key, accepts(dragged, side) else {
             onDropEdge(nil)
             return []
         }
-        onDropEdge(edge(of: sender))
+        onDropEdge(side)
         return .move
     }
 

@@ -85,7 +85,6 @@ enum MenuBarScanner {
         }
     }
 
-    /// Reads the current frame of a single element.
     /// The current frames of elements, read off the main thread.
     static func frames(of elements: [AXUIElement]) async -> [CGRect?] {
         await withCheckedContinuation { continuation in

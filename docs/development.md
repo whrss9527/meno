@@ -1,6 +1,6 @@
 # Developing Meno
 
-[← Back to the README](../README.md) · [简体中文](guide.zh-CN.md)
+[← Back to the README](../README.md) · [简体中文](development.zh-CN.md)
 
 ## Development
 

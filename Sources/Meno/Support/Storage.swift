@@ -25,9 +25,11 @@ final class Storage {
 
     func loadSettings() -> MenoSettings {
         let url = url(for: "settings.json")
-        guard let data = try? Data(contentsOf: url) else { return MenoSettings() }
+        // Only a file that is not there means a fresh start; one that cannot
+        // be read is kept aside, so the next save does not overwrite it.
+        guard FileManager.default.fileExists(atPath: url.path) else { return MenoSettings() }
         do {
-            return try MenoSettings.decode(from: data)
+            return try MenoSettings.decode(from: Data(contentsOf: url))
         } catch {
             Log.storage.error("Settings could not be read: \(error.localizedDescription, privacy: .public)")
             backUpUnreadableFile(at: url)
@@ -44,9 +46,9 @@ final class Storage {
     // MARK: Usage
 
     func loadUsage() -> UsageLog {
-        let url = url(for: "usage.json")
-        guard let data = try? Data(contentsOf: url) else { return UsageLog() }
-        return (try? TolerantJSON.decode(UsageLog.self, from: data, defaults: UsageLog())) ?? UsageLog()
+        load("usage.json", empty: UsageLog()) { data in
+            try TolerantJSON.decode(UsageLog.self, from: data, defaults: UsageLog())
+        }
     }
 
     func saveUsage(_ usage: UsageLog, immediately: Bool = false) {
@@ -72,8 +74,9 @@ final class Storage {
     // MARK: Sections
 
     func loadSectionMemory() -> [String: SectionKeeper.Remembered] {
-        guard let data = try? Data(contentsOf: url(for: "sections.json")) else { return [:] }
-        return (try? TolerantJSON.makeDecoder().decode([String: SectionKeeper.Remembered].self, from: data)) ?? [:]
+        load("sections.json", empty: [:]) { data in
+            try TolerantJSON.makeDecoder().decode([String: SectionKeeper.Remembered].self, from: data)
+        }
     }
 
     func saveSectionMemory(_ memory: [String: SectionKeeper.Remembered]) {
@@ -118,6 +121,20 @@ final class Storage {
             try data.write(to: url(for: name), options: .atomic)
         } catch {
             Log.storage.error("Writing \(name, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Reads a file, or `empty` when there is none. A file that cannot be
+    /// read is kept aside rather than overwritten by the next save.
+    private func load<Value>(_ name: String, empty: Value, decode: (Data) throws -> Value) -> Value {
+        let url = url(for: name)
+        guard FileManager.default.fileExists(atPath: url.path) else { return empty }
+        do {
+            return try decode(Data(contentsOf: url))
+        } catch {
+            Log.storage.error("\(name, privacy: .public) could not be read: \(error.localizedDescription, privacy: .public)")
+            backUpUnreadableFile(at: url)
+            return empty
         }
     }
 
