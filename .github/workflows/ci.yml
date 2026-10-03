@@ -50,11 +50,12 @@ jobs:
       - name: Build app bundle
         run: make zip
 
-      # Leaves the app alone for a minute; measured for main and runs by
-      # hand, not for every push to a branch.
+      # Leaves the app alone for a minute twice, as set up and with other
+      # apps' items, hover and a rule; measured for main and runs by hand,
+      # not for every push to a branch. Fails above the limits in the script.
       - name: Footprint while idle
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-        timeout-minutes: 5
+        timeout-minutes: 8
         run: scripts/measure-footprint.sh build/Meno.app
 
       - name: Hiding end to end
