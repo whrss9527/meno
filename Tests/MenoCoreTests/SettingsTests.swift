@@ -182,6 +182,16 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(action?.keys.sorted(), ["applyScene"])
     }
 
+    func testClearingTheAppMenusLeavesTypingAlone() {
+        // A click or a shortcut always may.
+        XCTAssertTrue(AppMenuHiding.mayActivate(direct: true, pointerInMenuBar: false, secondsSinceKeyDown: 0))
+        // Hovering may while the pointer is in the menu bar and nobody types.
+        XCTAssertTrue(AppMenuHiding.mayActivate(direct: false, pointerInMenuBar: true, secondsSinceKeyDown: 5))
+        XCTAssertFalse(AppMenuHiding.mayActivate(direct: false, pointerInMenuBar: true, secondsSinceKeyDown: 0.4))
+        // A change or a rule with the pointer elsewhere may not.
+        XCTAssertFalse(AppMenuHiding.mayActivate(direct: false, pointerInMenuBar: false, secondsSinceKeyDown: 60))
+    }
+
     func testHidingEngineResolution() {
         XCTAssertEqual(HidingEngine.automatic.resolved(osMajorVersion: 26), .wide)
         XCTAssertEqual(HidingEngine.automatic.resolved(osMajorVersion: 27), .stepped)
