@@ -67,15 +67,24 @@ final class Storage {
 
     // MARK: Known items
 
-    func loadKnownItems() -> Set<String>? {
-        guard let data = try? Data(contentsOf: url(for: "known-items.json")),
-              let keys = try? JSONDecoder().decode([String].self, from: data) else { return nil }
-        return Set(keys)
+    /// The items seen so far, or `nil` before the first scan.
+    func loadKnownItems() -> KnownItems? {
+        guard let data = try? Data(contentsOf: url(for: "known-items.json")) else { return nil }
+        return try? KnownItems.decode(from: data)
     }
 
-    func saveKnownItems(_ keys: Set<String>) {
+    /// Writes the items seen so far; `nil` forgets them, so that the next
+    /// scan counts everything as known again.
+    func saveKnownItems(_ known: KnownItems?) {
+        guard let known else {
+            pendingWrites["known-items.json"]?.cancel()
+            pendingWrites["known-items.json"] = nil
+            pendingEncoders["known-items.json"] = nil
+            try? FileManager.default.removeItem(at: url(for: "known-items.json"))
+            return
+        }
         write(name: "known-items.json", delay: 1) {
-            try TolerantJSON.makeEncoder().encode(keys.sorted())
+            try TolerantJSON.makeEncoder().encode(known)
         }
     }
 

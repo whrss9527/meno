@@ -30,7 +30,7 @@ final class ItemInventory: ObservableObject {
 
     private var cachedSections: [MenuItemKey: ItemSection] = [:]
     private var cachedPositions: [MenuItemKey: CGFloat] = [:]
-    private var knownKeys: Set<String>?
+    private var knownItems: KnownItems?
     /// Items whose section the last scan could tell from their position.
     private var reliablySectioned: Set<MenuItemKey> = []
     /// Items that were missing from the last scan but kept.
@@ -41,7 +41,7 @@ final class ItemInventory: ObservableObject {
 
     init(model: AppModel) {
         self.model = model
-        knownKeys = model.storage.loadKnownItems()
+        knownItems = model.storage.loadKnownItems()
     }
 
     // MARK: - Queries
@@ -336,25 +336,23 @@ final class ItemInventory: ObservableObject {
     // MARK: - New arrivals
 
     private func detectNewArrivals() {
-        let current = Set(items.filter { $0.kind != .marker }.map(\.key.rawValue))
-        guard var known = knownKeys else {
-            // First scan ever: everything that exists now is already known.
-            knownKeys = current
-            model.storage.saveKnownItems(current)
-            return
-        }
-        let arrivals = items.filter { $0.kind == .app && !known.contains($0.key.rawValue) }
-        known.formUnion(current)
-        knownKeys = known
+        let scan = items.filter { $0.kind != .marker }
+        // The first scan ever finds everything already known.
+        let isFirst = knownItems == nil
+        var known = knownItems ?? KnownItems()
+        let arrivals = Set(known.arrivals(in: scan.map(\.key)))
+        guard known != knownItems else { return }
+        knownItems = known
         model.storage.saveKnownItems(known)
-        for item in arrivals {
+        guard !isFirst else { return }
+        for item in scan where item.kind == .app && arrivals.contains(item.key) {
             model.handleNewArrival(item)
         }
     }
 
     func forgetKnownItems() {
-        knownKeys = nil
-        model.storage.saveKnownItems([])
+        knownItems = nil
+        model.storage.saveKnownItems(nil)
     }
 
     // MARK: - Naming
