@@ -335,7 +335,7 @@
 "Move to Stash" = "移到暗格";
 "Move to Visible" = "移到常显";
 "Moving item %lld of %lld…" = "正在移动第 %lld 项（共 %lld 项）…";
-"Moving items briefly takes over the pointer." = "移动项目时会短暂接管鼠标指针。";
+"Moving items can briefly take over the pointer." = "移动项目时可能会短暂接管鼠标指针。";
 "Moving…" = "正在移动…";
 "My Layout" = "我的布局";
 "Name" = "名称";
@@ -570,6 +570,7 @@
 "The Meno icon is hidden and no other way to show items is on. Turn one on below, or show the icon again." = "Meno 图标已隐藏，也没有开启其他显示项目的方式。请在下方开启一种，或重新显示图标。";
 "The Meno icon, the Shelf and the look of the menu bar." = "Meno 图标、托盘以及菜单栏的外观。";
 "The menu bar adapts to apps, displays, power and time." = "菜单栏会随 App、显示器、电源和时间自动调整。";
+"The menu bar is hidden, for example while an app is in full screen. Show the menu bar or leave full screen, then try again." = "菜单栏当前是隐藏的，例如有 App 正处于全屏。请先让菜单栏显示出来或退出全屏，然后再试一次。";
 "The menu bar is on a specific display" = "菜单栏在指定的显示器上";
 "The menu bar is on an external display" = "菜单栏在外接显示器上";
 "the menu bar is on an external display" = "菜单栏在外接显示器上";
@@ -634,7 +635,7 @@
 "When items need the room" = "项目需要空间时";
 "When the pointer leaves the menu bar" = "指针离开菜单栏时";
 "When you switch to another app or click elsewhere" = "切换到其他 App 或点按别处时";
-"While Meno moves an item it briefly takes over the pointer. It puts the pointer back when it is done." = "Meno 移动项目时会短暂接管指针，完成后会把指针放回原处。";
+"Meno moves items without the pointer where it can. On macOS 27, or when that does not work, it briefly takes over the pointer and puts it back when it is done." = "Meno 会尽量不占用指针来移动项目；在 macOS 27 上，或者这样做不成功时，才会短暂接管指针，完成后放回原处。";
 "While rules are paused, none of them applies. Rules that undo their action when it ends have undone it." = "规则暂停期间，任何规则都不会生效；设为“条件不再满足时撤销”的规则已撤销了它们的动作。";
 "Wide divider" = "宽分隔符";
 "Width" = "宽度";

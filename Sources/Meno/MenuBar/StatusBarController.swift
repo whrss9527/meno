@@ -354,10 +354,13 @@ final class StatusBarController: NSObject {
 
     /// Shows the dividers even if the user hid them, so that items can be
     /// dropped next to them while moving.
-    func setDividersForcedVisible(_ visible: Bool) {
-        guard dividersForcedVisible != visible else { return }
+    /// Returns whether that changed the menu bar.
+    @discardableResult
+    func setDividersForcedVisible(_ visible: Bool) -> Bool {
+        guard dividersForcedVisible != visible else { return false }
         dividersForcedVisible = visible
         apply(state)
+        return !model.settings.appearance.showsDividers
     }
 
     private var expandedDividerLength: CGFloat {

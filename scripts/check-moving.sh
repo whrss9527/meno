@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# Checks on this Mac that Meno can move menu bar items by their windows, as
-# it does for items the pointer cannot reach, such as those behind the
-# camera housing of a MacBook, and as CI does on each macOS version it builds
-# on. With MENO_MOVE_BY_WINDOW=1 Meno moves every item that way, so a Mac
-# without a housing will do. A new menu bar item appears in the Stash; a
-# scene moves it to Visible and another one back to the Stash.
+# Checks on this Mac that Meno moves menu bar items by their windows, as CI
+# does on each macOS version it builds on. Up to macOS 26 Meno drags items
+# that way while they stay hidden, without the pointer, which also reaches
+# items behind the camera housing or under an app in full screen. A new menu
+# bar item appears in the Stash; a scene moves it to Visible and another one
+# back to the Stash.
 #
 # Usage: scripts/check-moving.sh [path/to/Meno.app]
 set -euo pipefail
@@ -143,7 +143,7 @@ swiftc -O -o "$WORK/MenoE2EMove" "$ROOT/scripts/e2e/StatusItemHelper.swift"
 
 echo "==> Starting Meno"
 # Launched directly rather than with open, so that the environment reaches it.
-MENO_DIAG=1 MENO_MOVE_BY_WINDOW=1 "$BINARY" > "$LOG" 2>&1 &
+MENO_DIAG=1 "$BINARY" > "$LOG" 2>&1 &
 meno=$!
 wait_for 60 log_has '^MENO_DIAG ready' || fail "Meno did not get ready"
 if log_has 'Accessibility: missing'; then

@@ -61,7 +61,7 @@ struct LayoutPane: View {
                 tip("cursorarrow.click", "Click an item to choose where it goes: another section, or one step to the left or right.")
                 tip("hand.draw", "Or drag it onto a section, or onto another item. A line shows on which side it will land.")
                 tip("command", "You can also hold ⌘ and drag icons directly in the menu bar. Meno's dividers mark the sections: the single chevron starts the Hidden section, the double chevron the Stash.")
-                tip("cursorarrow.motionlines", "While Meno moves an item it briefly takes over the pointer. It puts the pointer back when it is done.")
+                tip("cursorarrow.motionlines", "Meno moves items without the pointer where it can. On macOS 27, or when that does not work, it briefly takes over the pointer and puts it back when it is done.")
                 tip("bell", "Choose Show When It Changes for a hidden item, and Meno shows it for a moment when its icon or text changes, for example when a sync fails. Icons are compared when Screen Recording is allowed.")
                 if AppInfo.osMajorVersion >= 26 {
                     HStack(alignment: .top, spacing: 10) {

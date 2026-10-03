@@ -53,6 +53,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
+        window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         window.setContentSize(NSSize(width: 680, height: 540))
         window.delegate = self
         self.window = window

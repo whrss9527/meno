@@ -129,6 +129,10 @@ final class SettingsWindowController: NSObject, ObservableObject, NSWindowDelega
         window.isOpaque = false
         window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
+        // Opened again from another Space, including next to an app in full
+        // screen, the window comes to that Space instead of taking the person
+        // back to where it was first opened.
+        window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         window.minSize = NSSize(width: 820, height: 560)
         window.setContentSize(NSSize(width: 940, height: 660))
         window.center()

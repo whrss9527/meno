@@ -125,7 +125,7 @@ struct RuleEditor: View {
                 Toggle("Undo when the conditions stop being true", isOn: $reverts)
                     .toggleStyle(.checkbox)
                 if action.itemKey != nil {
-                    Text("Moving items briefly takes over the pointer.")
+                    Text("Moving items can briefly take over the pointer.")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }

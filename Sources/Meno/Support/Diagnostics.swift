@@ -86,12 +86,6 @@ extension Diagnostics {
     /// measures it, as CI does. Set `MENO_DIAG=1` in its environment.
     static let printsEvents = ProcessInfo.processInfo.environment["MENO_DIAG"] == "1"
 
-    /// Whether Meno drags every item by its window, as it otherwise only
-    /// does for items the pointer cannot reach, so that a script can check
-    /// that way on a Mac without a camera housing, as CI does. Set
-    /// `MENO_MOVE_BY_WINDOW=1` in its environment.
-    static let movesByWindow = ProcessInfo.processInfo.environment["MENO_MOVE_BY_WINDOW"] == "1"
-
     /// Prints a line starting with `MENO_DIAG` to standard error when
     /// `printsEvents`.
     static func event(_ line: @autoclosure () -> String) {
