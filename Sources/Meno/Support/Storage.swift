@@ -43,6 +43,14 @@ final class Storage {
         }
     }
 
+    /// Writes a copy of `settings` next to `settings.json` under `name`, and
+    /// returns where it is.
+    func backUp(_ settings: MenoSettings, as name: String) throws -> URL {
+        let url = url(for: name)
+        try settings.encoded().write(to: url, options: .atomic)
+        return url
+    }
+
     // MARK: Usage
 
     func loadUsage() -> UsageLog {

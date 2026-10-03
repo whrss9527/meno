@@ -166,6 +166,16 @@ struct GeneralPane: View {
                 }
             }
         }
+        .confirmationDialog(
+            "Import these settings?",
+            isPresented: Binding(get: { model.pendingImport != nil }, set: { if !$0 { model.pendingImport = nil } }),
+            presenting: model.pendingImport
+        ) { pending in
+            Button("Import") { model.confirmImport() }
+            Button("Cancel", role: .cancel) { model.pendingImport = nil }
+        } message: { pending in
+            Text("“\(pending.fileName)” holds \(pending.file.settings.scenes.count) scenes, \(pending.file.settings.rules.count) rules and \(pending.file.settings.shortcuts.count) shortcuts. It replaces all your current settings. Meno keeps a copy of them, and Undo in the notice puts them back.")
+        }
         .confirmationDialog("Reset all settings?", isPresented: $confirmingReset) {
             Button("Reset", role: .destructive) { model.resetSettings() }
             Button("Cancel", role: .cancel) {}

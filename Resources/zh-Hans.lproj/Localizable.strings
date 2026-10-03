@@ -237,6 +237,7 @@
 "Import" = "导入";
 "Import from “%@”" = "从“%@”导入";
 "Import Settings…" = "导入设置…";
+"Import these settings?" = "要导入这些设置吗？";
 "Imported as “%@”" = "导入后名为“%@”";
 "Imported from “%@”." = "已从“%@”导入。";
 "Imported from “%@”. Rules that run commands were turned off; check them before turning them on." = "已从“%@”导入。带命令的规则已被关闭，请检查后再打开。";
@@ -636,6 +637,7 @@
 "When the pointer leaves the menu bar" = "指针离开菜单栏时";
 "When you switch to another app or click elsewhere" = "切换到其他 App 或点按别处时";
 "Meno moves items without the pointer where it can. On macOS 27, or when that does not work, it briefly takes over the pointer and puts it back when it is done." = "Meno 会尽量不占用指针来移动项目；在 macOS 27 上，或者这样做不成功时，才会短暂接管指针，完成后放回原处。";
+"The copy of your previous settings could not be read. It is in ~/Library/Application Support/Meno." = "无法读取之前设置的副本。它保存在 ~/Library/Application Support/Meno 中。";
 "While rules are paused, none of them applies. Rules that undo their action when it ends have undone it." = "规则暂停期间，任何规则都不会生效；设为“条件不再满足时撤销”的规则已撤销了它们的动作。";
 "Wide divider" = "宽分隔符";
 "Width" = "宽度";
@@ -643,6 +645,8 @@
 "Work" = "工作";
 "You can also hold ⌘ and drag icons directly in the menu bar. Meno's dividers mark the sections: the single chevron starts the Hidden section, the double chevron the Stash." = "你也可以直接在菜单栏中按住 ⌘ 拖移图标。Meno 的分隔符标记了各个分区：单箭头是“隐藏”分区的起点，双箭头是“暗格”的起点。";
 "You're all set" = "一切就绪";
+"Your current settings could not be kept aside, so nothing was imported." = "无法保存当前设置的副本，所以没有导入任何内容。";
+"Your previous settings are back." = "已恢复之前的设置。";
 "Zen" = "禅模式";
 "Zen clears the menu bar for screenshots, recordings and presentations. Rules can turn it on for you, for example while Keynote is in front." = "禅模式会为截图、录屏和演示清空菜单栏。规则可以自动开启它，例如在 Keynote 位于前台时。";
 "Zen during calls" = "通话时开启禅模式";
@@ -650,6 +654,7 @@
 "Zen is on. Click to leave Zen." = "禅模式已开启。点按以退出。";
 "Zen is on. Only system items remain." = "禅模式已开启，只保留系统项目。";
 "Zen while presenting with Keynote" = "用 Keynote 演示时开启禅模式";
+"“%@” holds %lld scenes, %lld rules and %lld shortcuts. It replaces all your current settings. Meno keeps a copy of them, and Undo in the notice puts them back." = "“%@”包含 %lld 个场景、%lld 条规则和 %lld 个快捷键，会替换你当前的全部设置。Meno 会保留当前设置的副本，点提示里的“撤销”即可恢复。";
 "“%@” is connected" = "已连接“%@”";
 "“%@” is not in the menu bar right now." = "“%@”现在不在菜单栏中。";
 "“%@” succeeds" = "“%@”执行成功";

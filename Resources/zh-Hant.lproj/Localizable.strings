@@ -237,6 +237,7 @@
 "Import" = "匯入";
 "Import from “%@”" = "從「%@」匯入";
 "Import Settings…" = "匯入設定…";
+"Import these settings?" = "要匯入這些設定嗎？";
 "Imported as “%@”" = "匯入後名為「%@」";
 "Imported from “%@”." = "已從「%@」匯入。";
 "Imported from “%@”. Rules that run commands were turned off; check them before turning them on." = "已從「%@」匯入。帶指令的規則已被關閉，請檢查後再開啟。";
@@ -636,6 +637,7 @@
 "When the pointer leaves the menu bar" = "指標離開選單列時";
 "When you switch to another app or click elsewhere" = "切換到其他 App 或按一下別處時";
 "Meno moves items without the pointer where it can. On macOS 27, or when that does not work, it briefly takes over the pointer and puts it back when it is done." = "Meno 會盡量不佔用指標來移動項目；在 macOS 27 上，或者這樣做不成功時，才會短暫接管指標，完成後放回原處。";
+"The copy of your previous settings could not be read. It is in ~/Library/Application Support/Meno." = "無法讀取先前設定的副本。它儲存在 ~/Library/Application Support/Meno 中。";
 "While rules are paused, none of them applies. Rules that undo their action when it ends have undone it." = "規則暫停期間，任何規則都不會生效；設為「條件不再滿足時還原」的規則已還原了它們的動作。";
 "Wide divider" = "寬分隔線";
 "Width" = "寬度";
@@ -643,6 +645,8 @@
 "Work" = "工作";
 "You can also hold ⌘ and drag icons directly in the menu bar. Meno's dividers mark the sections: the single chevron starts the Hidden section, the double chevron the Stash." = "你也可以直接在選單列中按住 ⌘ 拖移圖示。Meno 的分隔線標記了各個區段：單箭頭是「隱藏」區段的起點，雙箭頭是「暗格」的起點。";
 "You're all set" = "一切就緒";
+"Your current settings could not be kept aside, so nothing was imported." = "無法保留目前設定的副本，所以沒有匯入任何內容。";
+"Your previous settings are back." = "已回復先前的設定。";
 "Zen" = "禪模式";
 "Zen clears the menu bar for screenshots, recordings and presentations. Rules can turn it on for you, for example while Keynote is in front." = "禪模式會為截圖、螢幕錄製和簡報清空選單列。規則可以自動開啟它，例如在 Keynote 位於最前方時。";
 "Zen during calls" = "通話時開啟禪模式";
@@ -650,6 +654,7 @@
 "Zen is on. Click to leave Zen." = "禪模式已開啟。按一下以結束。";
 "Zen is on. Only system items remain." = "禪模式已開啟，只保留系統項目。";
 "Zen while presenting with Keynote" = "用 Keynote 播放簡報時開啟禪模式";
+"“%@” holds %lld scenes, %lld rules and %lld shortcuts. It replaces all your current settings. Meno keeps a copy of them, and Undo in the notice puts them back." = "「%@」包含 %lld 個場景、%lld 條規則和 %lld 個快速鍵，會取代你目前的全部設定。Meno 會保留目前設定的副本，按一下提示裡的「還原」即可回復。";
 "“%@” is connected" = "已連接「%@」";
 "“%@” is not in the menu bar right now." = "「%@」現在不在選單列中。";
 "“%@” succeeds" = "「%@」執行成功";
