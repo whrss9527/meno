@@ -51,6 +51,11 @@ final class StatusBarController: NSObject {
     private var groupItems: [UUID: NSStatusItem] = [:]
     private(set) var state = BarState()
     private var applyTask: Task<Void, Never>?
+    /// When the state was last applied; the menu bar takes a moment to
+    /// follow.
+    private var appliedAt = Date.distantPast
+    /// Whether hiding was seen to work, for the diagnostic report.
+    private(set) var hidingCheck = HidingCheck()
     private var zenGlyphView: NSImageView?
     private var dividersForcedVisible = false
     private var orderRepairs = 0
@@ -73,8 +78,32 @@ final class StatusBarController: NSObject {
     }
 
     var engine: ResolvedHidingEngine {
-        model.settings.general.hidingEngine.resolved(osMajorVersion: AppInfo.osMajorVersion)
+        let setting = model.settings.general.hidingEngine
+        if setting == .automatic, let fallback = engineFallback {
+            return fallback
+        }
+        return setting.resolved(osMajorVersion: AppInfo.osMajorVersion)
     }
+
+    /// The engine Meno switched to after the one it picked did not hide
+    /// items, on this version of macOS; an update of macOS tries again.
+    private(set) var engineFallback: ResolvedHidingEngine? = {
+        guard let stored = UserDefaults.standard.string(forKey: StatusBarController.engineFallbackKey) else { return nil }
+        let parts = stored.split(separator: "|", maxSplits: 1).map(String.init)
+        guard parts.count == 2, parts[1] == AppInfo.osVersionString else { return nil }
+        return ResolvedHidingEngine(rawValue: parts[0])
+    }() {
+        didSet {
+            UserDefaults.standard.set(
+                engineFallback.map { "\($0.rawValue)|\(AppInfo.osVersionString)" },
+                forKey: Self.engineFallbackKey
+            )
+        }
+    }
+
+    private static let engineFallbackKey = "HidingEngineFallback"
+    /// The version of macOS on which Meno last said that hiding failed.
+    private static let hidingNoticeKey = "HidingFailureNoticeShown"
 
     // MARK: - Setup
 
@@ -334,6 +363,7 @@ final class StatusBarController: NSObject {
 
     func apply(_ newState: BarState) {
         state = newState
+        appliedAt = Date()
         applyTask?.cancel()
         applyTask = nil
         switch engine {
@@ -345,6 +375,46 @@ final class StatusBarController: NSObject {
             }
         }
         refreshAppearance()
+    }
+
+    /// Looks, after a scan, whether the items that belong in collapsed
+    /// sections have left the screen. Only the wide engine is checked: the
+    /// stepped one keeps hidden items' positions from being reported.
+    func checkHiding(_ items: [MenuBarItem]) {
+        guard engine == .wide, !dividersForcedVisible, Date().timeIntervalSince(appliedAt) > 2 else { return }
+        var collapsed: Set<ItemSection> = []
+        if state.hiddenCollapsed { collapsed.insert(.hidden) }
+        if state.stashCollapsed { collapsed.insert(.stash) }
+        guard !collapsed.isEmpty else { return }
+        let meant = items.filter { $0.kind != .marker && $0.isMovable && collapsed.contains($0.section) }
+        let onScreen = meant.filter { $0.isOnScreen }.count
+        guard hidingCheck.record(onScreen: onScreen, of: meant.count) else { return }
+        hidingFailed(onScreen: onScreen, of: meant.count)
+    }
+
+    private func hidingFailed(onScreen: Int, of total: Int) {
+        let failed = engine
+        Diagnostics.event("hiding not verified engine=\(failed) on_screen=\(onScreen) of=\(total)")
+        Log.menuBar.error("Hidden items stayed on the screen: \(onScreen, privacy: .public) of \(total, privacy: .public) with the \(failed.rawValue, privacy: .public) engine")
+        let fallback = model.settings.general.hidingEngine.fallback(after: failed)
+        if let fallback {
+            engineFallback = fallback
+            hidingCheck.reset()
+            apply(state)
+        }
+        // Said once for each version of macOS.
+        let defaults = UserDefaults.standard
+        guard defaults.string(forKey: Self.hidingNoticeKey) != AppInfo.osVersionString else { return }
+        defaults.set(AppInfo.osVersionString, forKey: Self.hidingNoticeKey)
+        let message = fallback == nil
+            ? String(localized: "Hidden items stayed in the menu bar. Try another hiding engine in Settings › General › Advanced.")
+            : String(localized: "Hidden items stayed in the menu bar, so Meno switched to another hiding engine. You can pick one in Settings › General › Advanced.")
+        model.toasts.show(
+            message,
+            symbol: "exclamationmark.triangle.fill",
+            actions: [ToastCenter.Action(title: String(localized: "Open Settings")) { [weak self] in self?.model.openSettings(.general) }],
+            duration: 12
+        )
     }
 
     /// Re-applies the current state, for example after the screens changed.

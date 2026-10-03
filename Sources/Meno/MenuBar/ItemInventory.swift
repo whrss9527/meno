@@ -146,6 +146,7 @@ final class ItemInventory: ObservableObject {
         // without sections leaves new items to the next one.
         if sectioned {
             detectNewArrivals()
+            model.statusBar.checkHiding(items)
         }
         model.keeper.scanned(keeperObservations())
         // Artwork is only captured for what shows it, so that macOS's
