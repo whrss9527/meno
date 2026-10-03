@@ -150,6 +150,16 @@ echo "::group::Meno's report"
 printf '%s\n' "$report"
 echo "::endgroup::"
 
+echo "==> Checking that Meno saw the hidden items leave the screen"
+# Each report scans again; the check skips the first seconds after hiding.
+verified=""
+for _ in 1 2 3 4 5 6; do
+  sleep 2
+  verified="$(meno_report | sed -n 's/.*hiding verified \([a-z ]*\) ·.*/\1/p' | head -n 1)" || true
+  [[ "$verified" == "yes" || "$verified" == "not checked" || "$verified" == "no" ]] && break
+done
+[[ "$verified" == "yes" || "$verified" == "not checked" ]] || fail "Meno did not verify that hiding worked (hiding verified: ${verified:-missing})"
+
 # Whether a report has the Hidden divider left of the Meno icon. Its line
 # reads "Meno icon x=… w=… · hidden divider x=… w=… · …".
 divider_in_order() {

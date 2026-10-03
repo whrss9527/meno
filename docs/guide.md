@@ -69,6 +69,8 @@ To hide a section, its divider grows until the items to its left no longer fit:
 - **Wide engine (macOS 14–26):** one divider grows far past the edge of the screen.
 - **Stepped engine (macOS 27):** the macOS 27 menu bar drops items wider than about half of the display, and large length changes do not push neighbours along. Meno grows the divider together with a few helper spacers, each just below that limit, in 40 pt steps. Items pushed out go into the system overflow menu. You can choose the engine in *Settings › General › Advanced*.
 
+With the wide engine, Meno checks after hiding that the hidden items have left the screen. When they stay twice in a row, it switches to the stepped engine for this version of macOS, if it picked the engine itself, and says so once. The diagnostic report shows whether hiding was verified.
+
 Menu bar items are read through each app's accessibility tree, which works on every supported macOS version, including the single-window menu bar of macOS 27.
 
 ## Footprint
