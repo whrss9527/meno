@@ -92,12 +92,17 @@ final class RuleTests: XCTestCase {
         XCTAssertTrue(rule.requiresAll)
         XCTAssertFalse(rule.revertsWhenInactive)
         XCTAssertEqual(rule.conditions, [.onBattery])
+        XCTAssertEqual(rule.minimumDuration, 0)
 
         var any = rule
         any.requiresAll = false
+        any.minimumDuration = 10
         var saved = MenoSettings()
         saved.rules = [any]
         XCTAssertEqual(try MenoSettings.decode(from: saved.encoded()).rules, [any])
+
+        let negative = #"{"rules":[{"id":"6F1C2A7E-2B1D-4C8A-9E3F-1A2B3C4D5E6F","name":"Battery","conditions":[{"onBattery":{}}],"action":{"zen":{}},"minimumDuration":-5}]}"#
+        XCTAssertEqual(try MenoSettings.decode(from: Data(negative.utf8)).rules.first?.minimumDuration, 0)
     }
 
     func testPausedRulesDoNotApply() {
@@ -291,6 +296,83 @@ final class RuleTests: XCTestCase {
         XCTAssertEqual(evaluator.activeRuleIDs, [battery.id])
         evaluator.reset()
         XCTAssertEqual(evaluator.update(rules: [battery], context: RuleContext(isOnBattery: true)), [.activated(battery)])
+    }
+
+    func testBriefChangesNeitherStartNorEndARule() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let rule = AutomationRule(name: "Call", conditions: [.microphoneInUse], action: .zen, minimumDuration: 3)
+        let on = RuleContext(microphoneInUse: true)
+        let off = RuleContext()
+        var evaluator = RuleEvaluator()
+
+        // On for two and a half seconds, then off: nothing happens.
+        XCTAssertEqual(evaluator.update(rules: [rule], context: on, now: start), [])
+        XCTAssertEqual(evaluator.nextChange(rules: [rule]), start + 3)
+        XCTAssertEqual(evaluator.update(rules: [rule], context: on, now: start + 2), [])
+        XCTAssertEqual(evaluator.update(rules: [rule], context: off, now: start + 2.5), [])
+        XCTAssertNil(evaluator.nextChange(rules: [rule]))
+        XCTAssertEqual(evaluator.activeRuleIDs, [])
+
+        // On again: the wait starts over, and the rule starts once it is over.
+        XCTAssertEqual(evaluator.update(rules: [rule], context: on, now: start + 4), [])
+        XCTAssertEqual(evaluator.update(rules: [rule], context: on, now: start + 6.9), [])
+        XCTAssertEqual(evaluator.update(rules: [rule], context: on, now: start + 7), [.activated(rule)])
+        XCTAssertNil(evaluator.nextChange(rules: [rule]))
+
+        // Ending waits as long: a short pause keeps the rule on.
+        XCTAssertEqual(evaluator.update(rules: [rule], context: off, now: start + 10), [])
+        XCTAssertEqual(evaluator.activeRuleIDs, [rule.id])
+        XCTAssertEqual(evaluator.update(rules: [rule], context: on, now: start + 11), [])
+        XCTAssertEqual(evaluator.update(rules: [rule], context: off, now: start + 20), [])
+        XCTAssertEqual(evaluator.nextChange(rules: [rule]), start + 23)
+        XCTAssertEqual(evaluator.update(rules: [rule], context: off, now: start + 23), [.deactivated(rule)])
+        XCTAssertEqual(evaluator.activeRuleIDs, [])
+    }
+
+    func testRulesWithoutAMinimumDurationDoNotWait() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let quick = AutomationRule(name: "Battery", conditions: [.onBattery], action: .revealHidden)
+        let slow = AutomationRule(name: "Slow", conditions: [.onBattery], action: .zen, minimumDuration: 5)
+        var evaluator = RuleEvaluator()
+        let battery = RuleContext(isOnBattery: true)
+        XCTAssertEqual(evaluator.update(rules: [quick, slow], context: battery, now: start), [.activated(quick)])
+        XCTAssertEqual(evaluator.nextChange(rules: [quick, slow]), start + 5)
+        XCTAssertEqual(evaluator.update(rules: [quick, slow], context: battery, now: start + 5), [.activated(slow)])
+    }
+
+    func testTurningARuleOffEndsItAtOnce() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        var rule = AutomationRule(name: "Keynote", conditions: [.appFrontmost(bundleID: "k")], action: .zen, minimumDuration: 3)
+        let keynote = RuleContext(frontmostBundleID: "k")
+        var evaluator = RuleEvaluator()
+        XCTAssertEqual(evaluator.update(rules: [rule], context: keynote, now: start), [])
+        XCTAssertEqual(evaluator.update(rules: [rule], context: keynote, now: start + 3), [.activated(rule)])
+        rule.isEnabled = false
+        XCTAssertEqual(evaluator.update(rules: [rule], context: keynote, now: start + 4), [.deactivated(rule)])
+        // Turning it on again waits like any other change.
+        rule.isEnabled = true
+        XCTAssertEqual(evaluator.update(rules: [rule], context: keynote, now: start + 5), [])
+        XCTAssertEqual(evaluator.update(rules: [rule], context: keynote, now: start + 8), [.activated(rule)])
+    }
+
+    func testAnEditedRuleDoesNotWaitAgain() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let rule = AutomationRule(name: "Keynote", conditions: [.appFrontmost(bundleID: "k")], action: .zen, minimumDuration: 3)
+        let keynote = RuleContext(frontmostBundleID: "k")
+        var evaluator = RuleEvaluator()
+        _ = evaluator.update(rules: [rule], context: keynote, now: start)
+        XCTAssertEqual(evaluator.update(rules: [rule], context: keynote, now: start + 3), [.activated(rule)])
+        var edited = rule
+        edited.action = .collapse
+        evaluator.forget(rule.id)
+        XCTAssertEqual(evaluator.update(rules: [edited], context: keynote, now: start + 4), [.activated(edited)])
+    }
+
+    func testSuggestedMinimumDuration() {
+        XCTAssertEqual(AutomationRule.suggestedMinimumDuration(for: [.onBattery]), 0)
+        XCTAssertEqual(AutomationRule.suggestedMinimumDuration(for: [.onBattery, .microphoneInUse]), 3)
+        XCTAssertEqual(AutomationRule.suggestedMinimumDuration(for: [.appFrontmost(bundleID: "k")]), 3)
+        XCTAssertEqual(AutomationRule.suggestedMinimumDuration(for: [.cameraInUse]), 3)
     }
 
     func testActionHelpers() {

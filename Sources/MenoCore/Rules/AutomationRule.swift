@@ -201,6 +201,13 @@ public enum RuleCondition: Codable, Hashable, Sendable {
         case commandSucceeds
         case network
 
+        /// Whether a condition of this kind can change and change back
+        /// within seconds: the app in front with ⌘-Tab, or a microphone or
+        /// camera during a call.
+        public var changesBackQuickly: Bool {
+            self == .appFrontmost || self == .microphoneInUse || self == .cameraInUse
+        }
+
         /// A reasonable starting value for a new condition of this kind.
         public var defaultCondition: RuleCondition {
             switch self {
@@ -296,6 +303,10 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
     public var revertsWhenInactive: Bool
     /// Whether all conditions have to be true, or any one of them.
     public var requiresAll: Bool
+    /// Seconds the conditions have to stay true before the rule acts, and
+    /// stay false before it ends, so that brief changes such as a quick
+    /// switch between apps do not move items back and forth. 0 acts at once.
+    public var minimumDuration: TimeInterval
 
     public init(
         id: UUID = UUID(),
@@ -304,7 +315,8 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
         conditions: [RuleCondition],
         action: RuleAction,
         revertsWhenInactive: Bool = true,
-        requiresAll: Bool = true
+        requiresAll: Bool = true,
+        minimumDuration: TimeInterval = 0
     ) {
         self.id = id
         self.name = name
@@ -313,10 +325,11 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
         self.action = action
         self.revertsWhenInactive = revertsWhenInactive
         self.requiresAll = requiresAll
+        self.minimumDuration = minimumDuration
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, isEnabled, conditions, action, revertsWhenInactive, requiresAll
+        case id, name, isEnabled, conditions, action, revertsWhenInactive, requiresAll, minimumDuration
     }
 
     /// Rules are stored in a list, where missing fields are not filled in
@@ -330,6 +343,15 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
         action = try container.decode(RuleAction.self, forKey: .action)
         revertsWhenInactive = try container.decodeIfPresent(Bool.self, forKey: .revertsWhenInactive) ?? true
         requiresAll = try container.decodeIfPresent(Bool.self, forKey: .requiresAll) ?? true
+        let minimumDuration = try container.decodeIfPresent(TimeInterval.self, forKey: .minimumDuration) ?? 0
+        self.minimumDuration = max(minimumDuration, 0)
+    }
+
+    /// The minimum duration suggested for a new rule with these conditions:
+    /// a few seconds when one of them can change back quickly, such as the
+    /// app in front or a microphone during a call, and none otherwise.
+    public static func suggestedMinimumDuration(for conditions: [RuleCondition]) -> TimeInterval {
+        conditions.contains { $0.kind.changesBackQuickly } ? 3 : 0
     }
 
     public func matches(_ context: RuleContext) -> Bool {
@@ -408,13 +430,33 @@ public enum RuleTransition: Hashable, Sendable {
 /// Tracks which rules are active and reports edges.
 public struct RuleEvaluator: Sendable {
     public private(set) var activeRuleIDs: Set<UUID> = []
+    /// Since when the rules whose conditions changed have waited for their
+    /// minimum duration, by rule.
+    public private(set) var changedSince: [UUID: Date] = [:]
 
     public init() {}
 
-    /// Evaluates all rules and returns what changed since the last call.
+    /// Evaluates all rules at `now` and returns what changed since the last
+    /// call. A rule starts or ends once its conditions have been true or
+    /// false for its minimum duration; one that is turned off ends at once.
     /// Deactivations come first, so reverts run before new actions.
-    public mutating func update(rules: [AutomationRule], context: RuleContext) -> [RuleTransition] {
-        let nowActive = Set(rules.filter { $0.matches(context) }.map(\.id))
+    public mutating func update(rules: [AutomationRule], context: RuleContext, now: Date = Date()) -> [RuleTransition] {
+        var nowActive: Set<UUID> = []
+        var waiting: [UUID: Date] = [:]
+        for rule in rules {
+            let wasActive = activeRuleIDs.contains(rule.id)
+            var isActive = rule.matches(context)
+            if isActive != wasActive, rule.isEnabled, rule.minimumDuration > 0 {
+                let since = changedSince[rule.id] ?? now
+                if now.timeIntervalSince(since) < rule.minimumDuration {
+                    waiting[rule.id] = since
+                    isActive = wasActive
+                }
+            }
+            if isActive {
+                nowActive.insert(rule.id)
+            }
+        }
         var transitions: [RuleTransition] = []
         for rule in rules.reversed() where activeRuleIDs.contains(rule.id) && !nowActive.contains(rule.id) {
             transitions.append(.deactivated(rule))
@@ -423,16 +465,28 @@ public struct RuleEvaluator: Sendable {
             transitions.append(.activated(rule))
         }
         activeRuleIDs = nowActive
+        changedSince = waiting
         return transitions
+    }
+
+    /// When the first rule that waits for its minimum duration is due to
+    /// start or end, if its conditions do not change back before.
+    public func nextChange(rules: [AutomationRule]) -> Date? {
+        rules.compactMap { rule in
+            changedSince[rule.id].map { $0.addingTimeInterval(rule.minimumDuration) }
+        }.min()
     }
 
     public mutating func reset() {
         activeRuleIDs = []
+        changedSince = [:]
     }
 
     /// Forgets that a rule is active, so the next update activates it again
-    /// if it still matches (for example after its action was edited).
+    /// if it still matches (for example after its action was edited). It
+    /// does at once: its conditions did not just change.
     public mutating func forget(_ id: UUID) {
         activeRuleIDs.remove(id)
+        changedSince[id] = .distantPast
     }
 }

@@ -188,6 +188,9 @@ enum RuleDescriber {
         if rule.revertsWhenInactive {
             sentence += " " + String(localized: "Undone afterwards.")
         }
+        if rule.minimumDuration > 0 {
+            sentence += " " + String(localized: "Ignores changes shorter than \(Formatters.duration(rule.minimumDuration)).")
+        }
         return sentence
     }
 
@@ -275,8 +278,17 @@ enum RulePreset: CaseIterable {
         }
     }
 
+    /// The preset's rule, waiting a few seconds when its conditions can
+    /// change back quickly.
     @MainActor
     func makeRule(model: AppModel) -> AutomationRule {
+        var rule = baseRule(model: model)
+        rule.minimumDuration = AutomationRule.suggestedMinimumDuration(for: rule.conditions)
+        return rule
+    }
+
+    @MainActor
+    private func baseRule(model: AppModel) -> AutomationRule {
         switch self {
         case .presenting:
             return AutomationRule(name: title, conditions: [.appFrontmost(bundleID: "com.apple.Keynote")], action: .zen)
