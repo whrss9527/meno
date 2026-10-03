@@ -60,6 +60,8 @@ enum Diagnostics {
             if !item.isMovable { flags.append("fixed") }
             if !item.isOnScreen { flags.append("off screen") }
             if item.kind == .marker { flags.append("marker") }
+            // Named by its text or place, which can change; see KnownItems.
+            if item.kind != .marker, !item.key.isSteady { flags.append("key may change") }
             let section = item.section.rawValue.padding(toLength: 7, withPad: " ", startingAt: 0)
             lines.append("  \(section) \(describe(item.frame)) \(item.key.rawValue) “\(item.displayName)”"
                 + (flags.isEmpty ? "" : " [\(flags.joined(separator: ", "))]"))
