@@ -1,0 +1,29 @@
+name: 问题反馈 / Bug report
+description: 用的时候出了问题 / Something isn't working
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么 / What happened
+      description: 一两句话就行，有截图更好 / A sentence or two is enough; screenshots help
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 怎么复现 / Steps to reproduce
+      placeholder: |
+        1.
+        2.
+  - type: input
+    id: version
+    attributes:
+      label: 版本 / Version
+      description: App 版本和 macOS 版本 / App and macOS version
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 诊断报告 / Diagnostic report
+      description: 在 Meno 的「设置 › 关于」里点「复制诊断报告」，粘贴到这里。报告里有 Meno 和 macOS 的版本、显示器和菜单栏项目的名字，粘贴前可以先看一眼 / In Meno, open Settings › About, click Copy Diagnostic Report and paste it here. It lists the Meno and macOS versions, your displays and the names of your menu bar items; have a look before pasting.
+      render: text
