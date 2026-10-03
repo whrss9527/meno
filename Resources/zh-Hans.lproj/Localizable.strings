@@ -290,6 +290,7 @@
 "macOS has no symbol with this name." = "macOS 中没有这个名称的符号。";
 "macOS keeps this item in place" = "macOS 固定了这个项目的位置";
 "macOS runs Meno from a temporary copy. Move Meno to the Applications folder, open it from there and try again." = "macOS 正在从临时副本运行 Meno。请把 Meno 移到“应用程序”文件夹，从那里打开后再试一次。";
+"macOS shows the same items in the same order on the menu bar of every display, so Meno arranges them for the display you use: whenever its menu bar has the items, its scene applies. Each choice is a rule, which Rules lists as well." = "macOS 在每块显示器的菜单栏上显示同样的项目、同样的顺序，所以 Meno 按你正在用的显示器来排列：哪块显示器的菜单栏上有这些项目，就应用它的场景。每个选择都是一条规则，在“规则”里也能看到。";
 "Made with Meno %@" = "由 Meno %@ 制作";
 "Makes room by hiding the menus of the frontmost app while items are shown." = "显示项目时暂时隐藏前台 App 的菜单，腾出空间。";
 "Manage Scenes…" = "管理场景…";
@@ -637,6 +638,10 @@
 "When the pointer leaves the menu bar" = "指针离开菜单栏时";
 "When you switch to another app or click elsewhere" = "切换到其他 App 或点按别处时";
 "Meno moves items without the pointer where it can. On macOS 27, or when that does not work, it briefly takes over the pointer and puts it back when it is done." = "Meno 会尽量不占用指针来移动项目；在 macOS 27 上，或者这样做不成功时，才会短暂接管指针，完成后放回原处。";
+"No Scene" = "不用场景";
+"Not connected" = "未连接";
+"Scene" = "场景";
+"Scenes for displays" = "各显示器的场景";
 "The copy of your previous settings could not be read. It is in ~/Library/Application Support/Meno." = "无法读取之前设置的副本。它保存在 ~/Library/Application Support/Meno 中。";
 "While rules are paused, none of them applies. Rules that undo their action when it ends have undone it." = "规则暂停期间，任何规则都不会生效；设为“条件不再满足时撤销”的规则已撤销了它们的动作。";
 "Wide divider" = "宽分隔符";
@@ -657,5 +662,6 @@
 "“%@” holds %lld scenes, %lld rules and %lld shortcuts. It replaces all your current settings. Meno keeps a copy of them, and Undo in the notice puts them back." = "“%@”包含 %lld 个场景、%lld 条规则和 %lld 个快捷键，会替换你当前的全部设置。Meno 会保留当前设置的副本，点提示里的“撤销”即可恢复。";
 "“%@” is connected" = "已连接“%@”";
 "“%@” is not in the menu bar right now." = "“%@”现在不在菜单栏中。";
+"“%@” on %@" = "“%@”用于 %@";
 "“%@” succeeds" = "“%@”执行成功";
 "⌥-click it to include the Stash." = "按住 ⌥ 点按它可同时显示暗格。";

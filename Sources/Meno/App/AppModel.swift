@@ -651,6 +651,17 @@ final class AppModel: ObservableObject {
         if activeSceneID == id { activeSceneID = nil }
     }
 
+    /// Applies `scene` whenever the menu bar of `display` has the items, or
+    /// stops doing so with `nil`. It is kept as a rule.
+    func setDisplayScene(_ scene: UUID?, for display: String) {
+        let sceneName = scene.flatMap { id in settings.scenes.first { $0.id == id }?.name } ?? ""
+        settings.rules = settings.rules.settingDisplayScene(
+            scene,
+            for: display,
+            name: String(localized: "“\(sceneName)” on \(display)")
+        )
+    }
+
     @discardableResult
     func applyScene(
         _ scene: LayoutScene,
