@@ -7,6 +7,11 @@ on:
   push:
     branches: ["**"]
   workflow_dispatch:
+    inputs:
+      runner:
+        description: "Also run on this runner, for example macos-27 for a new macOS"
+        required: false
+        default: ""
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -19,13 +24,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Current SDK: Liquid Glass code paths are compiled.
-          - name: "26 / Xcode 26"
-            runner: macos-26
-          # Previous SDK: the material fallbacks are compiled instead.
-          - name: "15 / Xcode 16"
-            runner: macos-15
+        # macOS 26 with the current SDK, where the Liquid Glass code paths
+        # are compiled, and macOS 15 with the previous one, where the
+        # material fallbacks are. A run by hand can add another runner, such
+        # as a new macOS, to see whether hiding and moving still work there.
+        include: ${{ fromJSON(format('[{{"name":"26 / Xcode 26","runner":"macos-26"}},{{"name":"15 / Xcode 16","runner":"macos-15"}}{0}]', inputs.runner && format(',{{"name":"{0}","runner":"{0}"}}', inputs.runner) || '')) }}
     steps:
       - uses: actions/checkout@v5
         with:

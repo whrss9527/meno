@@ -206,6 +206,8 @@
 "Hidden items appear for a moment when something happens." = "隱藏的項目有變化時會短暫出現。";
 "Hidden items appear in the menu bar, so the file can be dropped on one of them. Items in the Shelf cannot take drops." = "隱藏的項目會顯示在選單列中，方便把檔案放到其中一個項目上。托盤中的項目無法接收拖放。";
 "Hidden items cannot be shown" = "隱藏的項目無法顯示";
+"Hidden items stayed in the menu bar, so Meno switched to another hiding engine. You can pick one in Settings › General › Advanced." = "隱藏的項目仍留在選單列裡，Meno 已改用另一種隱藏引擎。你可以在「設定 › 一般 › 進階」中選擇。";
+"Hidden items stayed in the menu bar. Try another hiding engine in Settings › General › Advanced." = "隱藏的項目仍留在選單列裡。請在「設定 › 一般 › 進階」中換一種隱藏引擎試試看。";
 "Hidden section divider" = "隱藏區段分隔線";
 "Hide" = "隱藏";
 "hide %@" = "隱藏 %@";

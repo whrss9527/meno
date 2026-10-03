@@ -12,7 +12,9 @@ enum Diagnostics {
                 + " · \((Bundle.main.bundlePath as NSString).abbreviatingWithTildeInPath)",
             "macOS \(AppInfo.osVersionString) · \(architecture) · \(Locale.current.identifier)"
                 + " · interface \(InterfaceLanguageSetting.current.rawValue)",
-            "Engine: \(model.statusBar.engine) · hidden \(state.hiddenCollapsed ? "collapsed" : "shown")"
+            "Engine: \(model.statusBar.engine)\(model.statusBar.engineFallback == nil ? "" : " (switched)")"
+                + " · hiding verified \(hidingVerified(model.statusBar))"
+                + " · hidden \(state.hiddenCollapsed ? "collapsed" : "shown")"
                 + " · stash \(state.stashCollapsed ? "collapsed" : "shown") · zen \(state.zen ? "on" : "off")",
             "Accessibility: \(model.permissions.accessibility ? "granted" : "missing")"
                 + " · Screen Recording: \(model.permissions.screenRecording ? "granted" : "missing")",
@@ -66,6 +68,17 @@ enum Diagnostics {
                 + (flags.isEmpty ? "" : " [\(flags.joined(separator: ", "))]"))
         }
         return lines.joined(separator: "\n")
+    }
+
+    /// Whether hiding was seen to work: yes, no, not yet, or not checked
+    /// with the stepped engine.
+    private static func hidingVerified(_ statusBar: StatusBarController) -> String {
+        guard statusBar.engine == .wide else { return "not checked" }
+        switch statusBar.hidingCheck.verdict {
+        case .verified: return "yes"
+        case .failed: return "no"
+        case .unknown: return "not yet"
+        }
     }
 
     private static var architecture: String {
