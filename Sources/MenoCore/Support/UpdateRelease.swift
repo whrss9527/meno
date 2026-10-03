@@ -38,17 +38,39 @@ public struct UpdateRelease: Decodable, Equatable, Sendable {
     public let tagName: String
     public let htmlURL: URL
     public let assets: [Asset]
+    /// The release notes, in Markdown.
+    public let body: String?
+    public let publishedAt: Date?
+    /// Drafts and pre-releases are not offered as updates.
+    public let isDraft: Bool
+    public let isPrerelease: Bool
 
-    public init(tagName: String, htmlURL: URL, assets: [Asset] = []) {
+    public init(
+        tagName: String,
+        htmlURL: URL,
+        assets: [Asset] = [],
+        body: String? = nil,
+        publishedAt: Date? = nil,
+        isDraft: Bool = false,
+        isPrerelease: Bool = false
+    ) {
         self.tagName = tagName
         self.htmlURL = htmlURL
         self.assets = assets
+        self.body = body
+        self.publishedAt = publishedAt
+        self.isDraft = isDraft
+        self.isPrerelease = isPrerelease
     }
 
     enum CodingKeys: String, CodingKey {
         case tagName = "tag_name"
         case htmlURL = "html_url"
         case assets
+        case body
+        case publishedAt = "published_at"
+        case isDraft = "draft"
+        case isPrerelease = "prerelease"
     }
 
     public init(from decoder: Decoder) throws {
@@ -56,6 +78,12 @@ public struct UpdateRelease: Decodable, Equatable, Sendable {
         tagName = try container.decode(String.self, forKey: .tagName)
         htmlURL = try container.decode(URL.self, forKey: .htmlURL)
         assets = (try? container.decodeIfPresent([Asset].self, forKey: .assets)) ?? []
+        body = try? container.decodeIfPresent(String.self, forKey: .body)
+        // For example `2026-10-01T09:05:20Z`.
+        let published = try? container.decodeIfPresent(String.self, forKey: .publishedAt)
+        publishedAt = published.flatMap { ISO8601DateFormatter().date(from: $0) }
+        isDraft = (try? container.decodeIfPresent(Bool.self, forKey: .isDraft)) ?? false
+        isPrerelease = (try? container.decodeIfPresent(Bool.self, forKey: .isPrerelease)) ?? false
     }
 
     public var version: AppVersion? {

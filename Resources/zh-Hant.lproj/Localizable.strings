@@ -52,6 +52,7 @@
 "Advanced" = "進階";
 "After" = "延遲";
 "After an update, System Settings can still list an earlier build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "更新之後，系統設定裡可能還留著舊版本 Meno 的記錄，它對新版本不生效。先清除這條記錄，再在系統提示時開啟 Meno 的開關。";
+"All Releases" = "所有版本";
 "Already switched on?" = "開關已經開啟了？";
 "Also at %@. Keep one: each copy needs its own permissions, and a login item may open the other one." = "另一份在 %@。建議只保留一份：每一份都需要個別授權，登入項目也可能開啟另一份。";
 "Also hide the items in the Visible section" = "同時隱藏「常顯」區段中的項目";
@@ -162,6 +163,7 @@
 "Drop items here" = "拖到這裡";
 "Duplicate…" = "製作副本…";
 "Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items by dragging them onto a group, or with Group in their menu. Hold ⌘ and drag a group's icon to move it." = "每個群組在選單列裡都有自己的圖示，按一下即可在托盤中顯示組內的項目。把項目拖到群組上，或在項目選單的「群組」裡加入；按住 ⌘ 拖移群組圖示可以調整它的位置。";
+"Earlier versions are not listed here." = "更早的版本沒有列在這裡。";
 "Edit Groups…" = "編輯群組…";
 "Edit Rule" = "編輯規則";
 "Edit…" = "編輯…";
@@ -310,6 +312,7 @@
 "Meno marker — ⌘-drag to move it" = "Meno 標記 — 按住 ⌘ 拖移以調整位置";
 "Meno needs Accessibility access to move items." = "Meno 需要輔助使用權限才能移動項目。";
 "Meno needs Accessibility access to open items." = "Meno 需要輔助使用權限才能開啟項目。";
+"Meno put its divider back to the left of the Meno icon, so that hiding items does not hide the icon too." = "Meno 已把分隔線移回 Meno 圖示左側，這樣隱藏項目時不會連圖示本身也藏起來。";
 "Meno quits and opens again." = "Meno 會結束並重新開啟。";
 "Meno quits and opens again. macOS then asks you to allow Meno in Accessibility again." = "Meno 會結束並重新開啟，之後 macOS 會請你在「輔助使用」中重新允許 Meno。";
 "Meno reads and moves menu bar items through Accessibility." = "Meno 透過輔助使用讀取和移動選單列項目。";
@@ -560,6 +563,8 @@
 "The download is signed differently than this copy of Meno." = "下載檔案的簽名與目前的 Meno 不一致。";
 "The download's code signature is not valid." = "下載檔案的程式碼簽名無效。";
 "The item is no longer in the menu bar." = "該項目已不在選單列中。";
+"The items left of the divider are hidden. To show them again, click the empty part of the menu bar where the divider was." = "分隔線左側的項目已隱藏。要重新顯示，請按一下選單列上分隔線原本所在的空白處。";
+"The items left of the divider are hidden. To show them again, click the Meno icon or the empty part of the menu bar where the divider was." = "分隔線左側的項目已隱藏。要重新顯示，請按一下 Meno 圖示，或按一下選單列上分隔線原本所在的空白處。";
 "The layout could not be planned." = "無法規劃佈局。";
 "The Mac is offline" = "Mac 處於離線狀態";
 "The Meno icon is hidden and no other way to show items is on. Turn one on below, or show the icon again." = "Meno 圖示已隱藏，也沒有開啟其他顯示項目的方式。請在下方開啟一種，或重新顯示圖示。";
@@ -580,6 +585,7 @@
 "This copy of Meno does not run from an app bundle." = "目前的 Meno 不是以 App 套件的形式執行的。";
 "This Mac" = "這台 Mac";
 "This shortcut is used more than once in Meno. Only one of its uses works." = "這個快速鍵在 Meno 中被多次使用，只有其中一處會生效。";
+"This update includes changes from %lld versions." = "這次更新包含 %lld 個版本的變更。";
 "This version does not run on this Mac's processor." = "這個版本不能在這部 Mac 的處理器上執行。";
 "This version needs macOS %@ or later." = "這個版本需要 macOS %@ 或以上版本。";
 "This week" = "本週";

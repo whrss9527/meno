@@ -15,11 +15,22 @@ final class UpdateChecker: ObservableObject {
     @Published private(set) var phase: Phase = .idle
     /// A release newer than this copy, once a check found one.
     @Published private(set) var available: UpdateRelease?
+    /// What changed in every version from this copy's up to `available`.
+    var notes: UpdateNotes? {
+        guard let loadedNotes, loadedNotes.tagName == available?.tagName else { return nil }
+        return loadedNotes
+    }
+
+    @Published private var loadedNotes: UpdateNotes?
+    /// The release whose notes are read or being read, so the list of
+    /// releases is read once for each new version.
+    private var notesTag: String?
 
     unowned let model: AppModel
 
     static let repository = "whrss9527/meno"
     private static let latestReleaseURL = URL(string: "https://api.github.com/repos/\(repository)/releases/latest")!
+    private static let releasesURL = URL(string: "https://api.github.com/repos/\(repository)/releases?per_page=\(UpdateNotes.pageSize)")!
     /// The newest version announced by the daily check, so it is announced once.
     private static let announcedKey = "AnnouncedUpdateVersion"
     /// When GitHub was last asked. Time asleep counts, unlike a timer's.
@@ -78,6 +89,7 @@ final class UpdateChecker: ObservableObject {
                 return
             }
             available = release
+            loadNotes(for: release, current: current)
             let defaults = UserDefaults.standard
             if !userInitiated, defaults.string(forKey: Self.announcedKey) == latest.description { return }
             defaults.set(latest.description, forKey: Self.announcedKey)
@@ -96,8 +108,9 @@ final class UpdateChecker: ObservableObject {
             actions.append(ToastCenter.Action(title: String(localized: "Install and Relaunch")) { [weak self] in
                 Task { await self?.install() }
             })
-            actions.append(ToastCenter.Action(title: String(localized: "Release Notes")) {
-                NSWorkspace.shared.open(release.htmlURL)
+            // Settings › About lists what changed in every version since this one.
+            actions.append(ToastCenter.Action(title: String(localized: "Release Notes")) { [weak self] in
+                self?.model.openSettings(.about)
             })
         } else {
             actions.append(ToastCenter.Action(title: String(localized: "Download")) {
@@ -148,6 +161,7 @@ final class UpdateChecker: ObservableObject {
             release = latest
             version = latestVersion
             available = latest
+            loadNotes(for: latest, current: current)
             let ready = try await UpdateInstaller.prepare(release, repository: Self.repository)
             prepared = ready
             phase = .installing
@@ -179,8 +193,42 @@ final class UpdateChecker: ObservableObject {
         }
     }
 
+    /// Reads the notes of the versions up to `release` from the list of
+    /// releases. Without the list, the notes of `release` alone are shown,
+    /// and the list is asked for again at the next check.
+    private func loadNotes(for release: UpdateRelease, current: AppVersion) {
+        guard notesTag != release.tagName else { return }
+        notesTag = release.tagName
+        // The notes are in English and Chinese; Traditional Chinese reads the Chinese ones.
+        let chinese = Bundle.main.preferredLocalizations.first?.hasPrefix("zh") == true
+        Task { [weak self] in
+            var releases: [UpdateRelease]?
+            do {
+                releases = try await Self.recentReleases()
+            } catch {
+                Log.app.error("Reading the release notes failed: \(error.localizedDescription, privacy: .public)")
+            }
+            guard let self, self.notesTag == release.tagName else { return }
+            if releases == nil {
+                self.notesTag = nil
+            }
+            self.loadedNotes = UpdateNotes(current: current, latest: release, releases: releases, chinese: chinese)
+        }
+    }
+
     private static func latestRelease() async throws -> UpdateRelease {
-        var request = URLRequest(url: latestReleaseURL, timeoutInterval: 15)
+        let data = try await get(latestReleaseURL)
+        return try JSONDecoder().decode(UpdateRelease.self, from: data)
+    }
+
+    /// The newest releases, newest first, for their notes.
+    private static func recentReleases() async throws -> [UpdateRelease] {
+        let data = try await get(releasesURL)
+        return try JSONDecoder().decode([UpdateRelease].self, from: data)
+    }
+
+    private static func get(_ url: URL) async throws -> Data {
+        var request = URLRequest(url: url, timeoutInterval: 15)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("Meno/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
         // Otherwise the Mac's preferred languages would be sent along.
@@ -189,6 +237,6 @@ final class UpdateChecker: ObservableObject {
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             throw URLError(.badServerResponse)
         }
-        return try JSONDecoder().decode(UpdateRelease.self, from: data)
+        return data
     }
 }
