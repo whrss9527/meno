@@ -3,8 +3,7 @@ import MenoCore
 import SwiftUI
 
 /// An item in the layout editor. Clicking it shows where it can be moved,
-/// and it can be dragged. Dropping another item on it places that item on
-/// the side where it was dropped.
+/// and it can be dragged to another place in the editor.
 struct LayoutChip: View {
     let item: MenuBarItem
     let image: NSImage
@@ -41,7 +40,6 @@ struct LayoutChip: View {
     let showForAWhile: (TimeInterval) -> Void
     let putBack: () -> Void
 
-    @State private var dropEdge: HorizontalEdge?
     @State private var isHovering = false
 
     var body: some View {
@@ -89,43 +87,18 @@ struct LayoutChip: View {
         }
         // The item being dragged stays where it is, faded, until it lands.
         .opacity(draggedKey == item.key ? 0.4 : 1)
-        .overlay(alignment: dropEdge == .leading ? .leading : .trailing) {
-            if dropEdge != nil {
-                Capsule()
-                    .fill(Color.accentColor)
-                    .frame(width: 3)
-                    .padding(.vertical, 3)
-                    .offset(x: dropEdge == .leading ? -5 : 5)
-            }
-        }
         .overlay {
             ChipMouseArea(
                 key: item.key,
                 label: accessibilityLabel,
                 toolTip: item.isMovable ? (item.bundleID ?? item.appName) : String(localized: "macOS keeps this item in place"),
                 canDrag: item.isMovable && !isBusy,
-                accepts: { accepts($0, on: $1) },
                 makeMenu: makeMenu,
                 makeDragImage: { ChipMouseView.dragImage(icon: image, name: item.displayName) },
                 onHover: { isHovering = $0 },
                 onDragStart: { draggedKey = item.key },
-                onDragEnd: { draggedKey = nil },
-                onDropEdge: { dropEdge = $0 },
-                onDrop: { key, edge in
-                    place(key, edge == .leading ? .leftOf(item.layoutToken) : .rightOf(item.layoutToken))
-                }
+                onDragEnd: { draggedKey = nil }
             )
-        }
-    }
-
-    /// Whether dropping `dragged` on a side of this item would move it: not
-    /// next to where it already is, and not right of an item macOS keeps at
-    /// the right end.
-    private func accepts(_ dragged: MenuItemKey, on edge: HorizontalEdge) -> Bool {
-        guard !isBusy else { return false }
-        switch edge {
-        case .leading: return left?.key != dragged
-        case .trailing: return item.isMovable && right?.key != dragged
         }
     }
 

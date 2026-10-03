@@ -390,7 +390,7 @@
 "Optional" = "可选";
 "Optional. Shows the real artwork of hidden items instead of app icons (macOS 14 to 26). Meno only captures menu bar items, never your screen, and only while the Shelf, Quick Open or Settings is open; macOS shows its recording indicator in the menu bar meanwhile." = "可选。显示隐藏项目的真实图标，而不是 App 图标（macOS 14 至 26）。Meno 只截取菜单栏项目，绝不会截取你的屏幕，而且只在托盘、快速打开或设置窗口打开时截取；此时 macOS 会在菜单栏显示录屏指示器。";
 "Optional. Shows the real icons of hidden items on macOS 14 to 26." = "可选。在 macOS 14 至 26 上显示隐藏项目的真实图标。";
-"Or drag it onto a section, or onto another item. A line shows on which side it will land." = "也可以直接拖：拖到某个分区，或拖到另一个项目上，竖线标出它会落在哪一边。";
+"Or drag it to any place in a section to put the items in order. The other items make room where it will land." = "也可以直接拖到某个分区里的任意位置，调整项目的先后顺序。其他项目会让出它要落下的位置。";
 "Other colors in Dark Mode" = "深色模式使用其他颜色";
 "Passing over the menu bar without it shows nothing." = "不按住这个键时，指针经过菜单栏不会显示任何项目。";
 "Pause All Rules" = "暂停所有规则";

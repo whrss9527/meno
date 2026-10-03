@@ -6,8 +6,8 @@ import SwiftUI
 ///
 /// SwiftUI gestures there lost clicks and drags to the window, which moved
 /// instead, so an AppKit view handles them: a click opens the item's menu,
-/// a drag starts a drag session, and dropping another item on it reports
-/// the side it landed on.
+/// and a drag starts a drag session. Drops land on the section's lane, which
+/// works out where among its items the dragged one goes.
 struct ChipMouseArea: NSViewRepresentable {
     let key: MenuItemKey
     /// What VoiceOver reads for the item.
@@ -16,20 +16,14 @@ struct ChipMouseArea: NSViewRepresentable {
     /// Whether the item can be dragged: macOS keeps some items in place, and
     /// nothing is dragged while Meno moves items.
     let canDrag: Bool
-    /// Whether dropping an item on a side would move it anywhere.
-    let accepts: (MenuItemKey, HorizontalEdge) -> Bool
     let makeMenu: () -> NSMenu
     let makeDragImage: () -> NSImage
     let onHover: (Bool) -> Void
     let onDragStart: () -> Void
     let onDragEnd: () -> Void
-    let onDropEdge: (HorizontalEdge?) -> Void
-    let onDrop: (MenuItemKey, HorizontalEdge) -> Void
 
     func makeNSView(context: Context) -> ChipMouseView {
-        let view = ChipMouseView()
-        view.registerForDraggedTypes([.string])
-        return view
+        ChipMouseView()
     }
 
     func updateNSView(_ view: ChipMouseView, context: Context) {
@@ -37,14 +31,11 @@ struct ChipMouseArea: NSViewRepresentable {
         view.label = label
         view.toolTip = toolTip
         view.canDrag = canDrag
-        view.accepts = accepts
         view.makeMenu = makeMenu
         view.makeDragImage = makeDragImage
         view.onHover = onHover
         view.onDragStart = onDragStart
         view.onDragEnd = onDragEnd
-        view.onDropEdge = onDropEdge
-        view.onDrop = onDrop
     }
 }
 
@@ -52,14 +43,11 @@ final class ChipMouseView: NSView, NSDraggingSource {
     var key: MenuItemKey?
     var label = ""
     var canDrag = true
-    var accepts: (MenuItemKey, HorizontalEdge) -> Bool = { _, _ in true }
     var makeMenu: () -> NSMenu = { NSMenu() }
     var makeDragImage: () -> NSImage = { NSImage() }
     var onHover: (Bool) -> Void = { _ in }
     var onDragStart: () -> Void = {}
     var onDragEnd: () -> Void = {}
-    var onDropEdge: (HorizontalEdge?) -> Void = { _ in }
-    var onDrop: (MenuItemKey, HorizontalEdge) -> Void = { _, _ in }
 
     private var mouseDownPoint: NSPoint?
     private var isDragging = false
@@ -147,47 +135,6 @@ final class ChipMouseView: NSView, NSDraggingSource {
         isDragging = false
         mouseDownPoint = nil
         onDragEnd()
-    }
-
-    // MARK: Dropping another item
-
-    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        track(sender)
-    }
-
-    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        track(sender)
-    }
-
-    override func draggingExited(_ sender: NSDraggingInfo?) {
-        onDropEdge(nil)
-    }
-
-    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        onDropEdge(nil)
-        let side = edge(of: sender)
-        guard let dragged = draggedKey(sender), dragged != key, accepts(dragged, side) else { return false }
-        onDrop(dragged, side)
-        return true
-    }
-
-    /// Shows the side a drop would land on, where it would move the item.
-    private func track(_ sender: NSDraggingInfo) -> NSDragOperation {
-        let side = edge(of: sender)
-        guard let dragged = draggedKey(sender), dragged != key, accepts(dragged, side) else {
-            onDropEdge(nil)
-            return []
-        }
-        onDropEdge(side)
-        return .move
-    }
-
-    private func draggedKey(_ sender: NSDraggingInfo) -> MenuItemKey? {
-        sender.draggingPasteboard.string(forType: .string).flatMap { MenuItemKey(rawValue: $0) }
-    }
-
-    private func edge(of sender: NSDraggingInfo) -> HorizontalEdge {
-        convert(sender.draggingLocation, from: nil).x < bounds.midX ? .leading : .trailing
     }
 
     // MARK: Drag image
