@@ -39,6 +39,18 @@ enum WindowCapture {
         }
     }
 
+    /// The windows of menu bar items at `frames` (Quartz), in the same
+    /// order, `nil` where there is none. Only up to macOS 26, where every
+    /// item has a window of its own.
+    static func itemWindows(at frames: [CGRect]) -> [WindowInfo?] {
+        guard AppInfo.osMajorVersion < 27 else { return frames.map { _ in nil } }
+        let statusLevel = Int(CGWindowLevelForKey(.statusWindow))
+        let windows = windowList(onScreenOnly: false).filter { $0.layer == statusLevel }
+        return frames.map { frame in
+            windows.first { matches($0.bounds, frame) }
+        }
+    }
+
     static func windowList(onScreenOnly: Bool) -> [WindowInfo] {
         let options: CGWindowListOption = onScreenOnly ? [.optionOnScreenOnly, .excludeDesktopElements] : [.optionAll]
         guard let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return [] }

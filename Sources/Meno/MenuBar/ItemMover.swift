@@ -31,9 +31,9 @@ final class ItemMover: ObservableObject {
             case .referenceMissing:
                 return String(localized: "Meno could not find where to drop the item.")
             case .offScreen(let name):
-                return String(localized: "\(name) is not visible, so it cannot be dragged. Make room in the menu bar and try again.")
+                return String(localized: "\(name) does not fit in the menu bar, and Meno could not move it from there. Quit menu bar apps you do not need, or narrow the icon spacing in Appearance, then try again.")
             case .behindHousing(let name):
-                return String(localized: "\(name) sits behind the camera housing, where it cannot be dragged. Move other visible items to Hidden to make room, then try again.")
+                return String(localized: "\(name) is behind the camera housing, where macOS keeps items that do not fit, and Meno could not move it from there. Quit menu bar apps you do not need, or narrow the icon spacing in Appearance, then try again.")
             case .didNotMove(let name):
                 return String(localized: "\(name) did not move. Try dragging it with ⌘ held down.")
             case .plan:
@@ -188,6 +188,7 @@ final class ItemMover: ObservableObject {
                 model.temporary.forget(Self.keys(of: request))
             }
         } catch {
+            Diagnostics.event("move failed: \(error.localizedDescription)")
             model.keeper.menoPlaced(placed)
             finish(before: before, moved: moved, automatic: automatic || restoring, isUndo: isUndo)
             throw error
@@ -273,21 +274,62 @@ final class ItemMover: ObservableObject {
             guard item.isMovable else { throw MoveError.notMovable(item.displayName) }
             guard let placement = remainingPlacement(for: move, item: item) else { return attempt > 0 }
             guard let reference = frame(of: placement.reference) else { throw MoveError.referenceMissing }
-            guard item.isOnScreen else { throw MoveError.offScreen(item.displayName) }
-            guard !Self.isBehindHousing(item.frame) else { throw MoveError.behindHousing(item.displayName) }
 
             let start = CGPoint(x: item.frame.midX, y: item.frame.midY)
             let end = dropPoint(for: item.frame, reference: reference, placement: placement, attempt: attempt)
-            Log.move.info("Moving \(item.key.rawValue, privacy: .public) attempt \(attempt)")
-            await EventSynthesizer.commandDrag(from: start, to: end, pace: 1 + Double(attempt) * 0.75)
+            let pace = 1 + Double(attempt) * 0.75
+            let reachesItem = ScreenGeometry.isReachable(start)
+            // Behind the camera housing or off the screen, where the pointer
+            // cannot reach, the item is dragged by its window instead.
+            let drag = reachesItem && ScreenGeometry.isReachable(end)
+                ? nil
+                : windowDrag(of: item, reference: reference, placement: placement)
+            if let drag {
+                Log.move.info("Moving \(item.key.rawValue, privacy: .public) by its window, attempt \(attempt)")
+                Diagnostics.event("move \(item.key.rawValue) by window \(drag.window.id) to x=\(Int(drag.end.x)) attempt=\(attempt)")
+                await EventSynthesizer.commandDrag(window: drag.window, to: drag.end, target: drag.target, pace: pace)
+            } else if reachesItem {
+                Log.move.info("Moving \(item.key.rawValue, privacy: .public) attempt \(attempt)")
+                await EventSynthesizer.commandDrag(from: start, to: end, pace: pace)
+            } else {
+                throw Self.outOfReach(item)
+            }
             try await Task.sleep(nanoseconds: 450_000_000)
             await model.inventory.refresh()
         }
-        if let item = model.inventory.item(for: move.key), remainingPlacement(for: move, item: item) == nil {
+        guard let item = model.inventory.item(for: move.key) else { throw MoveError.itemMissing }
+        if remainingPlacement(for: move, item: item) == nil {
             return true
         }
-        let name = model.inventory.item(for: move.key)?.displayName ?? move.key.owner
-        throw MoveError.didNotMove(name)
+        // Telling the person to drag it by hand only helps where they can.
+        if !ScreenGeometry.isReachable(CGPoint(x: item.frame.midX, y: item.frame.midY)) {
+            throw Self.outOfReach(item)
+        }
+        throw MoveError.didNotMove(item.displayName)
+    }
+
+    /// Why an item the pointer cannot reach was not moved.
+    private static func outOfReach(_ item: MenuBarItem) -> MoveError {
+        item.isOnScreen ? .behindHousing(item.displayName) : .offScreen(item.displayName)
+    }
+
+    /// The windows and drop point for dragging an item by its window, or
+    /// `nil` where items have no windows of their own (macOS 27).
+    private func windowDrag(
+        of item: MenuBarItem,
+        reference: CGRect,
+        placement: Placement
+    ) -> (window: WindowCapture.WindowInfo, target: WindowCapture.WindowInfo, end: CGPoint)? {
+        let windows = WindowCapture.itemWindows(at: [item.frame, reference])
+        guard let window = windows[0] else { return nil }
+        // The edge of the reference it goes next to, which works wherever
+        // that edge is, even off the screen.
+        let x: CGFloat
+        switch placement {
+        case .rightOf: x = reference.maxX
+        case .leftOf: x = reference.minX
+        }
+        return (window, windows[1] ?? window, CGPoint(x: x, y: reference.midY))
     }
 
     /// Where the item still has to be dropped, or `nil` when the move is done.
@@ -321,17 +363,6 @@ final class ItemMover: ObservableObject {
             try await Task.sleep(nanoseconds: 400_000_000)
         }
         throw MoveError.personBusy
-    }
-
-    /// Whether the middle of a frame is behind the camera housing of a
-    /// screen, where clicks do not reach the item.
-    static func isBehindHousing(_ frame: CGRect) -> Bool {
-        NSScreen.screens.contains { screen in
-            guard let notch = ScreenGeometry.notchRect(on: screen) else { return false }
-            let housing = ScreenGeometry.quartzRect(fromCocoa: notch)
-            return housing.minX < frame.midX && frame.midX < housing.maxX
-                && housing.minY <= frame.midY && frame.midY <= housing.maxY
-        }
     }
 
     /// Seconds since the person last used a mouse, trackpad or keyboard.

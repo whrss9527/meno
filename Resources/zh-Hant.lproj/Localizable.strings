@@ -8,10 +8,10 @@
 "%@ could not be opened." = "無法開啟 %@。";
 "%@ did not move. Try dragging it with ⌘ held down." = "%@ 沒有移動。請按住 ⌘ 手動拖移試試。";
 "%@ did not quit." = "%@ 沒有結束。";
+"%@ does not fit in the menu bar, and Meno could not move it from there. Quit menu bar apps you do not need, or narrow the icon spacing in Appearance, then try again." = "%@ 在選單列裡放不下，Meno 沒能把它移出來。請結束不需要的選單列 App，或在「外觀」中縮小圖示間距，然後再試一次。";
+"%@ is behind the camera housing, where macOS keeps items that do not fit, and Meno could not move it from there. Quit menu bar apps you do not need, or narrow the icon spacing in Appearance, then try again." = "%@ 被擠到了瀏海後面（選單列放不下的項目會被 macOS 藏在那裡），Meno 沒能把它移出來。請結束不需要的選單列 App，或在「外觀」中縮小圖示間距，然後再試一次。";
 "%@ is in front" = "%@ 在最前方";
-"%@ is not visible, so it cannot be dragged. Make room in the menu bar and try again." = "%@ 目前不可見，無法拖移。請在選單列騰出空間後再試。";
 "%@ is running" = "%@ 正在執行";
-"%@ sits behind the camera housing, where it cannot be dragged. Move other visible items to Hidden to make room, then try again." = "%@ 位於瀏海後面，無法拖移。請先把其他常顯項目移到「隱藏」騰出空間，再試一次。";
 "%lld items are no longer where you left them." = "有 %lld 個項目不在你原本放的位置了。";
 "%lld items · %lld tucked away" = "共 %lld 項 · %lld 項已收起";
 "A .meno file holds scenes and rules, for another Mac or for someone else; shortcuts stay here. Open a .meno file, or drop it on this window, to see what it holds before anything is imported." = "一個 .meno 檔案可以裝下場景和規則，帶到另一台 Mac 上，或分享給別人；快速鍵不會帶走。打開 .meno 檔案，或把它拖到這個視窗上，可以先看看裡面有什麼，再決定匯入哪些。";

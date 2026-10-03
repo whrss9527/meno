@@ -62,19 +62,9 @@ final class ShelfController: ObservableObject {
     /// clicked, so the Shelf offers them first.
     var crowdedItems: [MenuBarItem] {
         guard model.inventory.framesAreReliable, !model.isZenActive else { return [] }
-        // Each housing with the screen it belongs to, so items on another
-        // display next to it are not mistaken for items behind it.
-        let housings = NSScreen.screens.compactMap { screen -> (housing: CGRect, screen: CGRect)? in
-            guard let notch = ScreenGeometry.notchRect(on: screen) else { return nil }
-            return (ScreenGeometry.quartzRect(fromCocoa: notch), ScreenGeometry.quartzRect(fromCocoa: screen.frame))
-        }
         return model.inventory.items(in: .visible).filter { item in
             guard item.kind != .marker, item.frame.width > 0 else { return false }
-            if !item.isOnScreen { return true }
-            return housings.contains { housing, screen in
-                housing.minY <= item.frame.midY && item.frame.midY <= housing.maxY
-                    && screen.minX <= item.frame.midX && item.frame.midX < housing.maxX
-            }
+            return !ScreenGeometry.isReachable(CGPoint(x: item.frame.midX, y: item.frame.midY))
         }
     }
 
