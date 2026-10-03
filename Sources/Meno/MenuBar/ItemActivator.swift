@@ -58,9 +58,11 @@ final class ItemActivator {
         if let frame = await MenuBarScanner.frame(of: element) {
             target.frame = frame
         }
-        // Behind the camera housing the click would land on the housing.
+        // Behind the camera housing the click would land on the housing, and
+        // with the menu bar hidden on the app in full screen.
         let point = CGPoint(x: target.frame.midX, y: target.frame.midY)
-        guard ScreenGeometry.isReachable(point) else { return false }
+        guard ScreenGeometry.isReachable(point),
+              model.statusBar.screen.map({ ScreenGeometry.showsMenuBar(on: $0) }) ?? true else { return false }
         lastClick = Date()
         return EventSynthesizer.click(at: point, secondary: click == .secondary)
     }

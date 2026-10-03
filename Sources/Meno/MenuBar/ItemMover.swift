@@ -12,6 +12,9 @@ final class ItemMover: ObservableObject {
         case referenceMissing
         case offScreen(String)
         case behindHousing(String)
+        /// The menu bar is not on the screen, as while an app is in full
+        /// screen, so the pointer cannot drag items in it.
+        case menuBarHidden
         case didNotMove(String)
         case plan
         case personBusy
@@ -34,6 +37,8 @@ final class ItemMover: ObservableObject {
                 return String(localized: "\(name) does not fit in the menu bar, and Meno could not move it from there. Quit menu bar apps you do not need, or narrow the icon spacing in Appearance, then try again.")
             case .behindHousing(let name):
                 return String(localized: "\(name) is behind the camera housing, where macOS keeps items that do not fit, and Meno could not move it from there. Quit menu bar apps you do not need, or narrow the icon spacing in Appearance, then try again.")
+            case .menuBarHidden:
+                return String(localized: "The menu bar is hidden, for example while an app is in full screen. Show the menu bar or leave full screen, then try again.")
             case .didNotMove(let name):
                 return String(localized: "\(name) did not move. Try dragging it with ⌘ held down.")
             case .plan:
@@ -74,6 +79,8 @@ final class ItemMover: ObservableObject {
     @Published private(set) var progress: (done: Int, total: Int)?
     /// The item being dragged right now.
     @Published private(set) var movingKey: MenuItemKey?
+    /// Whether every item is shown for the request under way.
+    private var showsItems = false
     /// The arrangements before the latest changes the person made through
     /// Meno, oldest first.
     @Published private(set) var undoStack: [SceneLayout] = []
@@ -167,7 +174,9 @@ final class ItemMover: ObservableObject {
         }
         guard !isMoving else { throw MoveError.busy }
         isMoving = true
-        model.reveal.beginLayoutSession()
+        // Items are dragged where they are, by their windows, and Meno's
+        // dividers have to be there to drop them next to.
+        let dividersAppeared = model.statusBar.setDividersForcedVisible(true)
         defer {
             isMoving = false
             progress = nil
@@ -178,8 +187,17 @@ final class ItemMover: ObservableObject {
         /// Items that are where this request puts them.
         var placed: [MenuItemKey] = []
         do {
-            try await Task.sleep(nanoseconds: 450_000_000)
-            await model.inventory.refresh()
+            // Where hidden items are is only known with the wide engine, and
+            // only items with windows of their own can be dragged unseen.
+            if AppInfo.osMajorVersion < 27, model.statusBar.engine == .wide {
+                if dividersAppeared {
+                    // macOS moves the items to make room for them first.
+                    try await Task.sleep(nanoseconds: 300_000_000)
+                }
+                await model.inventory.refresh()
+            } else {
+                try await showItems()
+            }
             before = model.inventory.currentLayout()
             let moves = try plannedMoves(for: request)
             for (index, move) in moves.enumerated() {
@@ -260,7 +278,11 @@ final class ItemMover: ObservableObject {
                 undoStack.removeFirst(undoStack.count - Self.undoLimit)
             }
         }
-        model.reveal.endLayoutSession()
+        if showsItems {
+            showsItems = false
+            model.reveal.endLayoutSession()
+        }
+        model.statusBar.setDividersForcedVisible(false)
         model.inventory.scheduleRefresh(after: 0.5)
     }
 
@@ -312,32 +334,43 @@ final class ItemMover: ObservableObject {
     }
 
     /// Carries out a move, returning whether anything was dragged.
+    ///
+    /// Up to macOS 26 every item has a window, and the item is first dragged
+    /// by it, where it is: the menu bar does not open, the pointer stays with
+    /// the person, and it works behind the camera housing, off the screen
+    /// and while an app in full screen hides the menu bar. Only when that
+    /// does not work, and on macOS 27, does the pointer drag it, with every
+    /// item shown.
     private func execute(_ move: Move) async throws -> Bool {
-        for attempt in 0..<3 {
-            guard let item = model.inventory.item(for: move.key) else { throw MoveError.itemMissing }
-            guard item.isMovable else { throw MoveError.notMovable(item.displayName) }
-            guard let placement = remainingPlacement(for: move, item: item) else { return attempt > 0 }
-            guard let reference = frame(of: placement.reference) else { throw MoveError.referenceMissing }
-
-            let start = CGPoint(x: item.frame.midX, y: item.frame.midY)
-            let end = dropPoint(for: item.frame, reference: reference, placement: placement, attempt: attempt)
-            let pace = 1 + Double(attempt) * 0.75
-            let reachesItem = ScreenGeometry.isReachable(start)
-            // Behind the camera housing or off the screen, where the pointer
-            // cannot reach, the item is dragged by its window instead.
-            let drag = reachesItem && ScreenGeometry.isReachable(end) && !Diagnostics.movesByWindow
-                ? nil
-                : windowDrag(of: item, reference: reference, placement: placement)
-            if let drag {
-                Log.move.info("Moving \(item.key.rawValue, privacy: .public) by its window, attempt \(attempt)")
-                Diagnostics.event("move \(item.key.rawValue) by window \(drag.window.id) to x=\(Int(drag.end.x)) attempt=\(attempt)")
-                await EventSynthesizer.commandDrag(window: drag.window, to: drag.end, target: drag.target, pace: pace)
-            } else if reachesItem {
-                Log.move.info("Moving \(item.key.rawValue, privacy: .public) attempt \(attempt)")
-                await EventSynthesizer.commandDrag(from: start, to: end, pace: pace)
-            } else {
-                throw Self.outOfReach(item)
+        var dragged = false
+        var triedWindow = false
+        if AppInfo.osMajorVersion < 27 {
+            for attempt in 0..<2 {
+                guard let target = try pending(move) else { return dragged }
+                guard let drag = windowDrag(of: target.item, reference: target.reference, placement: target.placement) else { break }
+                triedWindow = true
+                Log.move.info("Moving \(target.item.key.rawValue, privacy: .public) by its window, attempt \(attempt)")
+                Diagnostics.event("move \(target.item.key.rawValue) by window \(drag.window.id) to x=\(Int(drag.end.x)) attempt=\(attempt)")
+                await EventSynthesizer.commandDrag(window: drag.window, to: drag.end, target: drag.target, pace: 1 + Double(attempt) * 0.75)
+                dragged = true
+                try await Task.sleep(nanoseconds: 450_000_000)
+                await model.inventory.refresh()
             }
+        }
+        guard try pending(move) != nil else { return dragged }
+        try await showItems()
+        for attempt in 0..<(triedWindow ? 2 : 3) {
+            guard let target = try pending(move) else { return dragged }
+            let item = target.item
+            // A press at the top of the screen would reach the app in full
+            // screen there, with ⌘ held.
+            guard model.statusBar.screen.map({ ScreenGeometry.showsMenuBar(on: $0) }) ?? true else { throw MoveError.menuBarHidden }
+            let start = CGPoint(x: item.frame.midX, y: item.frame.midY)
+            guard ScreenGeometry.isReachable(start) else { throw Self.outOfReach(item) }
+            let end = dropPoint(for: item.frame, reference: target.reference, placement: target.placement, attempt: attempt)
+            Log.move.info("Moving \(item.key.rawValue, privacy: .public) attempt \(attempt)")
+            await EventSynthesizer.commandDrag(from: start, to: end, pace: 1 + Double(attempt) * 0.75)
+            dragged = true
             try await Task.sleep(nanoseconds: 450_000_000)
             await model.inventory.refresh()
         }
@@ -350,6 +383,26 @@ final class ItemMover: ObservableObject {
             throw Self.outOfReach(item)
         }
         throw MoveError.didNotMove(item.displayName)
+    }
+
+    /// The item a move drags and where it still has to go, or `nil` once it
+    /// is there.
+    private func pending(_ move: Move) throws -> (item: MenuBarItem, placement: Placement, reference: CGRect)? {
+        guard let item = model.inventory.item(for: move.key) else { throw MoveError.itemMissing }
+        guard item.isMovable else { throw MoveError.notMovable(item.displayName) }
+        guard let placement = remainingPlacement(for: move, item: item) else { return nil }
+        guard let reference = frame(of: placement.reference) else { throw MoveError.referenceMissing }
+        return (item, placement, reference)
+    }
+
+    /// Shows every item for dragging with the pointer, once per request, and
+    /// reads where they are then.
+    private func showItems() async throws {
+        guard !showsItems else { return }
+        showsItems = true
+        model.reveal.beginLayoutSession()
+        try await Task.sleep(nanoseconds: 450_000_000)
+        await model.inventory.refresh()
     }
 
     /// Why an item the pointer cannot reach was not moved.

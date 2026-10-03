@@ -67,6 +67,13 @@ enum ScreenGeometry {
         notchRect(on: screen) != nil
     }
 
+    /// Whether the menu bar of `screen` is on the screen now. While an app is
+    /// in full screen, or the menu bar hides itself, it is not, and a press
+    /// at the top of the screen would reach whatever is below it.
+    static func showsMenuBar(on screen: NSScreen) -> Bool {
+        screen.frame.maxY - screen.visibleFrame.maxY > 0
+    }
+
     /// Whether the pointer can reach a menu bar item at `point` (Quartz): the
     /// point is on a screen, and not behind the camera housing or left of
     /// it, where macOS keeps items that do not fit out of sight.

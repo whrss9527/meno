@@ -335,7 +335,7 @@
 "Move to Stash" = "移到暗格";
 "Move to Visible" = "移到常顯";
 "Moving item %lld of %lld…" = "正在移動第 %lld 項（共 %lld 項）…";
-"Moving items briefly takes over the pointer." = "移動項目時會短暫接管滑鼠指標。";
+"Moving items can briefly take over the pointer." = "移動項目時可能會短暫接管滑鼠指標。";
 "Moving…" = "正在移動…";
 "My Layout" = "我的佈局";
 "Name" = "名稱";
@@ -390,7 +390,7 @@
 "Optional" = "選用";
 "Optional. Shows the real artwork of hidden items instead of app icons (macOS 14 to 26). Meno only captures menu bar items, never your screen, and only while the Shelf, Quick Open or Settings is open; macOS shows its recording indicator in the menu bar meanwhile." = "選用。顯示隱藏項目的真實圖示，而不是 App 圖示（macOS 14 至 26）。Meno 只擷取選單列項目，絕不會擷取你的螢幕，而且只在托盤、快速開啟或設定視窗打開時擷取；此時 macOS 會在選單列顯示錄製指示器。";
 "Optional. Shows the real icons of hidden items on macOS 14 to 26." = "選用。在 macOS 14 至 26 上顯示隱藏項目的真實圖示。";
-"Or drag it onto a section, or onto another item. A line shows on which side it will land." = "也可以直接拖：拖到某個區段，或拖到另一個項目上，直線標出它會落在哪一邊。";
+"Or drag it to any place in a section to put the items in order. The other items make room where it will land." = "也可以直接拖到某個區段裡的任意位置，調整項目的先後順序。其他項目會讓出它要落下的位置。";
 "Other colors in Dark Mode" = "深色模式使用其他顏色";
 "Passing over the menu bar without it shows nothing." = "不按住這個鍵時，指標經過選單列不會顯示任何項目。";
 "Pause All Rules" = "暫停所有規則";
@@ -570,6 +570,7 @@
 "The Meno icon is hidden and no other way to show items is on. Turn one on below, or show the icon again." = "Meno 圖示已隱藏，也沒有開啟其他顯示項目的方式。請在下方開啟一種，或重新顯示圖示。";
 "The Meno icon, the Shelf and the look of the menu bar." = "Meno 圖示、托盤以及選單列的外觀。";
 "The menu bar adapts to apps, displays, power and time." = "選單列會隨 App、顯示器、電源和時間自動調整。";
+"The menu bar is hidden, for example while an app is in full screen. Show the menu bar or leave full screen, then try again." = "選單列目前是隱藏的，例如有 App 正處於全螢幕。請先讓選單列顯示出來或結束全螢幕，然後再試一次。";
 "The menu bar is on a specific display" = "選單列在指定的顯示器上";
 "The menu bar is on an external display" = "選單列在外接顯示器上";
 "the menu bar is on an external display" = "選單列在外接顯示器上";
@@ -634,7 +635,7 @@
 "When items need the room" = "項目需要空間時";
 "When the pointer leaves the menu bar" = "指標離開選單列時";
 "When you switch to another app or click elsewhere" = "切換到其他 App 或按一下別處時";
-"While Meno moves an item it briefly takes over the pointer. It puts the pointer back when it is done." = "Meno 移動項目時會短暫接管指標，完成後會把指標放回原處。";
+"Meno moves items without the pointer where it can. On macOS 27, or when that does not work, it briefly takes over the pointer and puts it back when it is done." = "Meno 會盡量不佔用指標來移動項目；在 macOS 27 上，或者這樣做不成功時，才會短暫接管指標，完成後放回原處。";
 "While rules are paused, none of them applies. Rules that undo their action when it ends have undone it." = "規則暫停期間，任何規則都不會生效；設為「條件不再滿足時還原」的規則已還原了它們的動作。";
 "Wide divider" = "寬分隔線";
 "Width" = "寬度";
