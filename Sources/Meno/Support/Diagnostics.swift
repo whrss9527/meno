@@ -31,6 +31,7 @@ enum Diagnostics {
             }
             rules += " · camera \(capture.camera ? "in use" : "idle")"
         }
+        rules += " · capture listeners \(automation.captureListenerCount)"
         lines.append(rules)
         if !model.settings.groups.isEmpty {
             lines.append("Groups: " + model.settings.groups.map { group in
