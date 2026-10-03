@@ -71,12 +71,30 @@ enum ScreenGeometry {
         guard screen.safeAreaInsets.top > 0,
               let left = screen.auxiliaryTopLeftArea,
               let right = screen.auxiliaryTopRightArea else { return nil }
+        // Only the widths of the areas beside the housing count, so the
+        // housing lands on the right screen even when that screen is not the
+        // one at the origin.
+        let width = screen.frame.width - left.width - right.width
+        guard width > 0 else { return nil }
         let height = screen.safeAreaInsets.top
-        return NSRect(x: left.maxX, y: screen.frame.maxY - height, width: right.minX - left.maxX, height: height)
+        return NSRect(x: screen.frame.minX + left.width, y: screen.frame.maxY - height, width: width, height: height)
     }
 
     static func hasNotch(_ screen: NSScreen) -> Bool {
         notchRect(on: screen) != nil
+    }
+
+    /// Whether the pointer can reach a menu bar item at `point` (Quartz): the
+    /// point is on a screen, and not behind the camera housing or left of
+    /// it, where macOS keeps items that do not fit out of sight.
+    static func isReachable(_ point: CGPoint) -> Bool {
+        guard let screen = NSScreen.screens.first(where: { quartzRect(fromCocoa: $0.frame).contains(point) }) else {
+            return false
+        }
+        guard let notch = notchRect(on: screen) else { return true }
+        let housing = quartzRect(fromCocoa: notch)
+        let crowded = housing.minY <= point.y && point.y <= housing.maxY && point.x < housing.maxX
+        return !crowded
     }
 
     static func displayID(of screen: NSScreen) -> CGDirectDisplayID? {

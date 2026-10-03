@@ -8,10 +8,10 @@
 "%@ could not be opened." = "无法打开 %@。";
 "%@ did not move. Try dragging it with ⌘ held down." = "%@ 没有移动。请按住 ⌘ 手动拖移试试。";
 "%@ did not quit." = "%@ 没有退出。";
+"%@ does not fit in the menu bar, and Meno could not move it from there. Quit menu bar apps you do not need, or narrow the icon spacing in Appearance, then try again." = "%@ 在菜单栏里放不下，Meno 没能把它移出来。请退出不需要的菜单栏 App，或在“外观”中缩小图标间距，然后再试一次。";
+"%@ is behind the camera housing, where macOS keeps items that do not fit, and Meno could not move it from there. Quit menu bar apps you do not need, or narrow the icon spacing in Appearance, then try again." = "%@ 被挤到了刘海后面（菜单栏放不下的项目会被 macOS 藏在那里），Meno 没能把它移出来。请退出不需要的菜单栏 App，或在“外观”中缩小图标间距，然后再试一次。";
 "%@ is in front" = "%@ 在前台";
-"%@ is not visible, so it cannot be dragged. Make room in the menu bar and try again." = "%@ 当前不可见，无法拖移。请在菜单栏腾出空间后再试。";
 "%@ is running" = "%@ 正在运行";
-"%@ sits behind the camera housing, where it cannot be dragged. Move other visible items to Hidden to make room, then try again." = "%@ 位于刘海后面，无法拖动。请先把其他常显项目移到“隐藏”腾出空间，再试一次。";
 "%lld items are no longer where you left them." = "有 %lld 个项目不在你原来放的位置了。";
 "%lld items · %lld tucked away" = "共 %lld 项 · %lld 项已收起";
 "A .meno file holds scenes and rules, for another Mac or for someone else; shortcuts stay here. Open a .meno file, or drop it on this window, to see what it holds before anything is imported." = "一个 .meno 文件可以装下场景和规则，带到另一台 Mac 上，或者分享给别人；快捷键不会带走。打开 .meno 文件，或把它拖到这个窗口上，可以先看看里面有什么，再决定导入哪些。";
@@ -52,6 +52,7 @@
 "Advanced" = "高级";
 "After" = "延迟";
 "After an update, System Settings can still list an earlier build of Meno, which no longer counts. Reset the entry, then turn Meno on when macOS asks." = "更新之后，系统设置里可能还留着旧版本 Meno 的记录，它对新版本不生效。先清除这条记录，再在系统提示时打开 Meno 的开关。";
+"All Releases" = "所有版本";
 "Already switched on?" = "开关已经打开了？";
 "Also at %@. Keep one: each copy needs its own permissions, and a login item may open the other one." = "另一份在 %@。建议只保留一份：每一份都需要单独授权，登录项也可能打开另一份。";
 "Also hide the items in the Visible section" = "同时隐藏“常显”分区中的项目";
@@ -162,6 +163,7 @@
 "Drop items here" = "拖到这里";
 "Duplicate…" = "创建副本…";
 "Each group has its own icon in the menu bar, which shows the group's items in a Shelf. Add items by dragging them onto a group, or with Group in their menu. Hold ⌘ and drag a group's icon to move it." = "每个分组在菜单栏里都有自己的图标，点按即可在托盘中显示组内的项目。把项目拖到分组上，或在项目菜单的“分组”里加入；按住 ⌘ 拖移分组图标可以调整它的位置。";
+"Earlier versions are not listed here." = "更早的版本没有列在这里。";
 "Edit Groups…" = "编辑分组…";
 "Edit Rule" = "编辑规则";
 "Edit…" = "编辑…";
@@ -310,6 +312,7 @@
 "Meno marker — ⌘-drag to move it" = "Meno 标记 — 按住 ⌘ 拖移以调整位置";
 "Meno needs Accessibility access to move items." = "Meno 需要辅助功能权限才能移动项目。";
 "Meno needs Accessibility access to open items." = "Meno 需要辅助功能权限才能打开项目。";
+"Meno put its divider back to the left of the Meno icon, so that hiding items does not hide the icon too." = "Meno 已把分隔符移回 Meno 图标左侧，这样隐藏项目时不会把图标本身也藏起来。";
 "Meno quits and opens again." = "Meno 会退出并重新打开。";
 "Meno quits and opens again. macOS then asks you to allow Meno in Accessibility again." = "Meno 会退出并重新打开，之后 macOS 会请你在“辅助功能”中重新允许 Meno。";
 "Meno reads and moves menu bar items through Accessibility." = "Meno 通过辅助功能读取和移动菜单栏项目。";
@@ -560,6 +563,8 @@
 "The download is signed differently than this copy of Meno." = "下载文件的签名与当前的 Meno 不一致。";
 "The download's code signature is not valid." = "下载文件的代码签名无效。";
 "The item is no longer in the menu bar." = "该项目已不在菜单栏中。";
+"The items left of the divider are hidden. To show them again, click the empty part of the menu bar where the divider was." = "分隔符左侧的项目已隐藏。要重新显示，请点菜单栏上分隔符原来所在的空白处。";
+"The items left of the divider are hidden. To show them again, click the Meno icon or the empty part of the menu bar where the divider was." = "分隔符左侧的项目已隐藏。要重新显示，请点 Meno 图标，或点菜单栏上分隔符原来所在的空白处。";
 "The layout could not be planned." = "无法规划布局。";
 "The Mac is offline" = "Mac 处于离线状态";
 "The Meno icon is hidden and no other way to show items is on. Turn one on below, or show the icon again." = "Meno 图标已隐藏，也没有开启其他显示项目的方式。请在下方开启一种，或重新显示图标。";
@@ -580,6 +585,7 @@
 "This copy of Meno does not run from an app bundle." = "当前的 Meno 不是以 App 包的形式运行的。";
 "This Mac" = "这台 Mac";
 "This shortcut is used more than once in Meno. Only one of its uses works." = "这个快捷键在 Meno 中被多次使用，只有其中一处会生效。";
+"This update includes changes from %lld versions." = "这次更新包含 %lld 个版本的改动。";
 "This version does not run on this Mac's processor." = "这个版本不能在这台 Mac 的处理器上运行。";
 "This version needs macOS %@ or later." = "这个版本需要 macOS %@ 或更高版本。";
 "This week" = "本周";

@@ -8,7 +8,7 @@ Meno runs on macOS 14 Sonoma or later. Liquid Glass needs macOS 26 and a build m
 
 Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/releases/latest), unzip it and move Meno.app to *Applications*. The app is universal (Apple silicon and Intel). From 0.10.0 on it is signed with a Developer ID and notarized by Apple, so it opens with a double-click. Versions before 0.10.0 are signed ad hoc: right-click Meno.app and choose *Open*, or run `xattr -dr com.apple.quarantine /Applications/Meno.app`.
 
-Meno installs updates itself: when a check finds a newer release, choose *Install and Relaunch* in the notice, in *Settings › About* or in Meno's menu. Meno downloads the release from GitHub, checks its checksum, version and code signature, replaces itself and opens again. When Meno runs from a folder it cannot write to, it offers the download instead.
+Meno installs updates itself: when a check finds a newer release, choose *Install and Relaunch* in the notice, in *Settings › About* or in Meno's menu. *Settings › About* also lists what changed in every version since yours, newest first. Meno downloads the release from GitHub, checks its checksum, version and code signature, replaces itself and opens again. When Meno runs from a folder it cannot write to, it offers the download instead.
 
 After an update, macOS may keep an entry for the previous build in the Accessibility list that no longer counts. Meno then opens *Settings › Permissions*, replaces the entry and macOS asks again; *Reset and Grant Again* does the same by hand. Releases from 0.10.0 on are signed with the same Developer ID certificate, so later updates keep the permission; only the update from an ad hoc version asks once more.
 
@@ -99,13 +99,14 @@ Rules about a microphone or camera in use only ask macOS whether a device is run
 
 A rule condition that runs a command runs exactly the command you typed, every 10 seconds with zsh, and only while the rule is on. While a rule depends on a network, Meno runs `route` and `arp` when the network changes and every 30 seconds, which read the router of each connection from what macOS already knows and send nothing. Rules with commands are turned off when you import settings, so a settings file cannot run anything before you have looked at it.
 
-Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*; and to download a release you chose to install. Settings and statistics live in `~/Library/Application Support/Meno`.
+Meno has no analytics or accounts. It only goes online to ask GitHub for the latest release and the notes of the versions since yours: when you click *Check for Updates* in *Settings › About*, or once a day if you turn that on in *General*; and to download a release you chose to install. Settings and statistics live in `~/Library/Application Support/Meno`.
 
 ## Troubleshooting
 
 - **Meno does not respond after an update.** Builds without a fixed certificate get a new Accessibility entry with every update. Meno replaces the old entry and macOS asks again; if it does not, open *Settings › Permissions* and click *Reset and Grant Again*.
 - **An update cannot be installed from within Meno.** Meno replaces itself only where it may write, for example in *Applications* with an administrator account, and not while macOS runs it from a temporary copy of a download. Otherwise it offers the download instead.
 - **An app's icon or the Meno icon is missing on macOS 26 or later.** macOS only shows the items of apps that are allowed in *System Settings › Menu Bar*. Meno's own icon can also be turned off in *Settings › Appearance*; open Settings from Quick Open, with `open meno://settings` or by opening Meno again.
+- **Icons disappeared after you moved a divider and clicked it.** Everything left of the single-chevron divider belongs to the Hidden section, so moving the divider to the right takes along the icons it passes, and clicking it hides them together with the divider. Click the Meno icon, or the empty part of the menu bar where the divider was, to show them again, then ⌘-drag the divider back or use the Layout pane. A divider dragged to the right of the Meno icon is put back on its left within a few seconds, so that hiding never hides the Meno icon; should it be gone meanwhile, run `open meno://show/all`.
 - **An item moves back after you moved it.** Meno only puts an item back when its app, or Meno itself, has just started and the item is not where it was last left while Meno ran. Items you move while Meno runs stay where you put them. To stop this, turn off *Keep items where you put them* in *General › Sections*.
 - **macOS asks every month whether Meno may keep recording the screen (macOS 15 to 26).** Screen Recording is optional: without it the Shelf shows app icons instead of the items' own artwork, and changes are noticed by text only.
 - **A purple indicator says "Meno is capturing your screen".** macOS shows it whenever Meno captures the artwork of menu bar items: when the Shelf, Quick Open or Settings opens, at most every 30 seconds, and every few seconds while *Compare icons too* is on. Turn off Screen Recording for Meno to stop it; Meno then shows app icons.
@@ -114,7 +115,7 @@ Meno has no analytics or accounts. It only goes online to ask GitHub for the lat
 
 ## Good to know
 
-- Moving items simulates ⌘-drags, so Meno briefly takes over the pointer and puts it back afterwards. Items that are not currently on screen cannot be dragged; reveal them first. The clock and the Control Center icon cannot be moved.
+- Moving items simulates ⌘-drags, so Meno briefly takes over the pointer and puts it back afterwards. Items the pointer cannot reach, behind the camera housing or off the screen, are dragged through their own windows instead on macOS 14–26; on macOS 27 they have to fit in the menu bar first. The clock and the Control Center icon cannot be moved.
 - Icon spacing uses the `NSStatusItemSpacing` and `NSStatusItemSelectionPadding` preferences, which apps read at launch. Applying it relaunches apps that own menu bar items.
 - The menu bar tint is drawn behind the menu bar and is most visible with the transparent menu bar of macOS 26 and later.
 - With several displays, every menu bar shows the same items in the same order: macOS keeps them on the menu bar of the display you are using and shows them on the others as well. Meno hides and shows them alike on all displays. For more room on a large display, add the rule *Show hidden items on an external display*, or use the condition *The menu bar is on a specific display*.

@@ -1,5 +1,6 @@
-// A menu bar item for scripts/check-hiding.sh: it shows "E2E" in the menu
-// bar and prints where it is when it starts and on SIGUSR1.
+// A menu bar item for scripts/check-hiding.sh and scripts/check-moving.sh:
+// it shows "E2E" in the menu bar and prints where it is when it starts and
+// on SIGUSR1.
 import AppKit
 
 final class Helper: NSObject, NSApplicationDelegate {
