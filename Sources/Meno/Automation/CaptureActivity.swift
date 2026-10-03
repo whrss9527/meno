@@ -6,8 +6,9 @@ import Foundation
 ///
 /// Meno records nothing itself: CoreAudio and CoreMediaIO report which
 /// devices and processes are running, which needs no permission. Watching
-/// starts only while a rule asks for it. Change notifications are not
-/// delivered reliably on every macOS version, so the state is also polled.
+/// starts only while a rule asks for it, and stopping removes every
+/// listener again. Change notifications are not delivered reliably on every
+/// macOS version, so the state is also polled.
 final class CaptureActivity: @unchecked Sendable {
     struct State: Equatable, Sendable {
         var microphone = false
@@ -17,15 +18,25 @@ final class CaptureActivity: @unchecked Sendable {
     }
 
     private let queue = DispatchQueue(label: "\(AppInfo.bundleIdentifier).capture")
+    /// Where CoreAudio and CoreMediaIO call the listeners. Removing a
+    /// listener waits for its calls to finish, so they are not called on
+    /// `queue`, where listeners are removed.
+    private let listenerQueue = DispatchQueue(label: "\(AppInfo.bundleIdentifier).capture.listeners")
     private let onChange: @Sendable (State) -> Void
+
+    /// A property of a CoreAudio or CoreMediaIO object that Meno listens to.
+    private struct Listened: Hashable {
+        let object: UInt32
+        let selector: UInt32
+    }
 
     // Only used on `queue`.
     private var watchesMicrophones = false
     private var watchesCameras = false
-    private var installedMicrophoneListeners = false
-    private var installedCameraListeners = false
-    private var observedAudioObjects: Set<AudioObjectID> = []
-    private var observedCameras: Set<CMIOObjectID> = []
+    /// The listeners Meno added, kept so that they can be removed again:
+    /// removing one takes the same block.
+    private var audioListeners: [Listened: AudioObjectPropertyListenerBlock] = [:]
+    private var cameraListeners: [Listened: CMIOObjectPropertyListenerBlock] = [:]
     private var timer: DispatchSourceTimer?
     private var state = State()
 
@@ -39,8 +50,6 @@ final class CaptureActivity: @unchecked Sendable {
         queue.async { [self] in
             watchesMicrophones = microphones
             watchesCameras = cameras
-            if microphones { installMicrophoneListeners() }
-            if cameras { installCameraListeners() }
             if microphones || cameras {
                 startPolling()
             } else {
@@ -51,12 +60,18 @@ final class CaptureActivity: @unchecked Sendable {
         }
     }
 
+    /// How many listeners Meno has added to CoreAudio and CoreMediaIO, for
+    /// the diagnostic report.
+    var listenerCount: Int {
+        queue.sync { audioListeners.count + cameraListeners.count }
+    }
+
     // MARK: - Checking
 
     private func check() {
+        updateListeners()
         var new = State()
         if watchesMicrophones {
-            observeNewAudioObjects()
             let users = Microphones.recordingProcesses()
             new.microphoneUsers = users?.sorted() ?? []
             new.microphone = users.map { !$0.isEmpty } ?? false
@@ -67,7 +82,6 @@ final class CaptureActivity: @unchecked Sendable {
             }
         }
         if watchesCameras {
-            observeNewCameras()
             new.camera = Cameras.devices().contains(where: Cameras.isRunning)
         }
         guard new != state else { return }
@@ -86,50 +100,76 @@ final class CaptureActivity: @unchecked Sendable {
 
     // MARK: - Listeners
 
-    private func installMicrophoneListeners() {
-        guard !installedMicrophoneListeners else { return }
-        installedMicrophoneListeners = true
-        let system = AudioObjectID(kAudioObjectSystemObject)
-        var selectors = [kAudioHardwarePropertyDevices]
-        if #available(macOS 14.2, *) {
-            selectors.append(kAudioHardwarePropertyProcessObjectList)
+    /// Listens to the lists of devices and processes and to each one that
+    /// can record, as far as they are watched, and removes the listeners of
+    /// objects that are gone or no longer watched.
+    private func updateListeners() {
+        var audio: Set<Listened> = []
+        if watchesMicrophones {
+            let system = AudioObjectID(kAudioObjectSystemObject)
+            audio.insert(Listened(object: system, selector: kAudioHardwarePropertyDevices))
+            for device in Microphones.devices() {
+                audio.insert(Listened(object: device.id, selector: kAudioDevicePropertyDeviceIsRunningSomewhere))
+            }
+            if #available(macOS 14.2, *) {
+                audio.insert(Listened(object: system, selector: kAudioHardwarePropertyProcessObjectList))
+                for process in Microphones.processObjects() {
+                    audio.insert(Listened(object: process, selector: kAudioProcessPropertyIsRunningInput))
+                }
+            }
         }
-        for selector in selectors {
-            var address = Microphones.property(selector)
-            AudioObjectAddPropertyListenerBlock(system, &address, queue) { [weak self] _, _ in self?.check() }
+        var cameras: Set<Listened> = []
+        if watchesCameras {
+            cameras.insert(Listened(object: CMIOObjectID(kCMIOObjectSystemObject), selector: CMIOObjectPropertySelector(kCMIOHardwarePropertyDevices)))
+            for camera in Cameras.devices() {
+                cameras.insert(Listened(object: camera, selector: CMIOObjectPropertySelector(kCMIODevicePropertyDeviceIsRunningSomewhere)))
+            }
+        }
+        for listened in Array(audioListeners.keys) where !audio.contains(listened) {
+            removeAudioListener(listened)
+        }
+        for listened in audio where audioListeners[listened] == nil {
+            addAudioListener(listened)
+        }
+        for listened in Array(cameraListeners.keys) where !cameras.contains(listened) {
+            removeCameraListener(listened)
+        }
+        for listened in cameras where cameraListeners[listened] == nil {
+            addCameraListener(listened)
         }
     }
 
-    /// Listens to devices and processes that appeared since the last check.
-    private func observeNewAudioObjects() {
-        for device in Microphones.devices() where !observedAudioObjects.contains(device.id) {
-            observedAudioObjects.insert(device.id)
-            var address = Microphones.property(kAudioDevicePropertyDeviceIsRunningSomewhere)
-            AudioObjectAddPropertyListenerBlock(device.id, &address, queue) { [weak self] _, _ in self?.check() }
-        }
-        guard #available(macOS 14.2, *) else { return }
-        for process in Microphones.processObjects() where !observedAudioObjects.contains(process) {
-            observedAudioObjects.insert(process)
-            var address = Microphones.property(kAudioProcessPropertyIsRunningInput)
-            AudioObjectAddPropertyListenerBlock(process, &address, queue) { [weak self] _, _ in self?.check() }
-        }
+    /// Checks again on `queue` when a listener is called.
+    private func scheduleCheck() {
+        queue.async { [weak self] in self?.check() }
     }
 
-    private func installCameraListeners() {
-        guard !installedCameraListeners else { return }
-        installedCameraListeners = true
-        var address = Cameras.property(kCMIOHardwarePropertyDevices)
-        CMIOObjectAddPropertyListenerBlock(CMIOObjectID(kCMIOObjectSystemObject), &address, queue) { [weak self] _, _ in
-            self?.check()
-        }
+    private func addAudioListener(_ listened: Listened) {
+        let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in self?.scheduleCheck() }
+        var address = Microphones.property(listened.selector)
+        guard AudioObjectAddPropertyListenerBlock(listened.object, &address, listenerQueue, block) == noErr else { return }
+        audioListeners[listened] = block
     }
 
-    private func observeNewCameras() {
-        for camera in Cameras.devices() where !observedCameras.contains(camera) {
-            observedCameras.insert(camera)
-            var address = Cameras.property(kCMIODevicePropertyDeviceIsRunningSomewhere)
-            CMIOObjectAddPropertyListenerBlock(camera, &address, queue) { [weak self] _, _ in self?.check() }
-        }
+    /// Removes a listener; for an object that is gone, macOS has dropped it
+    /// already and only Meno's copy goes.
+    private func removeAudioListener(_ listened: Listened) {
+        guard let block = audioListeners.removeValue(forKey: listened) else { return }
+        var address = Microphones.property(listened.selector)
+        _ = AudioObjectRemovePropertyListenerBlock(listened.object, &address, listenerQueue, block)
+    }
+
+    private func addCameraListener(_ listened: Listened) {
+        let block: CMIOObjectPropertyListenerBlock = { [weak self] _, _ in self?.scheduleCheck() }
+        var address = Cameras.property(listened.selector)
+        guard CMIOObjectAddPropertyListenerBlock(listened.object, &address, listenerQueue, block) == noErr else { return }
+        cameraListeners[listened] = block
+    }
+
+    private func removeCameraListener(_ listened: Listened) {
+        guard let block = cameraListeners.removeValue(forKey: listened) else { return }
+        var address = Cameras.property(listened.selector)
+        _ = CMIOObjectRemovePropertyListenerBlock(listened.object, &address, listenerQueue, block)
     }
 }
 

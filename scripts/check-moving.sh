@@ -168,6 +168,9 @@ open "meno://scene/Stashed"
 wait_for 30 item_in stash || fail "Applying a scene did not move the item back into the Stash"
 wait_for 15 helper_on_screen 0 || fail "The item is in the Stash but still in the menu bar"
 
+# No rule here needs a microphone or a camera, so Meno listens to none.
+meno_report | grep -q "capture listeners 0" || fail "Meno listens to microphones or cameras without a rule that needs them"
+
 echo "Moving items by their windows works on macOS $(sw_vers -productVersion)."
 echo "::group::Meno's report"
 meno_report || true

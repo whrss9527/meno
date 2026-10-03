@@ -26,6 +26,12 @@ final class AutomationController: ObservableObject {
             self.evaluate()
         }
     }
+    /// How many CoreAudio and CoreMediaIO listeners are installed, for the
+    /// diagnostic report: none while no enabled rule watches microphones or
+    /// cameras.
+    var captureListenerCount: Int {
+        captureActivity.listenerCount
+    }
     /// The commands of rule conditions that succeeded when they last ran.
     private(set) var succeededCommands: Set<String> = []
     /// The routers of the networks the Mac is on, while a rule depends on them.
