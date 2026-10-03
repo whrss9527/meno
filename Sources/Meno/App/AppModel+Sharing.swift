@@ -15,6 +15,13 @@ struct PendingShare: Identifiable {
     let name: String
 }
 
+/// A settings file picked to import, waiting to be confirmed.
+struct PendingSettingsImport: Identifiable {
+    let id = UUID()
+    let fileName: String
+    let file: SettingsImport
+}
+
 extension AppModel {
     /// Writes the chosen scenes and rules, with the scenes those rules apply,
     /// to a `.meno` file the person picks.

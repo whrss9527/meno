@@ -28,6 +28,9 @@ final class AppModel: ObservableObject {
     /// A `.meno` file whose scenes and rules wait for the person to choose
     /// what to import.
     @Published var pendingShare: PendingShare?
+    /// A settings file that waits for the person to confirm that it replaces
+    /// the current settings.
+    @Published var pendingImport: PendingSettingsImport?
     /// Whether nobody can see the menu bar: the displays sleep or another
     /// user's session is in front. Background scans pause meanwhile.
     private(set) var isAway = false
@@ -351,28 +354,59 @@ final class AppModel: ObservableObject {
         NSApp.activate()
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            var imported = try MenoSettings.decodeImport(from: Data(contentsOf: url))
-            imported.onboardingCompleted = true
-            // Commands in a settings file only run once the person has
-            // looked at them and turned their rules back on.
-            let (rules, disabled) = imported.rules.disablingCommands()
-            imported.rules = rules
-            settings = imported
-            if disabled {
-                toasts.show(
-                    String(localized: "Settings imported. Rules that run commands were turned off; check them before turning them on."),
-                    symbol: "square.and.arrow.down",
-                    actions: [ToastCenter.Action(title: String(localized: "Show Rules")) { [weak self] in self?.openSettings(.rules) }],
-                    duration: 10
-                )
-            } else {
-                toasts.show(String(localized: "Settings imported."), symbol: "square.and.arrow.down")
-            }
+            // Nothing changes until the person has seen what the file holds.
+            let file = try SettingsImport(data: Data(contentsOf: url))
+            pendingImport = PendingSettingsImport(fileName: url.lastPathComponent, file: file)
         } catch MenoSettings.ImportError.shareFile {
             // Scenes and rules to share: shown before anything is imported.
             openShareFile(url)
         } catch {
             toasts.show(String(localized: "That file does not contain Meno settings."), symbol: "exclamationmark.triangle.fill")
+        }
+    }
+
+    /// Replaces the settings with the file the person confirmed, after
+    /// keeping a copy of the current ones that Undo puts back.
+    func confirmImport() {
+        guard let pending = pendingImport else { return }
+        pendingImport = nil
+        let backup: URL
+        do {
+            backup = try storage.backUp(settings, as: SettingsImport.backupName(at: Date()))
+        } catch {
+            toasts.show(
+                String(localized: "Your current settings could not be kept aside, so nothing was imported."),
+                symbol: "exclamationmark.triangle.fill"
+            )
+            return
+        }
+        settings = pending.file.settings
+        var actions = [ToastCenter.Action(title: String(localized: "Undo")) { [weak self] in self?.undoImport(from: backup) }]
+        if pending.file.turnedOffCommands {
+            // Commands in a settings file only run once the person has
+            // looked at them and turned their rules back on.
+            actions.append(ToastCenter.Action(title: String(localized: "Show Rules")) { [weak self] in self?.openSettings(.rules) })
+            toasts.show(
+                String(localized: "Settings imported. Rules that run commands were turned off; check them before turning them on."),
+                symbol: "square.and.arrow.down",
+                actions: actions,
+                duration: 12
+            )
+        } else {
+            toasts.show(String(localized: "Settings imported."), symbol: "square.and.arrow.down", actions: actions, duration: 10)
+        }
+    }
+
+    /// Puts back the settings kept before an import.
+    func undoImport(from backup: URL) {
+        do {
+            settings = try MenoSettings.decode(from: Data(contentsOf: backup))
+            toasts.show(String(localized: "Your previous settings are back."), symbol: "arrow.uturn.backward")
+        } catch {
+            toasts.show(
+                String(localized: "The copy of your previous settings could not be read. It is in ~/Library/Application Support/Meno."),
+                symbol: "exclamationmark.triangle.fill"
+            )
         }
     }
 
