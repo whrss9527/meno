@@ -47,7 +47,13 @@ enum WindowCapture {
         let statusLevel = Int(CGWindowLevelForKey(.statusWindow))
         let windows = windowList(onScreenOnly: false).filter { $0.layer == statusLevel }
         return frames.map { frame in
-            windows.first { matches($0.bounds, frame) }
+            // An item's window can be a little wider than the item reports,
+            // with padding on both sides, so it is the window around the
+            // item's middle that is about as wide.
+            let middle = CGPoint(x: frame.midX, y: frame.midY)
+            return windows
+                .filter { $0.bounds.contains(middle) && abs($0.bounds.width - frame.width) <= 24 }
+                .min { abs($0.bounds.width - frame.width) < abs($1.bounds.width - frame.width) }
         }
     }
 

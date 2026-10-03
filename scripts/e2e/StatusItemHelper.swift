@@ -1,10 +1,6 @@
 // A menu bar item for scripts/check-hiding.sh and scripts/check-moving.sh:
 // it shows "E2E" in the menu bar and prints where it is when it starts and
 // on SIGUSR1.
-//
-// With --wide the item is almost twice as wide as the widest screen, so its
-// middle stays off the screen even while every item is shown, where the
-// pointer cannot reach it.
 import AppKit
 
 final class Helper: NSObject, NSApplicationDelegate {
@@ -12,9 +8,7 @@ final class Helper: NSObject, NSApplicationDelegate {
     private var signalSource: DispatchSourceSignal?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let wide = CommandLine.arguments.contains("--wide")
-        let widest = NSScreen.screens.map(\.frame.width).max() ?? 1024
-        let item = NSStatusBar.system.statusItem(withLength: wide ? (widest * 1.9).rounded() : NSStatusItem.variableLength)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         item.button?.title = "E2E"
         self.item = item
         signal(SIGUSR1, SIG_IGN)

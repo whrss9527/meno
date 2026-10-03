@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
-# Checks on this Mac that Meno moves an item the pointer cannot reach, as CI
-# does on each macOS version it builds on. A new menu bar item, wider than
-# the screen, appears in the Stash; even with every item shown its middle is
-# off the screen, like an item behind the camera housing of a MacBook.
-# Applying a scene that keeps it visible has to move it there by its window.
+# Checks on this Mac that Meno can move menu bar items by their windows, as
+# it does for items the pointer cannot reach, such as those behind the
+# camera housing of a MacBook, and as CI does on each macOS version it builds
+# on. With MENO_MOVE_BY_WINDOW=1 Meno moves every item that way, so a Mac
+# without a housing will do. A new menu bar item appears in the Stash; a
+# scene moves it to Visible and another one back to the Stash.
 #
 # Usage: scripts/check-moving.sh [path/to/Meno.app]
 set -euo pipefail
@@ -17,7 +18,7 @@ WORK="$(mktemp -d)"
 LOG="$WORK/meno.log"
 HELPER_LOG="$WORK/helper.log"
 # The key Meno gives the helper's item: its process name, and the only item.
-KEY="MenoE2EWide#solo"
+KEY="MenoE2EMove#solo"
 
 if [[ ! -x "$BINARY" ]]; then
   echo "No app at $APP; build it with make app" >&2
@@ -109,7 +110,8 @@ item_in() {
 }
 
 # Showing items in the menu bar rather than in the Shelf, new items left
-# where macOS puts them, and a scene that keeps the helper's item visible.
+# where macOS puts them, and scenes that put the helper's item in Visible
+# and in the Stash.
 mkdir -p "$SUPPORT"
 cat > "$SUPPORT/settings.json" <<EOF
 {
@@ -118,9 +120,17 @@ cat > "$SUPPORT/settings.json" <<EOF
   "scenes" : [
     {
       "id" : "0E2E0E2E-0000-4000-8000-000000000001",
-      "name" : "Wide",
+      "name" : "Shown",
       "symbol" : "square.grid.2x2",
       "layout" : { "visible" : [ "$KEY" ], "hidden" : [ ], "stash" : [ ] },
+      "createdAt" : 0,
+      "updatedAt" : 0
+    },
+    {
+      "id" : "0E2E0E2E-0000-4000-8000-000000000002",
+      "name" : "Stashed",
+      "symbol" : "square.grid.2x2",
+      "layout" : { "visible" : [ ], "hidden" : [ ], "stash" : [ "$KEY" ] },
       "createdAt" : 0,
       "updatedAt" : 0
     }
@@ -129,34 +139,36 @@ cat > "$SUPPORT/settings.json" <<EOF
 EOF
 
 echo "==> Building the helper item"
-swiftc -O -o "$WORK/MenoE2EWide" "$ROOT/scripts/e2e/StatusItemHelper.swift"
+swiftc -O -o "$WORK/MenoE2EMove" "$ROOT/scripts/e2e/StatusItemHelper.swift"
 
 echo "==> Starting Meno"
 # Launched directly rather than with open, so that the environment reaches it.
-MENO_DIAG=1 "$BINARY" > "$LOG" 2>&1 &
+MENO_DIAG=1 MENO_MOVE_BY_WINDOW=1 "$BINARY" > "$LOG" 2>&1 &
 meno=$!
 wait_for 60 log_has '^MENO_DIAG ready' || fail "Meno did not get ready"
 if log_has 'Accessibility: missing'; then
   fail "Meno has no Accessibility permission on this Mac"
 fi
 
-echo "==> Adding a menu bar item wider than the screen"
-"$WORK/MenoE2EWide" --wide > "$HELPER_LOG" 2>&1 &
+echo "==> Adding a menu bar item"
+"$WORK/MenoE2EMove" > "$HELPER_LOG" 2>&1 &
 helper=$!
 wait_for 15 grep -q '^E2E_ITEM ' "$HELPER_LOG" || fail "The helper item did not start"
 wait_for 15 helper_on_screen 0 || fail "The new item is not hidden"
 wait_for 20 item_in stash || fail "Meno does not list the new item in the Stash"
 
-echo "==> Applying a scene that keeps it visible"
-open "meno://scene/Wide"
-wait_for 30 item_in visible || fail "Applying the scene did not move the item into Visible"
+echo "==> Moving it to Visible by its window"
+open "meno://scene/Shown"
+wait_for 30 item_in visible || fail "Applying a scene did not move the item into Visible"
 log_has "^MENO_DIAG move $KEY by window" || fail "Meno moved the item without going through its window"
+wait_for 15 helper_on_screen 1 || fail "The item is in Visible but not in the menu bar"
 
-echo "==> Hiding the other items"
-open "meno://hide"
-wait_for 15 helper_on_screen 1 || fail "The item did not stay in the menu bar as a visible item"
+echo "==> Moving it back to the Stash"
+open "meno://scene/Stashed"
+wait_for 30 item_in stash || fail "Applying a scene did not move the item back into the Stash"
+wait_for 15 helper_on_screen 0 || fail "The item is in the Stash but still in the menu bar"
 
-echo "Moving an item out of reach of the pointer works on macOS $(sw_vers -productVersion)."
+echo "Moving items by their windows works on macOS $(sw_vers -productVersion)."
 echo "::group::Meno's report"
 meno_report || true
 echo "::endgroup::"

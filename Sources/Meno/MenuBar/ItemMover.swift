@@ -281,7 +281,7 @@ final class ItemMover: ObservableObject {
             let reachesItem = ScreenGeometry.isReachable(start)
             // Behind the camera housing or off the screen, where the pointer
             // cannot reach, the item is dragged by its window instead.
-            let drag = reachesItem && ScreenGeometry.isReachable(end)
+            let drag = reachesItem && ScreenGeometry.isReachable(end) && !Diagnostics.movesByWindow
                 ? nil
                 : windowDrag(of: item, reference: reference, placement: placement)
             if let drag {
