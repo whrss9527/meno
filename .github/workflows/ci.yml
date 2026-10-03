@@ -1,8 +1,11 @@
 name: CI
 
+# Pull requests run in their own right, so pushes only run for main: a
+# push to a pull request's branch would otherwise run everything twice and
+# wait twice as long for macOS runners. Other branches can be run by hand.
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -45,7 +48,10 @@ jobs:
       - name: Build app bundle
         run: make zip
 
+      # Leaves the app alone for a minute; measured for main, not for every
+      # pull request.
       - name: Footprint while idle
+        if: github.event_name != 'pull_request'
         timeout-minutes: 5
         run: scripts/measure-footprint.sh build/Meno.app
 
