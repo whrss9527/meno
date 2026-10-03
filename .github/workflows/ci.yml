@@ -1,9 +1,11 @@
 name: CI
 
+# Every push runs once, on whatever branch; a pull request shows the result
+# for its branch's head. There is no pull_request trigger, which would run
+# the same commit a second time and wait twice as long for macOS runners.
 on:
   push:
     branches: ["**"]
-  pull_request:
   workflow_dispatch:
 
 concurrency:
@@ -45,7 +47,10 @@ jobs:
       - name: Build app bundle
         run: make zip
 
+      # Leaves the app alone for a minute; measured for main and runs by
+      # hand, not for every push to a branch.
       - name: Footprint while idle
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         timeout-minutes: 5
         run: scripts/measure-footprint.sh build/Meno.app
 

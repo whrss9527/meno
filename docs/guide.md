@@ -73,7 +73,7 @@ Menu bar items are read through each app's accessibility tree, which works on ev
 
 ## Footprint
 
-Left alone, Meno uses about a tenth of a percent of one CPU core and 10 to 15 MB of memory, as Activity Monitor counts it. CI measures this after every change: `scripts/measure-footprint.sh` starts the app, leaves it alone for a minute and adds the numbers to the run's summary.
+Left alone, Meno uses about a tenth of a percent of one CPU core and 10 to 15 MB of memory, as Activity Monitor counts it. CI measures this after every change to the main branch: `scripts/measure-footprint.sh` starts the app, leaves it alone for a minute and adds the numbers to the run's summary.
 
 | Idle for a minute, Apple silicon | macOS 26 | macOS 15 |
 | --- | --- | --- |
