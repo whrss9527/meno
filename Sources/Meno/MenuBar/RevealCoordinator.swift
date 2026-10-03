@@ -233,7 +233,7 @@ final class RevealCoordinator: ObservableObject {
         }
         revealedByHover = wasCollapsed && trigger == .hover
         apply()
-        hideAppMenusIfNeeded(all: target == .revealedAll)
+        hideAppMenusIfNeeded(all: target == .revealedAll, trigger: trigger)
         if wasCollapsed {
             model.recordReveal(trigger: trigger)
         }
@@ -250,6 +250,11 @@ final class RevealCoordinator: ObservableObject {
 
     /// Reveals the person asked for, as opposed to automatic ones.
     private static let personTriggers: Set<RevealTrigger> = [.click, .emptyArea, .hover, .scroll, .hotkey, .menu, .link, .drag]
+
+    /// Reveals the person asked for directly, for which Meno may become the
+    /// active app to clear the app menus at any time. For others, such as
+    /// hovering, a change or a rule, it may not while they type.
+    private static let directTriggers: Set<RevealTrigger> = [.click, .emptyArea, .hotkey, .menu, .link, .activation, .layout]
 
     func collapse(trigger: RevealTrigger) {
         // Items stay shown while Meno moves them, or later moves would find
@@ -671,10 +676,17 @@ final class RevealCoordinator: ObservableObject {
         return requiredWidth(all: all) > screenRect.maxX - menus.maxX
     }
 
-    private func hideAppMenusIfNeeded(all: Bool) {
+    private func hideAppMenusIfNeeded(all: Bool, trigger: RevealTrigger) {
         let mode = model.settings.general.appMenuHiding
         guard mode != .never, !activatedForAppMenus, model.permissions.accessibility else { return }
         if mode == .whenNeeded, !revealCollidesWithAppMenus(all: all) { return }
+        // Keys typed while Meno is in front would be lost, as it has no
+        // window to take them.
+        guard AppMenuHiding.mayActivate(
+            direct: Self.directTriggers.contains(trigger),
+            pointerInMenuBar: pointerIsInMenuBar,
+            secondsSinceKeyDown: CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown)
+        ) else { return }
         guard let front = NSWorkspace.shared.frontmostApplication, front.processIdentifier != AppInfo.ownPID else { return }
         previousApp = front
         activatedForAppMenus = true

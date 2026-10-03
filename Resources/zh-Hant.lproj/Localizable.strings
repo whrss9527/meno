@@ -294,7 +294,7 @@
 "macOS runs Meno from a temporary copy. Move Meno to the Applications folder, open it from there and try again." = "macOS 正從暫存副本執行 Meno。請把 Meno 移到「應用程式」資料夾，從那裡打開後再試一次。";
 "macOS shows the same items in the same order on the menu bar of every display, so Meno arranges them for the display you use: whenever its menu bar has the items, its scene applies. Each choice is a rule, which Rules lists as well." = "macOS 在每個顯示器的選單列上顯示同樣的項目、同樣的順序，所以 Meno 依你正在使用的顯示器來排列：哪個顯示器的選單列上有這些項目，就套用它的場景。每個選擇都是一條規則，在「規則」裡也看得到。";
 "Made with Meno %@" = "由 Meno %@ 製作";
-"Makes room by hiding the menus of the frontmost app while items are shown." = "顯示項目時暫時隱藏最前方 App 的選單，騰出空間。";
+"Makes room by hiding the menus of the frontmost app while items are shown. Meno is the active app meanwhile, so when items show by hovering, scrolling or on their own, it does this only while the pointer is in the menu bar and you are not typing." = "顯示項目時暫時隱藏最前方 App 的選單，騰出空間。這段期間 Meno 會成為目前的 App，所以停留、捲動或自動顯示項目時，只有指標在選單列上且你沒在打字時才會這麼做。";
 "Manage Scenes…" = "管理場景…";
 "Markers" = "標記";
 "Markers are small items you add to the menu bar to group other items: some space, a thin line, a dot, a symbol or a short label such as “Work”." = "標記是你新增到選單列中、用來替其他項目分組的小元素：一段空白、一條細線、一個圓點、一個符號，或像「工作」這樣的簡短標籤。";

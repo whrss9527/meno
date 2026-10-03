@@ -138,6 +138,19 @@ public enum AppMenuHiding: String, Codable, CaseIterable, Sendable {
     case never
     case whenNeeded
     case always
+
+    /// How long after a key press the app menus are left alone for a
+    /// reveal the person did not ask for directly.
+    public static let typingPause: TimeInterval = 1.5
+
+    /// Whether Meno may become the active app to clear the app menus, which
+    /// sends the keys typed meanwhile to Meno. It may for a reveal the
+    /// person asked for directly, such as with a click or a shortcut. For
+    /// others, such as by hovering or scrolling, it may only while the
+    /// pointer is in the menu bar and no key was pressed for a moment.
+    public static func mayActivate(direct: Bool, pointerInMenuBar: Bool, secondsSinceKeyDown: TimeInterval) -> Bool {
+        direct || (pointerInMenuBar && secondsSinceKeyDown >= typingPause)
+    }
 }
 
 /// What happens to an item that appears for the first time.

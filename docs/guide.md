@@ -19,7 +19,7 @@ After an update, macOS may keep an entry for the previous build in the Accessibi
 - **Three sections.** *Visible* items are always shown. *Hidden* items appear on demand. The *Stash* is for items you almost never need: they never appear in the menu bar, only in the Shelf, Quick Open or with ⌥-click.
 - **Many ways to reveal:** click the Meno icon, click or hover over an empty part of the menu bar (hovering can require a held key), scroll or swipe down over it, press a global shortcut, or drag a file onto the menu bar to drop it on a hidden item.
 - **Smart re-hiding:** after a delay, when you switch apps or click elsewhere, or when the pointer leaves the menu bar. Items stay put while one of their menus is open.
-- **Room when you need it:** Meno can clear the frontmost app's menus while items are revealed, so a long row of icons fits.
+- **Room when you need it:** Meno can clear the frontmost app's menus while items are revealed, so a long row of icons fits. For that it becomes the active app until the items hide; when they show by hovering, scrolling or on their own, it only does so while the pointer is in the menu bar and you are not typing, so your keys keep going to your app.
 - **Items stay where you put them:** when an app restarts and macOS puts its icon at the left end of the menu bar, in another section, Meno moves it back. When many items moved at once, it asks first.
 
 ### Glass interface
