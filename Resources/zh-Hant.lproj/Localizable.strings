@@ -235,7 +235,9 @@
 "Icon" = "圖示";
 "Icon size" = "圖示大小";
 "Icon spacing" = "圖示間距";
+"Ignore changes shorter than" = "忽略短於此時長的變化";
 "Ignore hover, scrolling and clicks while Zen is on" = "禪模式開啟時忽略停留、捲動和按一下";
+"Ignores changes shorter than %@." = "忽略短於 %@ 的變化。";
 "Import" = "匯入";
 "Import from “%@”" = "從「%@」匯入";
 "Import Settings…" = "匯入設定…";
@@ -370,6 +372,7 @@
 "Nothing to set" = "無需設定";
 "Nothing to suggest right now. Your menu bar looks well arranged." = "暫時沒有建議，你的選單列看起來井井有條。";
 "Notices items whose icon changes while their text stays the same. This needs Screen Recording, and macOS shows its recording indicator in the menu bar every few seconds while Meno looks." = "也能發現文字不變、只有圖示變化的項目。這需要螢幕錄製權限，而且 Meno 檢查期間 macOS 會每隔幾秒在選單列顯示錄製指示器。";
+"Off" = "關閉";
 "offline" = "離線";
 "on %@" = "在%@";
 "on any day" = "在任何一天";
@@ -581,6 +584,7 @@
 "the menu bar is on “%@”" = "選單列在「%@」上";
 "The move was called off." = "移動已取消。";
 "The release has no app to install." = "這個版本沒有可以安裝的 App。";
+"The rule acts once its conditions have held this long, and ends once they have stopped as long, so that a quick switch between apps or a short pause does not move items back and forth." = "條件持續滿足這麼久後，規則才會執行；條件不再滿足同樣久後，規則才會結束。這樣快速切換 App 或短暫停頓就不會把項目移來移去。";
 "The scenes that chosen rules apply go along." = "選取的規則所用的場景會一併匯出。";
 "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing." = "當選單列放不下時（例如瀏海附近），托盤能讓項目依然觸手可及。";
 "The tint sits behind the menu bar. It is most visible with a transparent menu bar, as on macOS 26 and later." = "著色位於選單列後方，在透明選單列（如 macOS 26 及更高版本）上最明顯。";

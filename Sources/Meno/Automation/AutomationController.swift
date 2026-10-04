@@ -41,6 +41,8 @@ final class AutomationController: ObservableObject {
     /// When routers that no lookup found since were last there.
     private var routersMissingSince: [String: Date] = [:]
     private var graceCheck: Task<Void, Never>?
+    /// Evaluates again when a rule that waits for its minimum duration is due.
+    private var durationCheck: Task<Void, Never>?
     private var isLookingUpRouters = false
     private var looksUpRoutersAgain = false
     /// How long a router may be missing before its network counts as left:
@@ -321,6 +323,24 @@ final class AutomationController: ObservableObject {
             case .activated(let rule): activate(rule)
             case .deactivated(let rule): deactivate(rule)
             }
+        }
+        scheduleDurationCheck()
+    }
+
+    /// Looks again once a rule's conditions have held for its minimum
+    /// duration, rather than at the next event or periodic check.
+    private func scheduleDurationCheck() {
+        durationCheck?.cancel()
+        durationCheck = nil
+        guard let due = evaluator.nextChange(rules: model.settings.effectiveRules) else { return }
+        // Long waits from imported settings are checked in bounded steps.
+        // Converting an arbitrary TimeInterval directly to UInt64 can trap.
+        let remaining = due.timeIntervalSinceNow
+        let delay = remaining.isFinite ? min(max(remaining, 0), 30) + 0.1 : 30
+        durationCheck = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.evaluate()
         }
     }
 
