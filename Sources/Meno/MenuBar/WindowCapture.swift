@@ -67,7 +67,7 @@ enum WindowCapture {
         let statusLevel = Int(CGWindowLevelForKey(.statusWindow))
         return Set(windows.filter { $0.layer == statusLevel }.map {
             MenuBarScanGate.Window(id: $0.id, pid: $0.pid, x: Double($0.bounds.minX),
-                                  y: Double($0.bounds.minY), width: Double($0.bounds.width), height: Double($0.bounds.height))
+                                  y: Double($0.bounds.minY), width: Double($0.bounds.width), height: Double($0.bounds.height), isOnScreen: $0.isOnScreen)
         })
     }
 

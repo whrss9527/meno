@@ -2,8 +2,8 @@ import XCTest
 @testable import MenoCore
 
 final class MenuBarScanGateTests: XCTestCase {
-    private func window(_ id: UInt32 = 1, pid: Int32 = 2, x: Double = 10, width: Double = 20) -> MenuBarScanGate.Window {
-        .init(id: id, pid: pid, x: x, y: 0, width: width, height: 24)
+    private func window(_ id: UInt32 = 1, pid: Int32 = 2, x: Double = 10, width: Double = 20, isOnScreen: Bool = true) -> MenuBarScanGate.Window {
+        .init(id: id, pid: pid, x: x, y: 0, width: width, height: 24, isOnScreen: isOnScreen)
     }
     func testOnlyStableCompletedScansCanBeSkipped() {
         var gate = MenuBarScanGate()
@@ -12,7 +12,7 @@ final class MenuBarScanGateTests: XCTestCase {
         gate.scanned(before: snapshot, after: snapshot)
         XCTAssertFalse(gate.needsScan(snapshot))
         XCTAssertTrue(gate.needsScan(nil))
-        for changed: MenuBarScanGate.Snapshot in [[window(), window(3)], [], [window(pid: 3)], [window(x: 30)], [window(width: 30)], [window(4)]] {
+        for changed: MenuBarScanGate.Snapshot in [[window(), window(3)], [], [window(pid: 3)], [window(x: 30)], [window(width: 30)], [window(4)], [window(isOnScreen: false)]] {
             XCTAssertTrue(gate.needsScan(changed))
         }
     }

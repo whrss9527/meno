@@ -6,9 +6,11 @@ public struct MenuBarScanGate: Sendable {
         public let id: UInt32
         public let pid: Int32
         public let x, y, width, height: Double
-        public init(id: UInt32, pid: Int32, x: Double, y: Double, width: Double, height: Double) {
+        public let isOnScreen: Bool
+        public init(id: UInt32, pid: Int32, x: Double, y: Double, width: Double, height: Double, isOnScreen: Bool = true) {
             self.id = id; self.pid = pid
             self.x = x; self.y = y; self.width = width; self.height = height
+            self.isOnScreen = isOnScreen
         }
     }
     public typealias Snapshot = Set<Window>
