@@ -162,7 +162,13 @@ final class ItemInventory: ObservableObject {
         lastRefresh = Date()
         refreshDependentState(sectioned: sectioned)
         fullScans += 1
-        if usesScanGate { scanGate.scanned(before: sectioned ? fingerprint : nil, after: WindowCapture.menuBarFingerprint()) }
+        if usesScanGate {
+            // An empty or partially unresolved AX result must be retried even
+            // when the windows have settled, especially just after launch.
+            let reusable = sectioned && !reliablySectioned.isEmpty
+                && items.allSatisfy { $0.kind == .marker || knowsSection(of: $0.key) }
+            scanGate.scanned(before: reusable ? fingerprint : nil, after: WindowCapture.menuBarFingerprint())
+        }
         Diagnostics.event("scan mode=full items=\(items.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))"
             + " full=\(fullScans) skipped=\(skippedScans) sectioned=\(sectioned ? 1 : 0) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
     }
