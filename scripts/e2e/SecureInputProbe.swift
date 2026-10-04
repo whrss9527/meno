@@ -19,7 +19,7 @@ enum WindowCapture {
 struct SecureInputProbe {
     static func windows(for pids: Set<pid_t>) -> [WindowCapture.WindowInfo] {
         let layer = Int(CGWindowLevelForKey(.statusWindow))
-        let list = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+        let list = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID) as? [[String: Any]] ?? []
         return list.compactMap { info in
             guard let pid = info[kCGWindowOwnerPID as String] as? Int32, pids.contains(pid),
                   let number = info[kCGWindowNumber as String] as? UInt32,
@@ -31,7 +31,20 @@ struct SecureInputProbe {
     }
 
     static func swap(pids: Set<pid_t>, byWindow: Bool) async throws -> Bool {
-        let before = windows(for: pids)
+        var before = windows(for: pids)
+        for _ in 0..<30 where before.count != 2 {
+            try await Task.sleep(nanoseconds: 100_000_000)
+            before = windows(for: pids)
+        }
+        if before.count != 2 {
+            let list = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID) as? [[String: Any]] ?? []
+            for info in list {
+                guard let pid = info[kCGWindowOwnerPID as String] as? Int32, pids.contains(pid) else { continue }
+                print("PROBE_WINDOW pid=\(pid) id=\(info[kCGWindowNumber as String] ?? "?") layer=\(info[kCGWindowLayer as String] ?? "?") bounds=\(info[kCGWindowBounds as String] ?? "?")")
+            }
+            print("PROBE_WINDOW expected=2 found=\(before.count)")
+            fflush(stdout)
+        }
         precondition(before.count == 2, "Both helper items must be visible")
         let left = before[0], right = before[1]
         let end = CGPoint(x: left.bounds.minX, y: left.bounds.midY)

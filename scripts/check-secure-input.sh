@@ -7,6 +7,10 @@ WORK="$(mktemp -d)"
 first=""
 second=""
 cleanup() {
+  local status=$?
+  if [[ "$status" != 0 ]]; then
+    cat "$WORK/first.log" "$WORK/second.log" 2>/dev/null || true
+  fi
   for pid in "$first" "$second"; do
     if [[ -n "$pid" ]]; then
       kill "$pid" 2>/dev/null || true
