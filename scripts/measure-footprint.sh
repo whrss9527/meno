@@ -162,8 +162,9 @@ measure() {
   fi
   scans="$(grep -c '^MENO_DIAG scan ' "$log" || true)"
   seen="$(value items)"
+  [[ -n "$last_scan" ]] || fail "Meno produced no scan to measure"
   if [[ "$last_scan" == *"accessibility=missing"* ]]; then
-    accessibility="missing, so Meno waits for it with Settings open"
+    fail "Accessibility is missing; the menu bar workload was not measured"
   elif [[ "${seen:-0}" -lt $((baseline + items)) ]]; then
     fail "Meno sees ${seen:-no} menu bar items, not the ${baseline} it saw before and the ${items} added"
   fi
