@@ -98,7 +98,7 @@ struct GeneralPane: View {
                 SettingRow("Show hidden items", subtitle: "The Shelf keeps items reachable when the menu bar is full, for example next to the camera housing.") {
                     EnumPicker(selection: $model.settings.general.revealStyle, title: \.title)
                 }
-                SettingRow("Clear the app menus", subtitle: "Makes room by hiding the menus of the frontmost app while items are shown.") {
+                SettingRow("Clear the app menus", subtitle: "Makes room by hiding the menus of the frontmost app while items are shown. Meno is the active app meanwhile, so when items show by hovering, scrolling or on their own, it does this only while the pointer is in the menu bar and you are not typing.") {
                     EnumPicker(selection: $model.settings.general.appMenuHiding, title: \.title)
                 }
             }
