@@ -19,6 +19,7 @@ enum Diagnostics {
             "Accessibility: \(model.permissions.accessibility ? "granted" : "missing")"
                 + " · Screen Recording: \(model.permissions.screenRecording ? "granted" : "missing")",
             "Reveal: \(model.settings.general.revealStyle.rawValue)"
+                + " · hover \(model.settings.reveal.onHover ? "on" : "off")"
                 + " · keeps sections \(model.settings.general.keepsSections ? "on" : "off")"
                 + " · tint \(model.settings.tint.enabled ? model.settings.tint.colorSource.rawValue : "off")",
         ]

@@ -75,20 +75,23 @@ Menu bar items are read through each app's accessibility tree, which works on ev
 
 ## Footprint
 
-Left alone, Meno uses about a tenth of a percent of one CPU core and 10 to 15 MB of memory, as Activity Monitor counts it. CI measures this after every change to the main branch: `scripts/measure-footprint.sh` starts the app, leaves it alone for a minute and adds the numbers to the run's summary.
+Left alone, Meno uses one or two tenths of a percent of one CPU core and 10 MB of memory, as Activity Monitor counts it, or 16 to 18 MB with the items of 20 other apps in the menu bar. CI measures this after every change to the main branch: `scripts/measure-footprint.sh` starts the app and leaves it alone for a minute twice, first with the default settings and nothing else in the menu bar, then with 20 other apps' items, hidden items shown on hover and a rule that waits for an app to come to the front. It adds the numbers to the run's summary, and the run fails when Meno uses more than half a percent of one core or 100 MB of resident memory.
 
 | Idle for a minute, Apple silicon | macOS 26 | macOS 15 |
 | --- | --- | --- |
-| CPU | 0.13 % of one core | 0.12 % of one core |
-| Memory | 14.2 MB | 9.7 MB |
-| Wake-ups | 0.1 per second | 0.1 per second |
-| A look over the menu bar, usually | 37–49 ms | 34–53 ms |
+| CPU, default settings | 0.18 % of one core | 0.08 % of one core |
+| CPU, 20 other items, hover and a rule | 0.15 % of one core | 0.13 % of one core |
+| Memory, default settings | 10.6 MB | 9.7 MB |
+| Memory, 20 other items, hover and a rule | 17.8 MB | 16.4 MB |
+| Wake-ups | 0.1 to 0.3 per second | 0.1 per second |
+| A look over the menu bar, default settings | 35–62 ms | 14–31 ms |
+| A look over the menu bar, 20 other items | 72–79 ms | 42–555 ms |
 
 - Meno hears about most changes as they happen, such as apps starting and quitting, and looks over the whole menu bar only every 20 seconds (every minute in Low Power Mode) to catch what slipped through. It does not look while the displays sleep or another user's session is in front.
 - Nothing is captured from the screen in the background.
 - Rules that run a command or depend on the network only do that work while such a rule is on.
 
-The measurements run on GitHub's virtual Macs, which have only macOS's own menu bar items; with more items, each look at the menu bar takes a little longer.
+The measurements run on GitHub's virtual Macs, whose menu bar has only macOS's own items. The other apps' items there are copies of a small test app that shows one item each; real apps can take longer to answer when Meno looks over the menu bar.
 
 ## Permissions and privacy
 
