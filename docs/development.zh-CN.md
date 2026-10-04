@@ -34,7 +34,7 @@ scripts            打包 App、生成图标、检查本地化
 
 ### 测试与脚本
 
-- `swift test` 运行 MenoCore 测试（也可在 Linux 上运行）。
+- `swift test` 运行 MenoCore 测试。CI 除了两个 macOS runner，也会在 Linux 上用 Swift 5.10 运行测试。库存构建、展开计数和分隔符修复决策是核心模块中的纯逻辑；辅助功能对象、计时器和系统操作仍保留在 App 中。
 - `scripts/check-localization.py` 列出界面文字并检查 `Resources/*.lproj` 中的翻译是否完整。
 - `scripts/generate-icon.py` 生成 `Resources/AppIcon.icns`（需要 Pillow 和 numpy）。
 - `scripts/measure-footprint.sh` 测量打包好的 App 空闲时的占用（默认设置一次，加上 20 个其他 App 的项目、悬停显示和一条规则再一次），超过上限就失败，`scripts/check-hiding.sh` 用自己添加的菜单栏项目检查隐藏和显示是否正常，并检查放到 Meno 图标右侧的“隐藏”分隔符会被移回左侧，`scripts/check-moving.sh` 检查 Meno 能通过窗口把自己添加的项目移到常显再移回去。CI 在 macOS 15 和 26 上都会运行这三个脚本，手动运行时还可以用 *runner* 输入再加一个 runner，比如新的 macOS；它们需要一台没有设置过 Meno 的 Mac，并且运行脚本的 App 有辅助功能权限。环境变量里有 `MENO_DIAG=1` 时，Meno 会把每次扫描和诊断报告输出到标准错误，收到 `SIGUSR1` 时再输出一次报告。
