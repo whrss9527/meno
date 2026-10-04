@@ -8,10 +8,14 @@ def read(path):
     result = {}
     for line in pathlib.Path(path).read_text().splitlines():
         pid, time = line.split()
+        days = 0
+        if "-" in time:
+            day, time = time.split("-", 1)
+            days = int(day)
         seconds = 0.0
         for part in time.split(":"):
             seconds = seconds * 60 + float(part)
-        result[pid] = seconds
+        result[pid] = seconds + days * 86400
     return result
 
 

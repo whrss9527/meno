@@ -65,6 +65,8 @@ jobs:
         run: scripts/measure-footprint.sh build/Meno.app
 
       - name: Footprint while idle
+        env:
+          MENO_REQUIRE_SCAN_SKIP: ${{ inputs.compare_scans && '1' || '0' }}
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         timeout-minutes: 8
         run: scripts/measure-footprint.sh build/Meno.app

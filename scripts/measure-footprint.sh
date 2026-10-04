@@ -168,6 +168,9 @@ measure() {
   skipped_scans="$(grep -c '^MENO_DIAG scan mode=skipped ' "$log" || true)"
   all_scans="$scans"
   skip_ratio="$(awk -v n="$skipped_scans" -v total="$all_scans" 'BEGIN { printf "%.1f", total ? n/total*100 : 0 }')"
+  if [[ "${MENO_REQUIRE_SCAN_SKIP:-0}" == 1 && "$(sw_vers -productVersion | cut -d. -f1)" -lt 27 && "$skipped_scans" == 0 ]]; then
+    fail "No stable periodic scan was skipped"
+  fi
   seen="$(value items)"
   [[ -n "$last_scan" ]] || fail "Meno produced no scan to measure"
   if [[ "$last_scan" == *"accessibility=missing"* ]]; then
