@@ -333,7 +333,10 @@ final class AutomationController: ObservableObject {
         durationCheck?.cancel()
         durationCheck = nil
         guard let due = evaluator.nextChange(rules: model.settings.effectiveRules) else { return }
-        let delay = max(due.timeIntervalSinceNow, 0) + 0.1
+        // Long waits from imported settings are checked in bounded steps.
+        // Converting an arbitrary TimeInterval directly to UInt64 can trap.
+        let remaining = due.timeIntervalSinceNow
+        let delay = remaining.isFinite ? min(max(remaining, 0), 30) + 0.1 : 30
         durationCheck = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             guard !Task.isCancelled else { return }

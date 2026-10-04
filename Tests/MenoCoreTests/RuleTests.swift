@@ -375,6 +375,20 @@ final class RuleTests: XCTestCase {
         XCTAssertEqual(AutomationRule.suggestedMinimumDuration(for: [.cameraInUse]), 3)
     }
 
+    func testImportedLongDurationRemainsPending() throws {
+        let original = AutomationRule(name: "Long wait", conditions: [.onBattery], action: .zen)
+        let encoded = try JSONEncoder().encode(original)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object["minimumDuration"] = 1e20
+        let rule = try JSONDecoder().decode(AutomationRule.self, from: JSONSerialization.data(withJSONObject: object))
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        var evaluator = RuleEvaluator()
+        XCTAssertEqual(evaluator.update(rules: [rule], context: RuleContext(isOnBattery: true), now: start), [])
+        let due = try XCTUnwrap(evaluator.nextChange(rules: [rule]))
+        XCTAssertGreaterThan(due.timeIntervalSince(start), Double(UInt64.max) / 1_000_000_000)
+        XCTAssertEqual(evaluator.update(rules: [rule], context: RuleContext(isOnBattery: true), now: start + 30), [])
+    }
+
     func testActionHelpers() {
         let key = MenuItemKey(owner: "a", token: "solo")
         XCTAssertEqual(RuleAction.showItem(key: key).targetSection, .visible)
