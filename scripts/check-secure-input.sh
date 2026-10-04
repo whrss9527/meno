@@ -19,6 +19,7 @@ trap cleanup EXIT
 swiftc "$ROOT/Sources/Meno/Support/SecureInput.swift" "$ROOT/scripts/e2e/SecureInputCheck.swift" -o "$WORK/check"
 "$WORK/check"
 swiftc "$ROOT/Sources/Meno/MenuBar/EventSynthesizer.swift" "$ROOT/scripts/e2e/SecureInputProbe.swift" -o "$WORK/probe"
+swiftc "$ROOT/scripts/e2e/SecureInputHolder.swift" -o "$WORK/holder"
 swiftc "$ROOT/scripts/e2e/StatusItemHelper.swift" -o "$WORK/MenoSecureA"
 cp "$WORK/MenoSecureA" "$WORK/MenoSecureB"
 "$WORK/MenoSecureA" > "$WORK/first.log" 2>&1 &
@@ -32,4 +33,4 @@ done
 grep -q '^E2E_ITEM ' "$WORK/first.log"
 grep -q '^E2E_ITEM ' "$WORK/second.log"
 sleep 2
-"$WORK/probe" "$first" "$second"
+"$WORK/probe" "$first" "$second" "$WORK/holder"

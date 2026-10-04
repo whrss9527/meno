@@ -54,21 +54,32 @@ struct SecureInputProbe {
     static func main() async throws {
         precondition(AXIsProcessTrusted(), "Accessibility is required for real drag measurements")
         precondition(!IsSecureEventInputEnabled(), "Another process is already holding secure input")
-        let pids = Set(CommandLine.arguments.dropFirst().compactMap(Int32.init))
+        precondition(CommandLine.arguments.count == 4)
+        let pids = Set(CommandLine.arguments[1...2].compactMap(Int32.init))
         precondition(pids.count == 2)
         // Both paths must work first; a broken baseline cannot show whether
         // secure input changed anything.
         for byWindow in [true, false] {
             let baseline = try await swap(pids: pids, byWindow: byWindow)
             precondition(baseline, "The baseline drag did not move an item")
-            precondition(EnableSecureEventInput() == noErr)
+            let holder = Process()
+            holder.executableURL = URL(fileURLWithPath: CommandLine.arguments[3])
+            try holder.run()
             let secureResult: Bool
             do {
-                defer { DisableSecureEventInput() }
+                defer {
+                    kill(holder.processIdentifier, SIGUSR1)
+                    holder.waitUntilExit()
+                }
+                for _ in 0..<30 where !IsSecureEventInputEnabled() {
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                }
+                precondition(holder.isRunning, "The holder failed to start")
                 precondition(IsSecureEventInputEnabled())
                 secureResult = try await swap(pids: pids, byWindow: byWindow)
                 precondition(IsSecureEventInputEnabled(), "The probe lost secure input")
             }
+            precondition(!IsSecureEventInputEnabled(), "Secure input was not released")
             print("SECURE_INPUT_PROBE path=\(byWindow ? "window" : "pointer") baseline_moved=\(baseline) secure_moved=\(secureResult)")
         }
     }
