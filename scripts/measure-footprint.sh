@@ -139,7 +139,9 @@ measure() {
   wake_start="$(idle_wakeups "$meno")"
   start="$(now)"
   cpu_start="$(cpu_seconds "$meno")"
+  ps -A -o pid=,time= > "$WORK/cpu-before"
   sleep "$WINDOW"
+  ps -A -o pid=,time= > "$WORK/cpu-after"
   cpu_end="$(cpu_seconds "$meno")"
   end="$(now)"
   wake_end="$(idle_wakeups "$meno")"
@@ -152,7 +154,9 @@ measure() {
     wakeups="$(awk -v a="$wake_start" -v b="$wake_end" -v s="$start" -v e="$end" 'BEGIN { printf "%.1f", (b - a) / (e - s) }') per second"
   fi
   rss_mb="$(awk -v k="$rss_kb" 'BEGIN { printf "%.1f", k / 1024 }')"
-  last_scan="$(grep '^MENO_DIAG scan ' "$log" | tail -1 || true)"
+  local system_cpu skipped_scans all_scans skip_ratio
+  system_cpu="$(python3 "$ROOT/scripts/e2e/process-cpu.py" "$WORK/cpu-before" "$WORK/cpu-after" "$(awk -v s="$start" -v e="$end" 'BEGIN { print e-s }')")"
+  last_scan="$(grep '^MENO_DIAG scan ' "$log" | grep -v 'mode=skipped' | tail -1 || true)"
   value() {
     printf '%s\n' "$last_scan" | tr ' ' '\n' | awk -F= -v key="$1" '$1 == key { print $2 }'
   }
@@ -161,6 +165,9 @@ measure() {
     footprint="$(awk -v k="$footprint_kb" 'BEGIN { printf "%.1f MB", k / 1024 }')"
   fi
   scans="$(grep -c '^MENO_DIAG scan ' "$log" || true)"
+  skipped_scans="$(grep -c '^MENO_DIAG scan mode=skipped ' "$log" || true)"
+  all_scans="$scans"
+  skip_ratio="$(awk -v n="$skipped_scans" -v total="$all_scans" 'BEGIN { printf "%.1f", total ? n/total*100 : 0 }')"
   seen="$(value items)"
   [[ -n "$last_scan" ]] || fail "Meno produced no scan to measure"
   if [[ "$last_scan" == *"accessibility=missing"* ]]; then
@@ -172,7 +179,7 @@ measure() {
     baseline="${seen:-0}"
   fi
 
-  rows="$rows| $name | ${cpu_percent} % | ${wakeups} | ${footprint} | ${rss_mb} MB | ${seen} | $(value ms) ms | ${scans} |"$'\n'
+  rows="$rows| $name | ${cpu_percent} % | ${wakeups} | ${footprint} | ${rss_mb} MB | ${seen} | $(value ms) ms | ${scans} | ${skip_ratio} % | ${system_cpu} % |"$'\n'
   if awk -v c="$cpu_percent" -v m="$MAX_CPU" 'BEGIN { exit !(c > m) }'; then
     failures="$failures$name: Meno used ${cpu_percent} % of a core while idle, more than ${MAX_CPU} %"$'\n'
   fi
@@ -233,10 +240,10 @@ fi
 summary="$(cat <<EOF
 ### Footprint on macOS $(sw_vers -productVersion) ($(uname -m))
 
-Meno idle for ${WINDOW} seconds, ${SETTLE} seconds after it got ready. It may use up to ${MAX_CPU} % of one core and ${MAX_RSS} MB of resident memory. Accessibility: ${accessibility}.
+Meno idle for ${WINDOW} seconds, ${SETTLE} seconds after it got ready. It may use up to ${MAX_CPU} % of one core and ${MAX_RSS} MB of resident memory. Accessibility: ${accessibility}. Periodic scan gate: ${MENO_SCAN_GATE:-1}. All-process CPU counts processes present at both snapshots, excluding exited processes; runner background activity can affect it.
 
-| | CPU, of one core | Idle wake-ups | Memory (as Activity Monitor counts it) | Resident memory | Menu bar items | Last scan took | Scans |
-| --- | --- | --- | --- | --- | --- | --- | --- |
+| | CPU, of one core | Idle wake-ups | Memory (as Activity Monitor counts it) | Resident memory | Menu bar items | Last full scan took | Scan checks | Skipped checks | All-process CPU, of one core |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 ${rows}
 EOF
 )"

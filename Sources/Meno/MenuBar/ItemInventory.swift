@@ -28,6 +28,13 @@ final class ItemInventory: ObservableObject {
         var empty: [String: Int] = [:]
     }
 
+    private var scanGate = MenuBarScanGate()
+    private(set) var fullScans = 0
+    private(set) var skippedScans = 0
+    // Diagnostic comparison mode, leaving ordinary refreshes unchanged.
+    private let usesScanGate = AppInfo.osMajorVersion < 27
+        && ProcessInfo.processInfo.environment["MENO_SCAN_GATE"] != "0"
+
     private var cachedSections: [MenuItemKey: ItemSection] = [:]
     private var cachedPositions: [MenuItemKey: CGFloat] = [:]
     private var knownItems: KnownItems?
@@ -98,6 +105,18 @@ final class ItemInventory: ObservableObject {
         }
     }
 
+    /// Periodic catch-up may reuse a stable menu bar on macOS 26 and earlier.
+    func refreshPeriodically() async {
+        if usesScanGate, model.permissions.accessibility, refreshTask == nil,
+           missingOnce.isEmpty, model.statusBar.isInOrder,
+           !scanGate.needsScan(WindowCapture.menuBarFingerprint()) {
+            skippedScans += 1
+            Diagnostics.event("scan mode=skipped items=\(items.count) full=\(fullScans) skipped=\(skippedScans) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
+            return
+        }
+        await refresh()
+    }
+
     /// Scans the menu bar now. Concurrent calls wait for one extra pass.
     func refresh() async {
         if let refreshTask {
@@ -128,6 +147,7 @@ final class ItemInventory: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
 
+        let fingerprint = usesScanGate ? WindowCapture.menuBarFingerprint() : nil
         let started = Date()
         let raw = await MenuBarScanner.scan(MenuBarScanner.currentTargets())
         // Sections come from where items are next to Meno's dividers, which
@@ -155,8 +175,10 @@ final class ItemInventory: ObservableObject {
         if model.showsItemArtwork {
             model.images.refresh(for: items, captureAllowed: model.permissions.canCapture)
         }
-        Diagnostics.event("scan items=\(items.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))"
-            + " sectioned=\(sectioned ? 1 : 0) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
+        fullScans += 1
+        if usesScanGate { scanGate.scanned(before: fingerprint, after: WindowCapture.menuBarFingerprint()) }
+        Diagnostics.event("scan mode=full items=\(items.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))"
+            + " full=\(fullScans) skipped=\(skippedScans) sectioned=\(sectioned ? 1 : 0) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
     }
 
     /// Whether the last scan could tell the item's section from its

@@ -8,6 +8,10 @@ on:
     branches: ["**"]
   workflow_dispatch:
     inputs:
+      compare_scans:
+        description: "Compare all-process CPU with periodic scan gating disabled"
+        type: boolean
+        default: false
       runner:
         description: "Also run on this runner, for example macos-27 for a new macOS"
         required: false
@@ -53,6 +57,13 @@ jobs:
       # Leaves the app alone for a minute twice, as set up and with other
       # apps' items, hover and a rule; measured for main and runs by hand,
       # not for every push to a branch. Fails above the limits in the script.
+      - name: Scan baseline without gating
+        if: github.event_name == 'workflow_dispatch' && inputs.compare_scans
+        timeout-minutes: 8
+        env:
+          MENO_SCAN_GATE: "0"
+        run: scripts/measure-footprint.sh build/Meno.app
+
       - name: Footprint while idle
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         timeout-minutes: 8
