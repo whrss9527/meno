@@ -78,7 +78,7 @@ PY
   # Reserve a loopback port with the serving process; metadata is regenerated
   # below before the test driver starts.
   ditto -c -k --keepParent "$SCENE/release/Meno.app" "$SCENE/Meno.zip"
-  python3 "$ROOT/scripts/helpers/update-server.py" "$SCENE" > "$SCENE/server.log" 2>&1 & SERVER=$!
+  python3 -u "$ROOT/scripts/helpers/update-server.py" "$SCENE" > "$SCENE/server.log" 2>&1 & SERVER=$!
   wait_file 10 "$SCENE/endpoint" "$SCENE"
   ENDPOINT="$(cat "$SCENE/endpoint")"
   for folder in installed release; do
