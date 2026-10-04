@@ -352,7 +352,8 @@ final class ItemMover: ObservableObject {
         var dragged = false
         var triedWindow = false
         if AppInfo.osMajorVersion < 27 {
-            for attempt in 0..<2 {
+            var attempt = 0
+            while attempt < 2 {
                 try await waitForSecureInput(automatic: automatic)
                 guard let target = try pending(move) else { return dragged }
                 guard let drag = windowDrag(of: target.item, reference: target.reference, placement: target.placement) else { break }
@@ -363,11 +364,17 @@ final class ItemMover: ObservableObject {
                 dragged = true
                 try await Task.sleep(nanoseconds: 450_000_000)
                 await model.inventory.refresh()
+                if SecureInput.isEnabled {
+                    try await waitForSecureInput(automatic: automatic)
+                    continue
+                }
+                attempt += 1
             }
         }
         guard try pending(move) != nil else { return dragged }
         try await showItems()
-        for attempt in 0..<(triedWindow ? 2 : 3) {
+        var attempt = 0
+        while attempt < (triedWindow ? 2 : 3) {
             try await waitForSecureInput(automatic: automatic)
             guard let target = try pending(move) else { return dragged }
             let item = target.item
@@ -382,6 +389,11 @@ final class ItemMover: ObservableObject {
             dragged = true
             try await Task.sleep(nanoseconds: 450_000_000)
             await model.inventory.refresh()
+            if SecureInput.isEnabled {
+                try await waitForSecureInput(automatic: automatic)
+                continue
+            }
+            attempt += 1
         }
         guard let item = model.inventory.item(for: move.key) else { throw MoveError.itemMissing }
         if remainingPlacement(for: move, item: item) == nil {
