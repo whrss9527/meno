@@ -6,9 +6,13 @@ import Carbon
 @main
 struct SecureInputProbe {
     static func windows(for pids: Set<pid_t>) -> [WindowCapture.WindowInfo] {
-        let layer = Int(CGWindowLevelForKey(.statusWindow))
-        return WindowCapture.windowList(onScreenOnly: false)
-            .filter { pids.contains($0.pid) && $0.layer == layer && $0.bounds.width > 1 }
+        // macOS can host an item's window in another process. Meno matches
+        // its AX frame to the window rather than filtering by owner PID.
+        let frames = pids.sorted().flatMap { pid in
+            MenuBarScanner.items(of: ScanTarget(pid: pid, bundleID: nil, name: "Secure input probe"))
+                .map(\.frame)
+        }
+        return WindowCapture.itemWindows(at: frames).compactMap { $0 }
             .sorted { $0.bounds.minX < $1.bounds.minX }
     }
 

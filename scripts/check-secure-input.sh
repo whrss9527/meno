@@ -26,6 +26,8 @@ swift build --package-path "$ROOT" --target MenoCore > /dev/null
 BUILD="$(swift build --package-path "$ROOT" --show-bin-path)"
 swiftc -I "$BUILD/Modules" "$BUILD"/MenoCore.build/*.o \
   "$ROOT/Sources/Meno/Support/AppInfo.swift" \
+  "$ROOT/Sources/Meno/Accessibility/AX.swift" \
+  "$ROOT/Sources/Meno/MenuBar/MenuBarScanner.swift" \
   "$ROOT/Sources/Meno/MenuBar/WindowCapture.swift" \
   "$ROOT/Sources/Meno/MenuBar/EventSynthesizer.swift" \
   "$ROOT/scripts/e2e/SecureInputProbe.swift" -o "$WORK/probe"
