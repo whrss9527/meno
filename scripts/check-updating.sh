@@ -119,7 +119,7 @@ PYTIME
   [[ -z "$(defaults read "$IDENTIFIER" UpdateLeftovers 2>/dev/null || true)" ]] || fail 'Leftovers preference was not cleared'
   if [[ -e "$LEFTOVERS" ]]; then ls -la "$LEFTOVERS"; fail 'Download folder was not removed'; fi
   # Every download was fetched from loopback and checked by the real installer.
-  rg -q 'GET /Meno.zip.*200' "$SCENE/server.log" || fail 'Archive was not downloaded'
+  /usr/bin/grep -q 'GET /Meno.zip.*200' "$SCENE/server.log" || fail 'Archive was not downloaded'
   python3 - "$SCENE/installed/Meno.app/Contents/MacOS/Meno" <<'PY'
 import os, signal, subprocess, sys
 for row in subprocess.check_output(['ps', '-A', '-o', 'pid=,command='], text=True).splitlines():
