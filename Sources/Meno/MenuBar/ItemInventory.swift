@@ -110,7 +110,7 @@ final class ItemInventory: ObservableObject {
         if usesScanGate, model.permissions.accessibility, refreshTask == nil,
            missingOnce.isEmpty, model.statusBar.isInOrder,
            !scanGate.needsScan(WindowCapture.menuBarFingerprint()) {
-            refreshDependentState(validatedAt: Date())
+            refreshDependentState(sectioned: true, validatedAt: Date())
             skippedScans += 1
             Diagnostics.event("scan mode=skipped items=\(items.count) full=\(fullScans) skipped=\(skippedScans) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
             return
@@ -160,25 +160,23 @@ final class ItemInventory: ObservableObject {
         }
         scannedAt = started
         lastRefresh = Date()
-        model.statusBar.ensureDividerOrder()
-        model.statusBar.refreshAppearance()
-        model.statusBar.refreshGroupTooltips()
-        // What happens to a new item depends on its section, so a scan
-        // without sections leaves new items to the next one.
-        if sectioned {
-            detectNewArrivals()
-            model.statusBar.checkHiding(items)
-        }
-        refreshDependentState()
+        refreshDependentState(sectioned: sectioned)
         fullScans += 1
-        if usesScanGate { scanGate.scanned(before: fingerprint, after: WindowCapture.menuBarFingerprint()) }
+        if usesScanGate { scanGate.scanned(before: sectioned ? fingerprint : nil, after: WindowCapture.menuBarFingerprint()) }
         Diagnostics.event("scan mode=full items=\(items.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))"
             + " full=\(fullScans) skipped=\(skippedScans) sectioned=\(sectioned ? 1 : 0) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
     }
 
     /// A reused window snapshot is still an observation for settling, retries
     /// and visible artwork; only the cross-process Accessibility query is skipped.
-    private func refreshDependentState(validatedAt: Date? = nil) {
+    private func refreshDependentState(sectioned: Bool, validatedAt: Date? = nil) {
+        model.statusBar.ensureDividerOrder()
+        model.statusBar.refreshAppearance()
+        model.statusBar.refreshGroupTooltips()
+        if sectioned {
+            detectNewArrivals()
+            model.statusBar.checkHiding(items)
+        }
         model.keeper.scanned(keeperObservations(), validatedAt: validatedAt)
         // Capture only while artwork is visible, as for a full scan.
         if model.showsItemArtwork {

@@ -23,6 +23,8 @@ final class MenuBarScanGateTests: XCTestCase {
         gate.scanned(before: a, after: b)
         XCTAssertTrue(gate.needsScan(a))
         XCTAssertTrue(gate.needsScan(b))
+        gate.scanned(before: nil, after: a)
+        XCTAssertTrue(gate.needsScan(a))
         gate.scanned(before: nil, after: nil)
         XCTAssertTrue(gate.needsScan([]))
         gate.scanned(before: [], after: [])
