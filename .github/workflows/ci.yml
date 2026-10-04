@@ -66,6 +66,11 @@ jobs:
         timeout-minutes: 5
         run: scripts/check-moving.sh build/Meno.app
 
+      - name: Updating end to end
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+        timeout-minutes: 10
+        run: scripts/check-updating.sh
+
       - name: Upload app
         if: matrix.runner == 'macos-26'
         uses: actions/upload-artifact@v4

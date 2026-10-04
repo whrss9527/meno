@@ -34,6 +34,7 @@ scripts            打包 App、生成图标、检查本地化
 
 ### 测试与脚本
 
+- `scripts/check-updating.sh` 将测试入口与正式更新器和提示界面一起编译。一次性的 ad hoc 签名 App 和独立的偏好域用于验证 0.0.1 → 0.0.2 安装、下载清理、启动即退出时的回滚和可见提示，不启动菜单栏控制器，也不修改 Meno 设置。CI 在 main 和手动运行时执行。`MENO_UPDATE_URL` 可以指向回环地址的发布 JSON；本地压缩包必须同源，安装器仍会执行全部验证。
 - `swift test` 运行 MenoCore 测试（也可在 Linux 上运行）。
 - `scripts/check-localization.py` 列出界面文字并检查 `Resources/*.lproj` 中的翻译是否完整。
 - `scripts/generate-icon.py` 生成 `Resources/AppIcon.icns`（需要 Pillow 和 numpy）。

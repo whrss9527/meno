@@ -117,15 +117,7 @@ final class AppModel: ObservableObject {
         let updated = recordLaunchedVersion()
         // The previous copy stays until this one has run for a few seconds,
         // so that it can be put back if this one quits right away.
-        Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 8_000_000_000)
-            guard let rejected = UpdateInstaller.removeLeftovers() else { return }
-            self?.toasts.show(
-                String(localized: "Meno \(rejected) did not start on this Mac, so this version was put back."),
-                symbol: "exclamationmark.triangle.fill",
-                duration: 12
-            )
-        }
+        updates.finishInstallation()
         if !settings.onboardingCompleted {
             onboarding.show()
         } else if !permissions.accessibility {

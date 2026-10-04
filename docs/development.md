@@ -34,6 +34,7 @@ scripts            App bundling, icon generation, localization check
 
 ### Tests and scripts
 
+- `scripts/check-updating.sh` compiles a test entry point with the production updater and toast UI. Disposable ad hoc bundles and a unique preferences domain verify 0.0.1 → 0.0.2 installation, download cleanup, early-exit rollback and its visible notice, without starting menu-bar controllers or changing Meno settings. CI runs it on main and manual runs. `MENO_UPDATE_URL` can point at loopback release JSON; local archive URLs must use the same origin, and normal installer verification still applies.
 - `swift test` runs the MenoCore tests (they also run on Linux).
 - `scripts/check-localization.py` lists user-facing strings and checks the translations in `Resources/*.lproj`.
 - `scripts/generate-icon.py` renders `Resources/AppIcon.icns` (needs Pillow and numpy).

@@ -28,7 +28,16 @@ enum Relauncher {
         if /usr/bin/open "$0" || { /bin/sleep 1; /usr/bin/open "$0"; }; then
           [ -n "$2" ] || exit 0
           i=0
-          while [ -e "$2" ] && [ "$i" -lt 45 ]; do /bin/sleep 1; i=$((i + 1)); done
+          started=0
+          while [ -e "$2" ] && [ "$i" -lt 45 ]; do
+            if running; then
+              started=1
+            elif [ "$started" -eq 1 ]; then
+              break
+            fi
+            /bin/sleep 1
+            i=$((i + 1))
+          done
           if [ ! -e "$2" ] || running; then exit 0; fi
         fi
         [ -n "$2" ] && [ -d "$2" ] || exit 1
