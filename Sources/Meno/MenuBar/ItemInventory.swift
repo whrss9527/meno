@@ -110,6 +110,7 @@ final class ItemInventory: ObservableObject {
         if usesScanGate, model.permissions.accessibility, refreshTask == nil,
            missingOnce.isEmpty, model.statusBar.isInOrder,
            !scanGate.needsScan(WindowCapture.menuBarFingerprint()) {
+            refreshDependentState(validatedAt: Date())
             skippedScans += 1
             Diagnostics.event("scan mode=skipped items=\(items.count) full=\(fullScans) skipped=\(skippedScans) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
             return
@@ -168,17 +169,21 @@ final class ItemInventory: ObservableObject {
             detectNewArrivals()
             model.statusBar.checkHiding(items)
         }
-        model.keeper.scanned(keeperObservations())
-        // Artwork is only captured for what shows it, so that macOS's
-        // reminders about capturing the screen come up while Meno is in use
-        // rather than at a random moment.
-        if model.showsItemArtwork {
-            model.images.refresh(for: items, captureAllowed: model.permissions.canCapture)
-        }
+        refreshDependentState()
         fullScans += 1
         if usesScanGate { scanGate.scanned(before: fingerprint, after: WindowCapture.menuBarFingerprint()) }
         Diagnostics.event("scan mode=full items=\(items.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))"
             + " full=\(fullScans) skipped=\(skippedScans) sectioned=\(sectioned ? 1 : 0) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
+    }
+
+    /// A reused window snapshot is still an observation for settling, retries
+    /// and visible artwork; only the cross-process Accessibility query is skipped.
+    private func refreshDependentState(validatedAt: Date? = nil) {
+        model.keeper.scanned(keeperObservations(), validatedAt: validatedAt)
+        // Capture only while artwork is visible, as for a full scan.
+        if model.showsItemArtwork {
+            model.images.refresh(for: items, captureAllowed: model.permissions.canCapture)
+        }
     }
 
     /// Whether the last scan could tell the item's section from its
