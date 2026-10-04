@@ -28,9 +28,9 @@ final class ItemMover: ObservableObject {
                 return String(localized: "Meno needs Accessibility access to move items.")
             case .secureInput(let name):
                 if let name {
-                    return String(localized: "Secure Keyboard Entry in \(name) is preventing Meno from moving items. Turn it off or leave the password field, then try again.")
+                    return String(localized: "Secure Keyboard Entry is on in \(name). Turn it off or leave the password field before moving items with Meno.")
                 }
-                return String(localized: "Secure Keyboard Entry is preventing Meno from moving items. Turn it off in Terminal or leave the password field, then try again.")
+                return String(localized: "Secure Keyboard Entry is on. Turn it off in Terminal or leave the password field before moving items with Meno.")
             case .busy:
                 return String(localized: "Another move is still in progress.")
             case .itemMissing:

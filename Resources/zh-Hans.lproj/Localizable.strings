@@ -484,8 +484,8 @@
 "Scroll or swipe over the menu bar" = "在菜单栏上滚动或轻扫";
 "Search menu bar items and actions" = "搜索菜单栏项目和操作";
 "Secondary click" = "辅助点按";
-"Secure Keyboard Entry in %@ is preventing Meno from moving items. Turn it off or leave the password field, then try again." = "%@ 的安全键盘输入正在阻止 Meno 移动项目。请关闭安全键盘输入或离开密码输入框，然后重试。";
-"Secure Keyboard Entry is preventing Meno from moving items. Turn it off in Terminal or leave the password field, then try again." = "安全键盘输入正在阻止 Meno 移动项目。请在终端中关闭安全键盘输入或离开密码输入框，然后重试。";
+"Secure Keyboard Entry is on in %@. Turn it off or leave the password field before moving items with Meno." = "%@ 已开启安全键盘输入。请关闭该选项或离开密码输入框，再用 Meno 移动项目。";
+"Secure Keyboard Entry is on. Turn it off in Terminal or leave the password field before moving items with Meno." = "安全键盘输入已开启。请在终端中关闭该选项或离开密码输入框，再用 Meno 移动项目。";
 "Sections" = "分区";
 "Set up shortcuts in Settings › Hotkeys, and open any item with Quick Open." = "在“设置 › 快捷键”中设置快捷键，并用“快速打开”打开任意项目。";
 "Settings exported." = "设置已导出。";
