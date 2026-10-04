@@ -11,6 +11,14 @@ release.setEventHandler {
     exit(0)
 }
 release.resume()
+// A failed probe must not leave a child holding secure input indefinitely.
+let expiry = DispatchSource.makeTimerSource(queue: .main)
+expiry.schedule(deadline: .now() + 15)
+expiry.setEventHandler {
+    DisableSecureEventInput()
+    exit(2)
+}
+expiry.resume()
 print("SECURE_INPUT_HOLDER ready")
 fflush(stdout)
-RunLoop.main.run()
+dispatchMain()
