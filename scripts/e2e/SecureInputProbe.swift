@@ -2,32 +2,14 @@ import AppKit
 import ApplicationServices
 import Carbon
 
-// The event synthesizer only needs this window value, not image capture.
-// Compile the production EventSynthesizer.swift alongside this probe.
-enum WindowCapture {
-    struct WindowInfo {
-        let id: CGWindowID
-        let pid: pid_t
-        let layer: Int
-        let bounds: CGRect
-        let isOnScreen: Bool
-    }
-}
-
 /// Measures the two production drag paths with real Secure Keyboard Entry.
 @main
 struct SecureInputProbe {
     static func windows(for pids: Set<pid_t>) -> [WindowCapture.WindowInfo] {
         let layer = Int(CGWindowLevelForKey(.statusWindow))
-        let list = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID) as? [[String: Any]] ?? []
-        return list.compactMap { info in
-            guard let pid = info[kCGWindowOwnerPID as String] as? Int32, pids.contains(pid),
-                  let number = info[kCGWindowNumber as String] as? UInt32,
-                  let level = info[kCGWindowLayer as String] as? Int, level == layer,
-                  let value = info[kCGWindowBounds as String] as? [String: Any],
-                  let bounds = CGRect(dictionaryRepresentation: value as CFDictionary), bounds.width > 1 else { return nil }
-            return WindowCapture.WindowInfo(id: number, pid: pid, layer: level, bounds: bounds, isOnScreen: true)
-        }.sorted { $0.bounds.minX < $1.bounds.minX }
+        return WindowCapture.windowList(onScreenOnly: false)
+            .filter { pids.contains($0.pid) && $0.layer == layer && $0.bounds.width > 1 }
+            .sorted { $0.bounds.minX < $1.bounds.minX }
     }
 
     static func swap(pids: Set<pid_t>, byWindow: Bool) async throws -> Bool {
@@ -37,10 +19,8 @@ struct SecureInputProbe {
             before = windows(for: pids)
         }
         if before.count != 2 {
-            let list = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID) as? [[String: Any]] ?? []
-            for info in list {
-                guard let pid = info[kCGWindowOwnerPID as String] as? Int32, pids.contains(pid) else { continue }
-                print("PROBE_WINDOW pid=\(pid) id=\(info[kCGWindowNumber as String] ?? "?") layer=\(info[kCGWindowLayer as String] ?? "?") bounds=\(info[kCGWindowBounds as String] ?? "?")")
+            for info in WindowCapture.windowList(onScreenOnly: false) where pids.contains(info.pid) {
+                print("PROBE_WINDOW pid=\(info.pid) id=\(info.id) layer=\(info.layer) bounds=\(info.bounds)")
             }
             print("PROBE_WINDOW expected=2 found=\(before.count)")
             fflush(stdout)

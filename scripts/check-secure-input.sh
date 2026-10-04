@@ -22,7 +22,13 @@ cleanup() {
 trap cleanup EXIT
 swiftc "$ROOT/Sources/Meno/Support/SecureInput.swift" "$ROOT/scripts/e2e/SecureInputCheck.swift" -o "$WORK/check"
 "$WORK/check"
-swiftc "$ROOT/Sources/Meno/MenuBar/EventSynthesizer.swift" "$ROOT/scripts/e2e/SecureInputProbe.swift" -o "$WORK/probe"
+swift build --package-path "$ROOT" --target MenoCore > /dev/null
+BUILD="$(swift build --package-path "$ROOT" --show-bin-path)"
+swiftc -I "$BUILD/Modules" "$BUILD"/MenoCore.build/*.o \
+  "$ROOT/Sources/Meno/Support/AppInfo.swift" \
+  "$ROOT/Sources/Meno/MenuBar/WindowCapture.swift" \
+  "$ROOT/Sources/Meno/MenuBar/EventSynthesizer.swift" \
+  "$ROOT/scripts/e2e/SecureInputProbe.swift" -o "$WORK/probe"
 swiftc "$ROOT/scripts/e2e/SecureInputHolder.swift" -o "$WORK/holder"
 swiftc "$ROOT/scripts/e2e/StatusItemHelper.swift" -o "$WORK/MenoSecureA"
 cp "$WORK/MenoSecureA" "$WORK/MenoSecureB"
