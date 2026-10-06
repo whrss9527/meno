@@ -51,7 +51,7 @@ final class LayoutKeeper {
     }
 
     /// Takes in a scan of the menu bar.
-    func scanned(_ observations: [SectionKeeper.Observation]) {
+    func scanned(_ observations: [SectionKeeper.Observation], validatedAt: Date? = nil) {
         let now = Date()
         // An item that seems to move while the dividers settle would count
         // as moved on purpose.
@@ -60,7 +60,8 @@ final class LayoutKeeper {
         // The scan read the menu bar from when it began, so a drag that
         // ended after the previous scan began may not be in that one.
         let since = lastScanStart ?? model.startedAt
-        let scanStart = model.inventory.scannedAt ?? now
+        // Stable window fingerprints can validate reused positions without AX.
+        let scanStart = validatedAt ?? model.inventory.scannedAt ?? now
         lastScanStart = scanStart
         let recentDrops = drops.filter { $0.date >= since }
         drops.removeAll { $0.date < scanStart }

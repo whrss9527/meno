@@ -21,6 +21,13 @@ final class ItemInventory: ObservableObject {
 
     typealias SkippedElements = InventoryBuilder.SkippedElements
     private var cached = InventoryBuilder.Cache()
+    private var scanGate = MenuBarScanGate()
+    private(set) var fullScans = 0
+    private(set) var skippedScans = 0
+    // Diagnostic comparison mode, leaving ordinary refreshes unchanged.
+    private let usesScanGate = AppInfo.osMajorVersion < 27
+        && ProcessInfo.processInfo.environment["MENO_SCAN_GATE"] != "0"
+
     private var knownItems: KnownItems?
     /// Items whose section the last scan could tell from their position.
     private var reliablySectioned: Set<MenuItemKey> = []
@@ -89,6 +96,19 @@ final class ItemInventory: ObservableObject {
         }
     }
 
+    /// Periodic catch-up may reuse a stable menu bar on macOS 26 and earlier.
+    func refreshPeriodically() async {
+        if usesScanGate, model.permissions.accessibility, refreshTask == nil,
+           missingOnce.isEmpty, model.statusBar.isInOrder,
+           !scanGate.needsScan(WindowCapture.menuBarFingerprint()) {
+            refreshDependentState(sectioned: true, validatedAt: Date())
+            skippedScans += 1
+            Diagnostics.event("scan mode=skipped items=\(items.count) full=\(fullScans) skipped=\(skippedScans) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
+            return
+        }
+        await refresh()
+    }
+
     /// Scans the menu bar now. Concurrent calls wait for one extra pass.
     func refresh() async {
         if let refreshTask {
@@ -119,6 +139,7 @@ final class ItemInventory: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
 
+        let fingerprint = usesScanGate ? WindowCapture.menuBarFingerprint() : nil
         let started = Date()
         let raw = await MenuBarScanner.scan(MenuBarScanner.currentTargets())
         // Sections come from where items are next to Meno's dividers, which
@@ -130,24 +151,34 @@ final class ItemInventory: ObservableObject {
         }
         scannedAt = started
         lastRefresh = Date()
+        refreshDependentState(sectioned: sectioned)
+        fullScans += 1
+        if usesScanGate {
+            // An empty or partially unresolved AX result must be retried even
+            // when the windows have settled, especially just after launch.
+            let reusable = sectioned && !reliablySectioned.isEmpty
+                && items.allSatisfy { $0.kind == .marker || knowsSection(of: $0.key) }
+            scanGate.scanned(before: reusable ? fingerprint : nil, after: WindowCapture.menuBarFingerprint())
+        }
+        Diagnostics.event("scan mode=full items=\(items.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))"
+            + " full=\(fullScans) skipped=\(skippedScans) sectioned=\(sectioned ? 1 : 0) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
+    }
+
+    /// A reused window snapshot is still an observation for settling, retries
+    /// and visible artwork; only the cross-process Accessibility query is skipped.
+    private func refreshDependentState(sectioned: Bool, validatedAt: Date? = nil) {
         model.statusBar.ensureDividerOrder()
         model.statusBar.refreshAppearance()
         model.statusBar.refreshGroupTooltips()
-        // What happens to a new item depends on its section, so a scan
-        // without sections leaves new items to the next one.
         if sectioned {
             detectNewArrivals()
             model.statusBar.checkHiding(items)
         }
-        model.keeper.scanned(keeperObservations())
-        // Artwork is only captured for what shows it, so that macOS's
-        // reminders about capturing the screen come up while Meno is in use
-        // rather than at a random moment.
+        model.keeper.scanned(keeperObservations(), validatedAt: validatedAt)
+        // Capture only while artwork is visible, as for a full scan.
         if model.showsItemArtwork {
             model.images.refresh(for: items, captureAllowed: model.permissions.canCapture)
         }
-        Diagnostics.event("scan items=\(items.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))"
-            + " sectioned=\(sectioned ? 1 : 0) footprint_kb=\(Diagnostics.physicalFootprint ?? 0)")
     }
 
     /// Whether the last scan could tell the item's section from its

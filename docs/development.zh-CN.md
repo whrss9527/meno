@@ -44,3 +44,5 @@ scripts            打包 App、生成图标、检查本地化
 ### 发布新版本
 
 发布新版本时，推送 `v*` 标签，或在 *Release* 工作流中填写版本号手动运行即可。工作流用的是 [Frit](https://github.com/whrss9527/frit) 里共用的发布流程：配好 Developer ID 的 Secrets 后（见 Frit 的 [docs/release.md](https://github.com/whrss9527/frit/blob/main/docs/release.md)），会签名、公证并钉上票据。发布说明取自 `.github/releases/<标签>.md`。
+
+macOS 26 及以前的后台补漏扫描，仅在菜单栏窗口编号、所属进程和位置尺寸均未变化时复用已完成的扫描。主动刷新仍执行扫描，macOS 27 保留原有行为。诊断日志用 `mode=full` 和 `mode=skipped` 区分扫描与跳过；占用摘要包含跳过比例和两次采样均存活进程的 CPU，runner 后台活动会影响这一指标。手动运行 CI 时开启 `compare_scans` 可对比关闭和开启优化；本地基线可设置 `MENO_SCAN_GATE=0`。

@@ -58,8 +58,22 @@ enum WindowCapture {
     }
 
     static func windowList(onScreenOnly: Bool) -> [WindowInfo] {
+        windowSnapshot(onScreenOnly: onScreenOnly) ?? []
+    }
+
+    /// Nil means WindowServer could not provide a snapshot; never reuse it.
+    static func menuBarFingerprint() -> MenuBarScanGate.Snapshot? {
+        guard let windows = windowSnapshot(onScreenOnly: false) else { return nil }
+        let statusLevel = Int(CGWindowLevelForKey(.statusWindow))
+        return Set(windows.filter { $0.layer == statusLevel }.map {
+            MenuBarScanGate.Window(id: $0.id, pid: $0.pid, x: Double($0.bounds.minX),
+                                  y: Double($0.bounds.minY), width: Double($0.bounds.width), height: Double($0.bounds.height), isOnScreen: $0.isOnScreen)
+        })
+    }
+
+    private static func windowSnapshot(onScreenOnly: Bool) -> [WindowInfo]? {
         let options: CGWindowListOption = onScreenOnly ? [.optionOnScreenOnly, .excludeDesktopElements] : [.optionAll]
-        guard let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return [] }
+        guard let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return nil }
         return list.compactMap { entry in
             guard let number = entry[kCGWindowNumber as String] as? NSNumber,
                   let pid = entry[kCGWindowOwnerPID as String] as? NSNumber,

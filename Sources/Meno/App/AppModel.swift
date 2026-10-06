@@ -234,7 +234,7 @@ final class AppModel: ObservableObject {
                 try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
                 guard let self else { return }
                 guard !self.isAway else { continue }
-                await self.inventory.refresh()
+                await self.inventory.refreshPeriodically()
             }
         }
     }

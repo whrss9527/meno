@@ -44,3 +44,5 @@ scripts            App bundling, icon generation, localization check
 ### Releases
 
 New versions are published by pushing a `v*` tag or by running the *Release* workflow with a version number. The workflow uses the shared release workflow in [Frit](https://github.com/whrss9527/frit): with the Developer ID secrets set (see Frit's [docs/release.md](https://github.com/whrss9527/frit/blob/main/docs/release.md)) it signs, notarizes and staples the app. The notes come from `.github/releases/<tag>.md`.
+
+Periodic catch-up scans on macOS 26 and earlier reuse completed scans only when status-window IDs, owners and bounds are unchanged. Explicit refreshes still scan, and macOS 27 keeps its existing behavior. Diagnostic scan lines distinguish `mode=full` from `mode=skipped`. The footprint summary includes skipped-check percentage and CPU across surviving processes; background runner activity affects this measurement. Manually dispatch CI with `compare_scans` to measure both disabled and enabled gating, or set `MENO_SCAN_GATE=0` for a local baseline.

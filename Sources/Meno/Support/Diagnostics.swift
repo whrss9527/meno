@@ -57,6 +57,8 @@ enum Diagnostics {
         for (label, counts) in [("unnamed", skipped.unnamed), ("duplicate", skipped.duplicates), ("empty", skipped.empty)] where !counts.isEmpty {
             lines.append("Skipped \(label) elements: " + counts.sorted { $0.key < $1.key }.map { "\($0.key) ×\($0.value)" }.joined(separator: ", "))
         }
+        let inventory = model.inventory
+        lines.append("Scans: \(inventory.fullScans) full, \(inventory.skippedScans) skipped")
         let items = model.inventory.items
         lines.append("Items (\(items.count)):")
         for item in items {
