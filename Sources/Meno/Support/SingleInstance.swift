@@ -7,7 +7,7 @@ import MenoCore
 @MainActor
 enum SingleInstance {
     /// Settles which copy runs, before Meno sets anything up: the newer one,
-    /// or at the same version the one opened last. Returns `false` when this
+    /// or at the same version the one with the lower process ID. Returns `false` when this
     /// copy hands over to a newer one that runs, which then shows Settings
     /// and gets `urls`, and this copy should quit.
     static func claim(forwarding urls: [URL]) -> Bool {
@@ -30,16 +30,32 @@ enum SingleInstance {
             }
             return false
         }
-        for other in others {
+        // Equal versions never ask each other to quit or wait on one another.
+        // Every participant uses the same ordering, including simultaneous starts.
+        let peers = others.filter { version(of: $0) == ours }
+        if let winner = peers.filter({ $0.processIdentifier < AppInfo.ownPID })
+            .min(by: { $0.processIdentifier < $1.processIdentifier }) {
+            Log.app.info("An equal-version Meno with PID \(winner.processIdentifier) wins; this copy quits")
+            if let url = winner.bundleURL {
+                if urls.isEmpty {
+                    NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+                } else {
+                    NSWorkspace.shared.open(urls, withApplicationAt: url, configuration: NSWorkspace.OpenConfiguration())
+                }
+            }
+            return false
+        }
+        let older = others.filter { version(of: $0) != ours }
+        for other in older {
             Log.app.info("Asking the Meno at \(other.bundleURL?.path ?? "?", privacy: .public) to quit")
             other.terminate()
         }
         // It saves its settings on the way out, which this copy then loads.
         let deadline = Date().addingTimeInterval(5)
-        while others.contains(where: { !$0.isTerminated }), Date() < deadline {
+        while older.contains(where: { !$0.isTerminated }), Date() < deadline {
             RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         }
-        for other in others where !other.isTerminated {
+        for other in older where !other.isTerminated {
             other.forceTerminate()
         }
         return true
