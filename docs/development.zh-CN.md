@@ -36,6 +36,7 @@ scripts            打包 App、生成图标、检查本地化
 
 - `scripts/check-updating.sh` 将测试入口与正式更新器和提示界面一起编译。一次性的 ad hoc 签名 App 和独立的偏好域用于验证 0.0.1 → 0.0.2 安装、下载清理、启动即退出时的回滚和可见提示，不启动菜单栏控制器，也不修改 Meno 设置。CI 在 main 和手动运行时执行。`MENO_UPDATE_URL` 可以指向回环地址的发布 JSON；本地压缩包必须同源，安装器仍会执行全部验证。
 - `swift test` 运行 MenoCore 测试（也可在 Linux 上运行）。
+- `scripts/check-secure-input.sh` 用真实的安全键盘输入检查等待和取消，再用两个临时 helper 项目实测窗口与指针两条移动路径。需要辅助功能权限，以及没有其他安全输入持有进程的测试 Mac；CI 在 macOS 15 和 26 上运行。
 - `scripts/check-localization.py` 列出界面文字并检查 `Resources/*.lproj` 中的翻译是否完整。
 - `scripts/generate-icon.py` 生成 `Resources/AppIcon.icns`（需要 Pillow 和 numpy）。
 - `scripts/measure-footprint.sh` 测量打包好的 App 空闲时的占用（默认设置一次，加上 20 个其他 App 的项目、悬停显示和一条规则再一次），超过上限就失败，`scripts/check-hiding.sh` 用自己添加的菜单栏项目检查隐藏和显示是否正常，并检查放到 Meno 图标右侧的“隐藏”分隔符会被移回左侧，`scripts/check-moving.sh` 检查 Meno 能通过窗口把自己添加的项目移到常显再移回去。CI 在 macOS 15 和 26 上都会运行这三个脚本，手动运行时还可以用 *runner* 输入再加一个 runner，比如新的 macOS；它们需要一台没有设置过 Meno 的 Mac，并且运行脚本的 App 有辅助功能权限。环境变量里有 `MENO_DIAG=1` 时，Meno 会把每次扫描和诊断报告输出到标准错误，收到 `SIGUSR1` 时再输出一次报告。

@@ -6,6 +6,7 @@ import MenoCore
 final class ItemMover: ObservableObject {
     enum MoveError: LocalizedError {
         case noPermission
+        case secureInput(String?)
         case busy
         case itemMissing
         case notMovable(String)
@@ -25,6 +26,11 @@ final class ItemMover: ObservableObject {
             switch self {
             case .noPermission:
                 return String(localized: "Meno needs Accessibility access to move items.")
+            case .secureInput(let name):
+                if let name {
+                    return String(localized: "Secure Keyboard Entry is on in \(name). Turn it off or leave the password field before moving items with Meno.")
+                }
+                return String(localized: "Secure Keyboard Entry is on. Turn it off in Terminal or leave the password field before moving items with Meno.")
             case .busy:
                 return String(localized: "Another move is still in progress.")
             case .itemMissing:
@@ -156,6 +162,7 @@ final class ItemMover: ObservableObject {
         } else if restoring {
             try await waitForOtherMoves()
         }
+        try await waitForSecureInput(automatic: automatic)
         if let proceeds, !proceeds() {
             throw MoveError.skipped
         }
@@ -206,7 +213,7 @@ final class ItemMover: ObservableObject {
                     try await waitForIdleInput(duringMove: true)
                 }
                 movingKey = move.key
-                if try await execute(move) {
+                if try await execute(move, automatic: automatic) {
                     moved = true
                 }
                 placed.append(move.key)
@@ -341,11 +348,13 @@ final class ItemMover: ObservableObject {
     /// and while an app in full screen hides the menu bar. Only when that
     /// does not work, and on macOS 27, does the pointer drag it, with every
     /// item shown.
-    private func execute(_ move: Move) async throws -> Bool {
+    private func execute(_ move: Move, automatic: Bool) async throws -> Bool {
         var dragged = false
         var triedWindow = false
         if AppInfo.osMajorVersion < 27 {
-            for attempt in 0..<2 {
+            var attempt = 0
+            while attempt < 2 {
+                try await waitForSecureInput(automatic: automatic)
                 guard let target = try pending(move) else { return dragged }
                 guard let drag = windowDrag(of: target.item, reference: target.reference, placement: target.placement) else { break }
                 triedWindow = true
@@ -355,11 +364,18 @@ final class ItemMover: ObservableObject {
                 dragged = true
                 try await Task.sleep(nanoseconds: 450_000_000)
                 await model.inventory.refresh()
+                if SecureInput.isEnabled {
+                    try await waitForSecureInput(automatic: automatic)
+                    continue
+                }
+                attempt += 1
             }
         }
         guard try pending(move) != nil else { return dragged }
         try await showItems()
-        for attempt in 0..<(triedWindow ? 2 : 3) {
+        var attempt = 0
+        while attempt < (triedWindow ? 2 : 3) {
+            try await waitForSecureInput(automatic: automatic)
             guard let target = try pending(move) else { return dragged }
             let item = target.item
             // A press at the top of the screen would reach the app in full
@@ -373,6 +389,11 @@ final class ItemMover: ObservableObject {
             dragged = true
             try await Task.sleep(nanoseconds: 450_000_000)
             await model.inventory.refresh()
+            if SecureInput.isEnabled {
+                try await waitForSecureInput(automatic: automatic)
+                continue
+            }
+            attempt += 1
         }
         guard let item = model.inventory.item(for: move.key) else { throw MoveError.itemMissing }
         if remainingPlacement(for: move, item: item) == nil {
@@ -449,9 +470,14 @@ final class ItemMover: ObservableObject {
     /// Before a move starts it also waits for other moves to finish. Gives
     /// up after five minutes.
     private func waitForIdleInput(duringMove: Bool) async throws {
-        let deadline = Date().addingTimeInterval(300)
+        var deadline = Date().addingTimeInterval(300)
         while Date() < deadline {
             try Task.checkCancellation()
+            // Secure input is a temporary gate, not a failed move. Time
+            // spent waiting for it does not consume the idle timeout.
+            let waitingAt = Date()
+            try await waitForSecureInput(automatic: true)
+            deadline = deadline.addingTimeInterval(Date().timeIntervalSince(waitingAt))
             let idle = Self.secondsSinceInput >= 1.5
                 && NSEvent.pressedMouseButtons == 0
                 && NSEvent.modifierFlags.isDisjoint(with: [.command, .option, .control, .shift])
@@ -461,6 +487,16 @@ final class ItemMover: ObservableObject {
             try await Task.sleep(nanoseconds: 400_000_000)
         }
         throw MoveError.personBusy
+    }
+
+    /// Automatic requests remain cancellable while waiting, without using
+    /// any drag attempts or the temporary placement's failure allowance.
+    private func waitForSecureInput(automatic: Bool) async throws {
+        try Task.checkCancellation()
+        guard SecureInput.isEnabled else { return }
+        guard automatic else { throw MoveError.secureInput(SecureInput.ownerName) }
+        Diagnostics.event("move deferred: secure keyboard input")
+        try await SecureInput.waitUntilDisabled()
     }
 
     /// Seconds since the person last used a mouse, trackpad or keyboard.
