@@ -1,16 +1,6 @@
 import AppKit
 import MenoCore
 
-/// Which dividers are grown.
-struct BarState: Equatable {
-    /// Items left of the Hidden divider are pushed away.
-    var hiddenCollapsed = false
-    /// Items left of the Stash divider are pushed away.
-    var stashCollapsed = false
-    /// Zen: everything left of the Meno icon is pushed away.
-    var zen = false
-}
-
 /// Owns Meno's status items: the Meno icon, the section dividers and the
 /// helper spacers of the stepped engine.
 ///
@@ -246,19 +236,23 @@ final class StatusBarController: NSObject {
     /// left of the Hidden divider. Right after launch macOS may not have
     /// placed them yet, and where their windows are then says otherwise.
     var isInOrder: Bool {
-        guard let hiddenFrame = hiddenDividerFrame else { return false }
-        // Without the Meno icon its item has no width and no frame, but the
-        // Stash divider is still checked.
-        if toggle != nil, let toggleFrame, hiddenFrame.maxX > toggleFrame.maxX { return false }
-        if let stashFrame = stashDividerFrame, stashFrame.maxX > hiddenFrame.maxX { return false }
-        return true
+        DividerOrder.isInOrder(frames: orderFrames)
+    }
+
+    private var orderFrames: DividerOrder.Frames {
+        func span(_ frame: CGRect?) -> HorizontalSpan? {
+            frame.map { HorizontalSpan(minX: Double($0.minX), maxX: Double($0.maxX)) }
+        }
+        return .init(hidden: span(hiddenDividerFrame), stash: span(stashDividerFrame),
+                     toggle: span(toggleFrame), toggleExists: toggle != nil)
     }
 
     /// Makes sure the dividers stay in order. Otherwise collapsing would push
     /// the Meno icon itself out of the menu bar.
     func ensureDividerOrder() {
-        guard let hiddenFrame = hiddenDividerFrame else { return }
-        guard !isInOrder else {
+        let frames = orderFrames
+        guard frames.hidden != nil else { return }
+        guard let repair = DividerOrder.repair(frames: frames) else {
             outOfOrderSince = nil
             // Repairs are only counted while they do not work, so a divider
             // dragged to the wrong side again later is still put back.
@@ -276,12 +270,13 @@ final class StatusBarController: NSObject {
             return
         }
         let repaired: Bool
-        if let toggle, let toggleFrame, hiddenFrame.maxX > toggleFrame.maxX {
+        switch repair {
+        case .hidden:
+            guard let toggle else { return }
             repaired = reseat(\.hiddenDivider, name: Name.hiddenDivider, leftOf: Name.toggle, item: toggle)
-        } else if let hiddenDivider {
+        case .stash:
+            guard let hiddenDivider else { return }
             repaired = reseat(\.stashDivider, name: Name.stashDivider, leftOf: Name.hiddenDivider, item: hiddenDivider)
-        } else {
-            return
         }
         if repaired {
             // The new divider gets a moment of its own to be placed.

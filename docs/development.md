@@ -34,7 +34,7 @@ scripts            App bundling, icon generation, localization check
 
 ### Tests and scripts
 
-- `swift test` runs the MenoCore tests (they also run on Linux).
+- `swift test` runs the MenoCore tests. CI runs them on Linux with Swift 5.10 as well as on both macOS runners. Inventory building, reveal counters and divider repair decisions are pure core logic; Accessibility payloads, timers and system effects stay in the app.
 - `scripts/check-secure-input.sh` tests waiting and cancellation with real Secure Keyboard Entry, then measures the production window and pointer drag paths on two disposable helper items. It needs Accessibility and a test Mac without another secure-input holder; CI runs it on macOS 15 and 26.
 - `scripts/check-localization.py` lists user-facing strings and checks the translations in `Resources/*.lproj`.
 - `scripts/generate-icon.py` renders `Resources/AppIcon.icns` (needs Pillow and numpy).

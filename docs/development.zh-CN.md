@@ -34,7 +34,7 @@ scripts            打包 App、生成图标、检查本地化
 
 ### 测试与脚本
 
-- `swift test` 运行 MenoCore 测试（也可在 Linux 上运行）。
+- `swift test` 运行 MenoCore 测试。CI 除了两个 macOS runner，也会在 Linux 上用 Swift 5.10 运行测试。库存构建、展开计数和分隔符修复决策是核心模块中的纯逻辑；辅助功能对象、计时器和系统操作仍保留在 App 中。
 - `scripts/check-secure-input.sh` 用真实的安全键盘输入检查等待和取消，再用两个临时 helper 项目实测窗口与指针两条移动路径。需要辅助功能权限，以及没有其他安全输入持有进程的测试 Mac；CI 在 macOS 15 和 26 上运行。
 - `scripts/check-localization.py` 列出界面文字并检查 `Resources/*.lproj` 中的翻译是否完整。
 - `scripts/generate-icon.py` 生成 `Resources/AppIcon.icns`（需要 Pillow 和 numpy）。
