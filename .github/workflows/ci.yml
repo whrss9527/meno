@@ -1,11 +1,11 @@
 name: CI
 
-# Every push runs once, on whatever branch; a pull request shows the result
-# for its branch's head. There is no pull_request trigger, which would run
-# the same commit a second time and wait twice as long for macOS runners.
+# Internal branches run once on push. External forks also run on pull_request
+# in this repository, with read-only permissions and no release credentials.
 on:
   push:
     branches: ["**"]
+  pull_request:
   workflow_dispatch:
     inputs:
       compare_scans:
@@ -17,6 +17,9 @@ on:
         required: false
         default: ""
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -24,6 +27,8 @@ concurrency:
 jobs:
   core:
     name: Linux core tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     container: swift:5.10
     steps:
@@ -33,9 +38,12 @@ jobs:
           scripts/check-release.sh
           python3 -m unittest discover -s scripts/tests
       - run: swift test
+      - name: Localization
+        run: python3 scripts/check-localization.py
 
   build:
     name: macOS ${{ matrix.name }}
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
