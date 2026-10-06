@@ -19,15 +19,8 @@ final class ItemInventory: ObservableObject {
     /// Elements left out of the last scan, for the diagnostic report.
     private(set) var skipped = SkippedElements()
 
-    struct SkippedElements {
-        /// Unnamed elements of Apple's processes, by owner.
-        var unnamed: [String: Int] = [:]
-        /// Elements that repeat another app's item, by owner.
-        var duplicates: [String: Int] = [:]
-        /// Elements without width, by owner.
-        var empty: [String: Int] = [:]
-    }
-
+    typealias SkippedElements = InventoryBuilder.SkippedElements
+    private var cached = InventoryBuilder.Cache()
     private var scanGate = MenuBarScanGate()
     private(set) var fullScans = 0
     private(set) var skippedScans = 0
@@ -35,8 +28,6 @@ final class ItemInventory: ObservableObject {
     private let usesScanGate = AppInfo.osMajorVersion < 27
         && ProcessInfo.processInfo.environment["MENO_SCAN_GATE"] != "0"
 
-    private var cachedSections: [MenuItemKey: ItemSection] = [:]
-    private var cachedPositions: [MenuItemKey: CGFloat] = [:]
     private var knownItems: KnownItems?
     /// Items whose section the last scan could tell from their position.
     private var reliablySectioned: Set<MenuItemKey> = []
@@ -234,101 +225,42 @@ final class ItemInventory: ObservableObject {
     }
 
     private func build(from raw: [RawMenuBarItem]) -> [MenuBarItem] {
-        let reliable = framesAreReliable
         let dividers = model.statusBar.dividerLayout
-        let customNames = model.settings.itemNames
-        let menoFrames = model.statusBar.ownFrames
-        var result: [MenuBarItem] = []
-        var reliablySectioned: Set<MenuItemKey> = []
-
-        var skipped = SkippedElements()
-        var named = raw.filter { entry in
-            let owner = entry.target.bundleID ?? entry.target.name
-            guard ItemNaming.isUnnamedSystemElement(owner: owner, texts: [entry.detail, entry.title, entry.help]) else { return true }
-            skipped.unnamed[owner, default: 0] += 1
-            return false
-        }
-        // Positions of hidden items are only compared while they are known.
-        let placements = named.map { entry in
-            let frame = reliable || isOnScreen(entry.frame) ? entry.frame : .zero
-            return HostedItems.Element(
+        let rawValues = raw.map { entry in
+            InventoryBuilder.RawItem(
                 owner: entry.target.bundleID ?? entry.target.name,
-                identifier: entry.identifier,
-                minX: Double(frame.minX), maxX: Double(frame.maxX),
-                minY: Double(frame.minY), maxY: Double(frame.maxY)
+                appName: entry.target.name, frame: entry.frame,
+                identifier: entry.identifier, detail: entry.detail,
+                title: entry.title, help: entry.help,
+                isOnScreen: isOnScreen(entry.frame),
+                isWithinScreenWidth: isWithinScreenWidth(entry.frame)
             )
         }
-        let duplicates = HostedItems.duplicates(in: placements)
-        if !duplicates.isEmpty {
-            for index in duplicates {
-                skipped.duplicates[placements[index].owner, default: 0] += 1
-            }
-            named = named.enumerated().filter { !duplicates.contains($0.offset) }.map(\.element)
+        let built = InventoryBuilder.build(
+            raw: rawValues,
+            dividers: .init(layout: dividers, ownFrames: model.statusBar.ownFrames, framesAreReliable: framesAreReliable),
+            cached: cached
+        )
+        cached = built.cached
+        skipped = built.skipped
+        reliablySectioned = built.reliablySectioned
+        var result = built.items.map { item in
+            let entry = raw[item.sourceIndex]
+            let customName = model.settings.itemNames[item.key.rawValue]
+            return MenuBarItem(
+                key: item.key, kind: item.isSystem ? .system : .app,
+                pid: entry.target.pid, bundleID: entry.target.bundleID,
+                appName: entry.target.name, displayName: customName ?? item.displayName,
+                detail: entry.detail, identifier: entry.identifier,
+                frame: item.frame, section: item.section, isMovable: item.isMovable,
+                element: entry.element,
+                keywords: Self.keywords(
+                    for: [customName, item.displayName].compactMap { $0 },
+                    appName: entry.target.name, bundleID: entry.target.bundleID,
+                    identifier: entry.identifier
+                ), markerID: nil
+            )
         }
-        // Leftovers go before keys are derived: siblings' keys depend on how
-        // many items an app has.
-        named = named.filter { entry in
-            guard isLeftoverSlot(entry.frame, reliable: reliable) else { return true }
-            skipped.empty[entry.target.bundleID ?? entry.target.name, default: 0] += 1
-            return false
-        }
-        let grouped = Dictionary(grouping: named) { $0.target.bundleID ?? $0.target.name }
-        for (owner, group) in grouped {
-            let sorted = group.sorted { $0.frame.minX < $1.frame.minX }
-            let tokens = MenuItemKey.tokens(for: sorted.map {
-                MenuItemKey.Attributes(identifier: $0.identifier, description: $0.detail, title: $0.title)
-            })
-            for (entry, token) in zip(sorted, tokens) {
-                let key = MenuItemKey(owner: owner, token: token)
-                let isSystem = owner.hasPrefix("com.apple.")
-                let scannedName = Self.displayName(for: entry, siblings: sorted.count, isSystem: isSystem)
-                let customName = customNames[key.rawValue]
-                let name = customName ?? scannedName
-                var frame = entry.frame
-                var section = ItemSection.visible
-                let trustworthy = (reliable || isOnScreen(frame)) && !Self.overlaps(frame, menoFrames)
-                if trustworthy, let dividers {
-                    section = SectionResolver.section(of: HorizontalSpan(minX: Double(frame.minX), maxX: Double(frame.maxX)), dividers: dividers)
-                    cachedSections[key] = section
-                    cachedPositions[key] = frame.minX
-                    reliablySectioned.insert(key)
-                } else {
-                    // Without dividers to compare with (they may be hidden
-                    // while items are shown), the last known section holds,
-                    // but a position that can be trusted stays.
-                    section = cachedSections[key] ?? .hidden
-                    if trustworthy {
-                        cachedPositions[key] = frame.minX
-                    } else if let x = cachedPositions[key] {
-                        frame.origin.x = x
-                    }
-                }
-                result.append(MenuBarItem(
-                    key: key,
-                    kind: isSystem ? .system : .app,
-                    pid: entry.target.pid,
-                    bundleID: entry.target.bundleID,
-                    appName: entry.target.name,
-                    displayName: name,
-                    detail: entry.detail,
-                    identifier: entry.identifier,
-                    frame: frame,
-                    section: section,
-                    isMovable: !Self.isPinned(entry, owner: owner),
-                    element: entry.element,
-                    keywords: Self.keywords(
-                        for: [customName, scannedName].compactMap { $0 },
-                        appName: entry.target.name,
-                        bundleID: entry.target.bundleID,
-                        identifier: entry.identifier
-                    ),
-                    markerID: nil
-                ))
-            }
-        }
-
-        self.skipped = skipped
-        self.reliablySectioned = reliablySectioned
 
         var markerSections: [UUID: ItemSection] = [:]
         if let dividers {
@@ -340,19 +272,9 @@ final class ItemInventory: ObservableObject {
         return result.sorted { $0.frame.minX < $1.frame.minX }
     }
 
-    /// Items never overlap Meno's own items. One reported inside a divider
-    /// or spacer still has its position from before it grew over it.
-    static func overlaps(_ frame: CGRect, _ menoFrames: [CGRect]) -> Bool {
-        menoFrames.contains { $0.minX < frame.midX && frame.midX < $0.maxX }
-    }
-
-    /// An element without width on the screen is left over from an item that
-    /// is gone (for example after its app crashed). While positions are
-    /// unreliable, items the stepped engine pushed into the system overflow
-    /// may have no width either, so nothing is left out then.
-    private func isLeftoverSlot(_ frame: CGRect, reliable: Bool) -> Bool {
-        guard frame.width < 1, reliable else { return false }
-        return NSScreen.screens.contains { screen in
+    /// A zero-width slot on any screen is a leftover only with reliable frames.
+    private func isWithinScreenWidth(_ frame: CGRect) -> Bool {
+        NSScreen.screens.contains { screen in
             let bounds = ScreenGeometry.quartzRect(fromCocoa: screen.frame)
             return bounds.minX <= frame.midX && frame.midX <= bounds.maxX
         }
@@ -388,26 +310,6 @@ final class ItemInventory: ObservableObject {
     }
 
     // MARK: - Naming
-
-    static func displayName(for entry: RawMenuBarItem, siblings: Int, isSystem: Bool) -> String {
-        let text = [entry.detail, entry.title, entry.help]
-            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty }
-        if isSystem {
-            return text.map { ItemNaming.leadingName(of: $0) } ?? entry.target.name
-        }
-        if siblings > 1, let text, text.caseInsensitiveCompare(entry.target.name) != .orderedSame {
-            return "\(entry.target.name) – \(text)"
-        }
-        return entry.target.name
-    }
-
-    /// The clock and the Control Center icon cannot be moved.
-    static func isPinned(_ entry: RawMenuBarItem, owner: String) -> Bool {
-        guard owner == "com.apple.controlcenter" || owner == "com.apple.systemuiserver" else { return false }
-        let identifier = (entry.identifier ?? "").lowercased()
-        return identifier.hasSuffix(".clock") || identifier.hasSuffix(".controlcenter") || identifier == "clock"
-    }
 
     static func keywords(for names: [String], appName: String, bundleID: String?, identifier: String?) -> [String] {
         // The first name is shown; the others stay searchable.
