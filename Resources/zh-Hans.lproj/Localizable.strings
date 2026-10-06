@@ -673,3 +673,5 @@
 "“%@” on %@" = "“%@”用于 %@";
 "“%@” succeeds" = "“%@”执行成功";
 "⌥-click it to include the Stash." = "按住 ⌥ 点按它可同时显示暗格。";
+
+"The release has no usable checksum. Meno cannot verify the download." = "此版本没有可用的校验值。Meno 无法验证下载文件。";

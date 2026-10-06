@@ -30,7 +30,7 @@ public struct UpdateRelease: Decodable, Equatable, Sendable {
             let prefix = "sha256:"
             guard digest.lowercased().hasPrefix(prefix) else { return nil }
             let hex = digest.dropFirst(prefix.count).lowercased()
-            guard hex.count == 64, hex.allSatisfy(\.isHexDigit) else { return nil }
+            guard hex.count == 64, hex.allSatisfy({ "0123456789abcdef".contains($0) }) else { return nil }
             return String(hex)
         }
     }
@@ -99,6 +99,33 @@ public struct UpdateRelease: Decodable, Equatable, Sendable {
         }
         return candidates.first { $0.name == "Meno.zip" }
             ?? candidates.first { $0.name.hasPrefix("Meno") && $0.name.hasSuffix(".zip") }
+    }
+
+    /// A checksum list attached to this release, with the same source restrictions as the app.
+    public func checksumArchive(repository: String, source: UpdateSource? = nil) -> Asset? {
+        assets.first { asset in
+            asset.name == "SHA256SUMS.txt" && (source?.accepts(asset.downloadURL)
+                ?? Self.isDownload(asset.downloadURL, of: tagName, in: repository))
+        }
+    }
+
+    public enum ChecksumFailure: Error { case unavailable }
+
+    /// Prefer GitHub's digest; otherwise require an unambiguous entry for this archive.
+    public static func expectedSHA256(for archive: Asset, checksums: String? = nil) throws -> String {
+        if let digest = archive.sha256 { return digest }
+        guard let checksums else { throw ChecksumFailure.unavailable }
+        let hashes = checksums.split(whereSeparator: \.isNewline).compactMap { line -> String? in
+            let fields = line.split(maxSplits: 1, whereSeparator: \.isWhitespace)
+            guard fields.count == 2 else { return nil }
+            let filename = fields[1].trimmingCharacters(in: .whitespaces)
+            let name = filename.hasPrefix("*") ? filename.dropFirst() : filename[...]
+            guard name == archive.name else { return nil }
+            return Asset(name: archive.name, downloadURL: archive.downloadURL,
+                         digest: "sha256:" + fields[0]).sha256
+        }
+        guard let hash = hashes.first, Set(hashes).count == 1 else { throw ChecksumFailure.unavailable }
+        return hash
     }
 
     /// Whether `url` is a file attached to the release `tag` of `repository`
