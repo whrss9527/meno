@@ -63,7 +63,7 @@ struct AboutPane: View {
                     Label("Source Code", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
                 .menoGlassButtonStyle()
-                Link(destination: AppInfo.repositoryURL.appendingPathComponent("issues")) {
+                Link(destination: FeedbackLink.bugReport(repositoryURL: AppInfo.repositoryURL, version: "\(AppInfo.version) (\(AppInfo.build))", systemVersion: AppInfo.osVersionString)) {
                     Label("Report an Issue", systemImage: "exclamationmark.bubble")
                 }
                 .menoGlassButtonStyle()
@@ -77,6 +77,9 @@ struct AboutPane: View {
                 .menoGlassButtonStyle()
                 .help(Text("Copies the macOS version, permissions and the menu bar items Meno sees, to help find problems."))
             }
+            Text("Paste the diagnostic report into your issue before sending it.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
         }
         .onAppear { otherCopies = SingleInstance.otherCopies }
     }
