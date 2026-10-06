@@ -138,6 +138,8 @@ final class TemporaryPlacements {
                 self.forget([key])
             } catch ItemMover.MoveError.skipped {
                 // Tried again at the next check.
+            } catch is CancellationError {
+                // Cancellation is not a failed attempt to put an item back.
             } catch {
                 Log.move.error("Putting back \(key.rawValue, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
                 let count = (self.failures[key]?.count ?? 0) + 1
