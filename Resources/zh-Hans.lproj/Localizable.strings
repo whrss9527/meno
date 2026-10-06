@@ -675,3 +675,5 @@
 "⌥-click it to include the Stash." = "按住 ⌥ 点按它可同时显示暗格。";
 
 "The release has no usable checksum. Meno cannot verify the download." = "此版本没有可用的校验值。Meno 无法验证下载文件。";
+
+"Paste the diagnostic report into your issue before sending it." = "提交问题反馈前，请把诊断报告粘贴进去。";
