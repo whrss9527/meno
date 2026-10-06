@@ -1,13 +1,6 @@
 import AppKit
 import MenoCore
 
-/// Which sections are currently shown in the menu bar.
-enum SectionVisibility: Equatable {
-    case collapsed
-    case revealed
-    case revealedAll
-}
-
 /// What caused a reveal or collapse.
 enum RevealTrigger: String {
     case click
@@ -37,16 +30,11 @@ enum RevealTrigger: String {
 final class RevealCoordinator: ObservableObject {
     unowned let model: AppModel
 
-    @Published private(set) var visibility: SectionVisibility = .collapsed
+    @Published private var state = RevealState()
+    var visibility: SectionVisibility { state.visibility }
+    private var holds: Int { state.holds }
+    private var zenLifts: Int { state.zenLifts }
 
-    private var holds = 0
-    /// Opened items and layout sessions in progress, which lift Zen.
-    private var zenLifts = 0
-    private var layoutSessions = 0
-    private var visibilityBeforeLayout: SectionVisibility = .collapsed
-    /// Items being opened, and what was shown before the first of them.
-    private var activations = 0
-    private var visibilityBeforeActivation: SectionVisibility?
     private var revealedByHover = false
     /// When more sections were last shown. Item positions from scans before
     /// that are out of date.
@@ -138,12 +126,7 @@ final class RevealCoordinator: ObservableObject {
     // MARK: - State
 
     var barState: BarState {
-        let zen = model.isZenActive && zenLifts == 0
-        return BarState(
-            hiddenCollapsed: zen || visibility == .collapsed,
-            stashCollapsed: zen || visibility != .revealedAll,
-            zen: zen
-        )
+        state.barState(zenActive: model.isZenActive)
     }
 
     /// Pushes the current state to the status items.
@@ -156,12 +139,12 @@ final class RevealCoordinator: ObservableObject {
 
     /// Keeps items revealed until ``release()`` is called.
     func hold() {
-        holds += 1
+        state.hold()
         rehideTask?.cancel()
     }
 
     func release() {
-        holds = max(holds - 1, 0)
+        state.release()
         if holds == 0 {
             scheduleRehide()
         }
@@ -227,7 +210,7 @@ final class RevealCoordinator: ObservableObject {
         if target != visibility {
             revealedAt = Date()
         }
-        visibility = target
+        state.reveal(all: all)
         if wasCollapsed {
             pointerVisitedSinceReveal = pointerIsInMenuBar
         }
@@ -259,10 +242,8 @@ final class RevealCoordinator: ObservableObject {
     func collapse(trigger: RevealTrigger) {
         // Items stay shown while Meno moves them, or later moves would find
         // them gone; they fold once the moves are done.
-        if layoutSessions > 0 {
-            visibilityBeforeLayout = .collapsed
-            return
-        }
+        let changed = visibility != .collapsed
+        guard state.collapse() else { return }
         rehideTask?.cancel()
         hoverTask?.cancel()
         hoverTask = nil
@@ -271,8 +252,6 @@ final class RevealCoordinator: ObservableObject {
         outsideClickTask?.cancel()
         outsideClickTask = nil
         revealedByHover = false
-        let changed = visibility != .collapsed
-        visibility = .collapsed
         apply()
         restoreAppMenus()
         if changed || trigger == .launch {
@@ -285,12 +264,8 @@ final class RevealCoordinator: ObservableObject {
     /// Shows the section of an item that is about to be opened, and keeps it
     /// shown until the item's menu closes.
     func revealForActivation(of section: ItemSection) {
-        if activations == 0 {
-            visibilityBeforeActivation = visibility
-        }
-        activations += 1
-        hold()
-        zenLifts += 1
+        state.beginActivation()
+        rehideTask?.cancel()
         if section == .visible {
             apply()
         } else {
@@ -315,61 +290,34 @@ final class RevealCoordinator: ObservableObject {
                     break
                 }
             }
-            self.activations = max(self.activations - 1, 0)
-            self.endZenLift()
-            self.release()
-            guard self.activations == 0 else { return }
-            let restore = self.visibilityBeforeActivation
-            self.visibilityBeforeActivation = nil
-            guard self.holds == 0 else { return }
+            let restore = self.state.endActivation()
+            if self.zenLifts == 0, self.model.isZenActive { self.apply() }
+            if self.holds == 0 { self.scheduleRehide() }
+            guard let restore else { return }
             // A reveal that only served to open the item always folds back.
             self.scheduleRehide(after: 0.8, force: restore == .collapsed)
         }
     }
 
-    private func endZenLift() {
-        zenLifts = max(zenLifts - 1, 0)
-        if zenLifts == 0, model.isZenActive {
-            apply()
-        }
-    }
-
     /// Reveals everything and keeps it that way while items are moved.
     func beginLayoutSession() {
-        layoutSessions += 1
-        guard layoutSessions == 1 else { return }
-        visibilityBeforeLayout = visibility
-        hold()
-        zenLifts += 1
+        guard state.beginLayoutSession() else { return }
+        rehideTask?.cancel()
         model.statusBar.setDividersForcedVisible(true)
         reveal(all: true, trigger: .layout)
     }
 
     func endLayoutSession() {
-        guard layoutSessions > 0 else { return }
-        layoutSessions -= 1
-        guard layoutSessions == 0 else { return }
+        guard let end = state.endLayoutSession() else { return }
         model.statusBar.setDividersForcedVisible(false)
-        zenLifts = max(zenLifts - 1, 0)
-        holds = max(holds - 1, 0)
-        guard holds == 0 else {
-            // An item being opened or a rule still needs the items shown. An
-            // opened item folds back to what was shown before the move.
-            if activations > 0, visibilityBeforeLayout == .collapsed {
-                visibilityBeforeActivation = .collapsed
-            }
-            // A rule keeping the Hidden section shown does not keep the
-            // Stash shown too, unless an item in it is being opened.
-            if activations == 0, visibilityBeforeLayout == .revealed {
-                visibility = .revealed
-            }
+        switch end {
+        case .held:
             apply()
-            return
-        }
-        switch visibilityBeforeLayout {
-        case .collapsed: collapse(trigger: .layout)
-        case .revealed: visibility = .revealed; apply(); scheduleRehide()
-        case .revealedAll: apply(); scheduleRehide()
+        case .restore(.collapsed):
+            collapse(trigger: .layout)
+        case .restore(.revealed), .restore(.revealedAll):
+            apply()
+            scheduleRehide()
         }
     }
 
