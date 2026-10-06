@@ -92,8 +92,11 @@ public struct UpdateRelease: Decodable, Equatable, Sendable {
 
     /// The zipped app to install, if the release has one that was published
     /// with this release of `repository` (for example `owner/name`).
-    public func appArchive(repository: String) -> Asset? {
-        let candidates = assets.filter { Self.isDownload($0.downloadURL, of: tagName, in: repository) }
+    public func appArchive(repository: String, source: UpdateSource? = nil) -> Asset? {
+        let candidates = assets.filter { asset in
+            if let source { return source.accepts(asset.downloadURL) }
+            return Self.isDownload(asset.downloadURL, of: tagName, in: repository)
+        }
         return candidates.first { $0.name == "Meno.zip" }
             ?? candidates.first { $0.name.hasPrefix("Meno") && $0.name.hasSuffix(".zip") }
     }

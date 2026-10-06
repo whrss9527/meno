@@ -78,19 +78,19 @@ enum UpdateInstaller {
     }
 
     /// Downloads, unpacks and checks the app of `release`.
-    static func prepare(_ release: UpdateRelease, repository: String) async throws -> Prepared {
+    static func prepare(_ release: UpdateRelease, repository: String, source: UpdateSource? = nil) async throws -> Prepared {
         if let blocker { throw blocker }
-        guard let version = release.version, let archive = release.appArchive(repository: repository) else {
+        guard let version = release.version, let archive = release.appArchive(repository: repository, source: source) else {
             throw Failure.noArchive
         }
         let fileManager = FileManager.default
         // On the same volume as the app, so it can be swapped in one step.
-        let folder = try fileManager.url(
-            for: .itemReplacementDirectory,
-            in: .userDomainMask,
-            appropriateFor: Bundle.main.bundleURL,
-            create: true
-        )
+        // A private sibling remains writable across the two app processes.
+        // A system-managed replacement directory can deny deletion after relaunch.
+        let folder = Bundle.main.bundleURL.deletingLastPathComponent()
+            .appendingPathComponent(".Meno-update-\(UUID().uuidString)", isDirectory: true)
+        try fileManager.createDirectory(at: folder, withIntermediateDirectories: false,
+                                        attributes: [.posixPermissions: 0o700])
         do {
             let zip = folder.appendingPathComponent("Meno.zip")
             try await download(archive, to: zip)
@@ -151,16 +151,23 @@ enum UpdateInstaller {
     /// seconds: the download and the previous copy. Until then the previous
     /// copy is put back if this one quits. Returns the version of a new copy
     /// that did not run and was replaced by this one again, if any.
+    @MainActor
     static func removeLeftovers() -> String? {
         let defaults = UserDefaults.standard
         guard let path = defaults.string(forKey: leftoversKey) else { return nil }
-        defaults.removeObject(forKey: leftoversKey)
         let folder = URL(fileURLWithPath: path, isDirectory: true)
         let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: folder.path) else {
+            defaults.removeObject(forKey: leftoversKey)
+            return nil
+        }
         // Only a folder made for an update, never one Meno runs from.
         guard fileManager.fileExists(atPath: folder.appendingPathComponent("Meno.zip").path),
               !Bundle.main.bundlePath.hasPrefix(folder.path)
-        else { return nil }
+        else {
+            Diagnostics.event("update_cleanup skipped folder=\(folder.path) bundle=\(Bundle.main.bundlePath)")
+            return nil
+        }
         let rejected = [
             folder.appendingPathComponent("Unpacked/Meno.app.rejected"),
             folder.appendingPathComponent("Previous.app.rejected"),
@@ -168,7 +175,14 @@ enum UpdateInstaller {
         let version = rejected.flatMap {
             NSDictionary(contentsOf: $0.appendingPathComponent("Contents/Info.plist"))?["CFBundleShortVersionString"] as? String
         }
-        try? fileManager.removeItem(at: folder)
+        do {
+            try fileManager.removeItem(at: folder)
+            defaults.removeObject(forKey: leftoversKey)
+        } catch {
+            Log.app.error("Update cleanup failed: \(error.localizedDescription, privacy: .public)")
+            Diagnostics.event("update_cleanup failed error=\(error.localizedDescription)")
+            return nil
+        }
         return version
     }
 

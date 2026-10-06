@@ -29,6 +29,7 @@ final class UpdateChecker: ObservableObject {
     unowned let model: AppModel
 
     static let repository = "whrss9527/meno"
+    static let source = UpdateSource(override: ProcessInfo.processInfo.environment["MENO_UPDATE_URL"])
     private static let latestReleaseURL = URL(string: "https://api.github.com/repos/\(repository)/releases/latest")!
     private static let releasesURL = URL(string: "https://api.github.com/repos/\(repository)/releases?per_page=\(UpdateNotes.pageSize)")!
     /// The newest version announced by the daily check, so it is announced once.
@@ -42,10 +43,23 @@ final class UpdateChecker: ObservableObject {
         self.model = model
     }
 
+    /// Cleans an installed update after its startup grace period and reports rollback.
+    func finishInstallation() {
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            guard let rejected = UpdateInstaller.removeLeftovers() else { return }
+            self?.model.toasts.show(
+                String(localized: "Meno \(rejected) did not start on this Mac, so this version was put back."),
+                symbol: "exclamationmark.triangle.fill",
+                duration: 12
+            )
+        }
+    }
+
     /// Whether Meno can put the available release in place of itself.
     var canInstall: Bool {
         guard let available else { return false }
-        return UpdateInstaller.blocker == nil && available.appArchive(repository: Self.repository) != nil
+        return UpdateInstaller.blocker == nil && available.appArchive(repository: Self.repository, source: Self.source) != nil
     }
 
     /// Starts or stops the daily check to match the settings.
@@ -162,7 +176,7 @@ final class UpdateChecker: ObservableObject {
             version = latestVersion
             available = latest
             loadNotes(for: latest, current: current)
-            let ready = try await UpdateInstaller.prepare(release, repository: Self.repository)
+            let ready = try await UpdateInstaller.prepare(release, repository: Self.repository, source: Self.source)
             prepared = ready
             phase = .installing
             let previous = try UpdateInstaller.replace(with: ready)
@@ -217,12 +231,13 @@ final class UpdateChecker: ObservableObject {
     }
 
     private static func latestRelease() async throws -> UpdateRelease {
-        let data = try await get(latestReleaseURL)
+        let data = try await get(source?.latestURL ?? latestReleaseURL)
         return try JSONDecoder().decode(UpdateRelease.self, from: data)
     }
 
     /// The newest releases, newest first, for their notes.
     private static func recentReleases() async throws -> [UpdateRelease] {
+        if source != nil { return [] }
         let data = try await get(releasesURL)
         return try JSONDecoder().decode([UpdateRelease].self, from: data)
     }
