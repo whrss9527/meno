@@ -28,6 +28,10 @@ jobs:
     container: swift:5.10
     steps:
       - uses: actions/checkout@v5
+      - name: Release metadata
+        run: |
+          scripts/check-release.sh
+          python3 -m unittest discover -s scripts/tests
       - run: swift test
 
   build:

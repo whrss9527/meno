@@ -30,7 +30,18 @@ permissions:
   contents: write
 
 jobs:
+  metadata:
+    name: Release metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check requested version and notes
+        env:
+          RELEASE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+        run: scripts/check-release.sh "$RELEASE_VERSION"
+
   release:
+    needs: metadata
     # Frit is pinned to a commit; change the @ below and frit-ref together.
     uses: whrss9527/frit/.github/workflows/release-app.yml@6f27e71aab8831a9b007e6ee5b022cf19cadb0a8
     with:
