@@ -7,7 +7,7 @@ import Security
 /// Puts a newer release in place of the running copy of Meno.
 ///
 /// The release's zip is downloaded from GitHub and checked before anything
-/// is replaced: its size and checksum when GitHub gives them, the bundle
+/// is replaced: its size when provided and a required checksum, the bundle
 /// identifier and version, that it runs on this Mac, and a valid code
 /// signature, from the same certificate when this copy has one. The two
 /// copies then swap places. The previous copy is deleted by the new one
@@ -20,6 +20,7 @@ enum UpdateInstaller {
         case noArchive
         case download
         case damaged
+        case noChecksum
         case unexpectedApp
         case invalidSignature
         case differentSigner
@@ -38,6 +39,8 @@ enum UpdateInstaller {
                 return String(localized: "The release has no app to install.")
             case .download:
                 return String(localized: "The download failed.")
+            case .noChecksum:
+                return String(localized: "The release has no usable checksum. Meno cannot verify the download.")
             case .damaged:
                 return String(localized: "The download is incomplete or damaged.")
             case .unexpectedApp:
@@ -93,7 +96,8 @@ enum UpdateInstaller {
                                         attributes: [.posixPermissions: 0o700])
         do {
             let zip = folder.appendingPathComponent("Meno.zip")
-            try await download(archive, to: zip)
+            let checksum = try await expectedChecksum(archive, release: release, repository: repository, source: source)
+            try await download(archive, to: zip, checksum: checksum)
             let unpacked = folder.appendingPathComponent("Unpacked", isDirectory: true)
             guard await run("/usr/bin/ditto", ["-x", "-k", zip.path, unpacked.path]) == 0 else {
                 throw Failure.damaged
@@ -186,7 +190,29 @@ enum UpdateInstaller {
         return version
     }
 
-    private static func download(_ asset: UpdateRelease.Asset, to destination: URL) async throws {
+    private static func expectedChecksum(_ archive: UpdateRelease.Asset, release: UpdateRelease,
+                                         repository: String, source: UpdateSource?) async throws -> String {
+        if let digest = archive.sha256 { return digest }
+        guard let asset = release.checksumArchive(repository: repository, source: source) else {
+            throw Failure.noChecksum
+        }
+        var request = URLRequest(url: asset.downloadURL, timeoutInterval: 30)
+        request.setValue("Meno/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
+        let data: Data
+        do {
+            let result = try await URLSession.shared.data(for: request)
+            guard (result.1 as? HTTPURLResponse)?.statusCode == 200 else { throw Failure.noChecksum }
+            data = result.0
+        } catch is CancellationError { throw CancellationError() }
+        catch { throw Failure.noChecksum }
+        guard let text = String(data: data, encoding: .utf8),
+              let checksum = try? UpdateRelease.expectedSHA256(for: archive, checksums: text) else {
+            throw Failure.noChecksum
+        }
+        return checksum
+    }
+
+    private static func download(_ asset: UpdateRelease.Asset, to destination: URL, checksum: String) async throws {
         var request = URLRequest(url: asset.downloadURL, timeoutInterval: 60)
         request.setValue("Meno/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
         request.setValue("en", forHTTPHeaderField: "Accept-Language")
@@ -207,10 +233,8 @@ enum UpdateInstaller {
         if let size = asset.size, data.count != size {
             throw Failure.damaged
         }
-        if let expected = asset.sha256 {
-            let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-            guard actual == expected else { throw Failure.damaged }
-        }
+        let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        guard actual == checksum else { throw Failure.damaged }
     }
 
     private static func findApp(in folder: URL) throws -> URL {

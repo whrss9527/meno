@@ -68,6 +68,16 @@ private final class UpdateDriverDelegate: NSObject, NSApplicationDelegate {
             }
             record("installing", "0.0.1 -> 0.0.2")
             await model.updates.install()
+            if Bundle.main.object(forInfoDictionaryKey: "MenoUpdateTestMissingChecksum") as? Bool == true {
+                guard model.updates.phase == .idle,
+                      model.toasts.current?.message.contains(UpdateInstaller.Failure.noChecksum.localizedDescription) == true else {
+                    record("failed", "Missing checksum did not produce a visible verification error")
+                    return
+                }
+                record("checksum-blocked", "Old copy retained with verification error")
+                NSApp.terminate(nil)
+                return
+            }
             record("failed", "Installer returned without terminating the old copy")
         }
     }

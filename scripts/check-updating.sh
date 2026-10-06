@@ -56,7 +56,7 @@ swiftc -parse-as-library -module-name Meno -I "$BIN/Modules" \
   -framework AppKit -framework ApplicationServices -framework Carbon \
   -framework CoreAudio -framework CoreMediaIO -framework IOKit \
   -framework ServiceManagement -o "$WORK/UpdateDriver"
-for scene in success rollback; do
+for scene in success checksums missing-checksum rollback; do
   IDENTIFIER="io.github.whrss9527.meno.update-test.$(uuidgen | tr '[:upper:]' '[:lower:]')"
   SCENE="$WORK/$scene"
   mkdir -p "$SCENE/installed/Meno.app/Contents/MacOS" "$SCENE/release/Meno.app/Contents/MacOS"
@@ -72,7 +72,8 @@ for folder, version in [('installed', '0.0.1'), ('release', '0.0.2')]:
     info = dict(CFBundleIdentifier=identifier, CFBundleName='Meno Update Test', CFBundleExecutable='Meno',
                 CFBundlePackageType='APPL', CFBundleShortVersionString=version, CFBundleVersion=version,
                 LSUIElement=True, LSMinimumSystemVersion='14.0', MenoUpdateTestDirectory=str(root),
-                MenoUpdateTestBroken=scene == 'rollback' and version == '0.0.2')
+                MenoUpdateTestBroken=scene == 'rollback' and version == '0.0.2',
+                MenoUpdateTestMissingChecksum=scene == 'missing-checksum')
     (root / folder / 'Meno.app/Contents/Info.plist').write_bytes(plistlib.dumps(info))
 PY
   # Reserve a loopback port with the serving process; metadata is regenerated
@@ -88,15 +89,37 @@ PY
   done
   rm "$SCENE/Meno.zip"
   ditto -c -k --keepParent "$SCENE/release/Meno.app" "$SCENE/Meno.zip"
-  python3 - "$SCENE" <<'PY'
+  python3 - "$SCENE" "$scene" <<'PY'
 import hashlib, json, pathlib, sys
 root = pathlib.Path(sys.argv[1]); archive = root / 'Meno.zip'
 p = root / 'latest.json'; data = json.loads(p.read_text())
 data['assets'][0].update(size=archive.stat().st_size, digest='sha256:' + hashlib.sha256(archive.read_bytes()).hexdigest())
+if sys.argv[2] in ('checksums', 'missing-checksum'):
+    data['assets'][0].pop('digest', None)
+if sys.argv[2] == 'checksums':
+    (root / 'SHA256SUMS.txt').write_text(hashlib.sha256(archive.read_bytes()).hexdigest() + '  Meno.zip\n')
+    base = data['assets'][0]['browser_download_url'].rsplit('/', 1)[0]
+    data['assets'].append(dict(name='SHA256SUMS.txt', browser_download_url=base + '/SHA256SUMS.txt'))
 p.write_text(json.dumps(data))
 PY
   "$SCENE/installed/Meno.app/Contents/MacOS/Meno" > "$SCENE/driver.log" 2>&1 &
   wait_file 30 "$SCENE/installing" "$SCENE"
+  if [[ "$scene" == missing-checksum ]]; then
+    wait_file 30 "$SCENE/checksum-blocked" "$SCENE"
+    [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$SCENE/installed/Meno.app/Contents/Info.plist")" == 0.0.1 ]] || fail 'Unverified copy was installed'
+    if /usr/bin/grep -q 'GET /Meno.zip' "$SCENE/server.log"; then fail 'Archive fetched without a checksum'; fi
+    python3 - "$SCENE/installed" <<'PYCLEAN'
+import pathlib, sys
+assert not list(pathlib.Path(sys.argv[1]).glob('.Meno-update-*')), 'Failed download staging was retained'
+PYCLEAN
+    kill "$SERVER"; wait "$SERVER" 2>/dev/null || true; SERVER=""
+    defaults delete "$IDENTIFIER" 2>/dev/null || true
+    echo "Updating missing checksum rejection passed"
+    continue
+  fi
+  if [[ "$scene" == checksums ]]; then
+    /usr/bin/grep -q 'GET /SHA256SUMS.txt.*200' "$SCENE/server.log" || fail 'Fallback checksum was not downloaded'
+  fi
   wait_file 30 "$SCENE/launched-0.0.2" "$SCENE"
   LEFTOVERS="$(cat "$SCENE/leftovers-path")"
   [[ -f "$LEFTOVERS/Meno.zip" ]] || fail 'Download folder was not retained during startup'

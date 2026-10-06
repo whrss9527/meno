@@ -4,6 +4,37 @@ import XCTest
 final class UpdateReleaseTests: XCTestCase {
     private let repository = "whrss9527/meno"
 
+    func testChecksumSourcesAndFailure() throws {
+        let hash = String(repeating: "a", count: 64)
+        let url = URL(string: "https://github.com/x")!
+        let digest = UpdateRelease.Asset(name: "Meno.zip", downloadURL: url, digest: "sha256:" + hash)
+        XCTAssertEqual(try UpdateRelease.expectedSHA256(for: digest), hash)
+        XCTAssertEqual(try UpdateRelease.expectedSHA256(for: digest, checksums: "invalid"), hash)
+        let fallback = UpdateRelease.Asset(name: "Meno.zip", downloadURL: url)
+        for marker in ["  ", " *"] {
+            let sums = String(repeating: "b", count: 64) + "  Other.zip\n" + hash.uppercased() + marker + "Meno.zip\r\n"
+            XCTAssertEqual(try UpdateRelease.expectedSHA256(for: fallback, checksums: sums), hash)
+        }
+        for sums in [nil, "", "xyz  Meno.zip", hash + "  Other.zip", hash + "  Meno.zip\n" + String(repeating: "b", count: 64) + "  Meno.zip"] {
+            XCTAssertThrowsError(try UpdateRelease.expectedSHA256(for: fallback, checksums: sums))
+        }
+    }
+
+    func testChecksumListMustBelongToTheSameRelease() {
+        let prefix = "https://github.com/whrss9527/meno/releases/download/"
+        for path in ["v0.7.0/SHA256SUMS.txt", "v0.6.0/SHA256SUMS.txt"] {
+            let release = UpdateRelease(tagName: "v0.7.0", htmlURL: URL(string: "https://github.com/x")!, assets: [
+                UpdateRelease.Asset(name: "SHA256SUMS.txt", downloadURL: URL(string: prefix + path)!)
+            ])
+            XCTAssertEqual(release.checksumArchive(repository: repository) != nil, path.hasPrefix("v0.7.0/"))
+        }
+        let source = UpdateSource(override: "http://127.0.0.1:12345/latest.json")!
+        let foreign = UpdateRelease(tagName: "v0.7.0", htmlURL: source.latestURL, assets: [
+            UpdateRelease.Asset(name: "SHA256SUMS.txt", downloadURL: URL(string: "http://127.0.0.1:54321/SHA256SUMS.txt")!)
+        ])
+        XCTAssertNil(foreign.checksumArchive(repository: repository, source: source))
+    }
+
     func testDecodesTheLatestReleaseResponse() throws {
         let json = """
         {
