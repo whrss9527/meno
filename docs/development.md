@@ -37,6 +37,12 @@ The current implementation relies on:
 
 These are current implementation dependencies, not a claim that every API listed is categorically private or forbidden in every sandboxed app. A store edition would require a separate reduced product and update path; adding a sandbox entitlement to this target does not preserve Meno's behavior.
 
+### Settings compatibility
+
+`settings.json` writes `schemaVersion: 1`; files without a version use the same schema. Add keys with defaults, keep existing names and types, and avoid repurposing values. A breaking schema needs an explicit migration and a backup before replacement.
+
+When a file has a higher schema version, Settings shows a notice. Meno reads supported values, retains the higher version number, and writes unrecognized keys back, including nested fields and fields attached to records by identity. Records that cannot be decoded remain inert and are retained in their original positions. Editing supported values takes precedence; deleting a recognized record or a name still deletes it. Existing fallback handling for unsupported values in recognized enum fields remains unchanged. Import, export, backups, delayed saves and quit-time flushes all use `MenoSettings.decode(from:)` / `encoded()`; use these entry points rather than encoding the model directly.
+
 ### Project layout
 
 ```
