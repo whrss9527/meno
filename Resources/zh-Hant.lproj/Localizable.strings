@@ -677,3 +677,6 @@
 "The release has no usable checksum. Meno cannot verify the download." = "此版本沒有可用的檢查碼。Meno 無法驗證下載檔案。";
 
 "Paste the diagnostic report into your issue before sending it." = "送出問題回報前，請將診斷報告貼上。";
+
+"Settings from a newer Meno" = "來自新版 Meno 的設定";
+"This settings file uses a newer format. Some features may be unavailable. Unrecognized fields are kept when you save." = "此設定檔使用較新的格式。部分功能可能無法使用，儲存時會保留無法辨識的欄位。";
