@@ -37,6 +37,12 @@ The current implementation relies on:
 
 These are current implementation dependencies, not a claim that every API listed is categorically private or forbidden in every sandboxed app. A store edition would require a separate reduced product and update path; adding a sandbox entitlement to this target does not preserve Meno's behavior.
 
+### Strict concurrency
+
+The package requires Swift 6 (Xcode 16 or later). `MenoCore` uses Swift 6 language mode; the app and tests retain Swift 5 mode. `scripts/check-concurrency.sh` builds in a fresh temporary directory with complete concurrency checking, so cached builds cannot hide warnings. CI records the core and app warning counts in its job summary.
+
+The core must have zero warnings. The app baseline in `scripts/concurrency-baseline.json` records ten existing diagnostics at nine source locations, measured with Swift 6.3.3 / Xcode 26.6. Toolchains may report fewer; new locations, additional diagnostics at an existing location, or a larger total fail CI. Fixing warnings can reduce the baseline. When moving source lines, review the diagnostics before updating their recorded locations; do not raise the budget to make a change pass.
+
 ### Settings compatibility
 
 `settings.json` writes `schemaVersion: 1`; files without a version use the same schema. Add keys with defaults, keep existing names and types, and avoid repurposing values. A breaking schema needs an explicit migration and a backup before replacement.
@@ -57,7 +63,7 @@ scripts            App bundling, icon generation, localization check
 
 - `scripts/check-single-instance.sh` starts two disposable bundles with the production single-instance arbitration. Both wait at a shared launch barrier, then exactly the lower-PID copy must survive after three seconds, repeated three times. It does not start menu-bar controllers or change user settings. CI runs it on both macOS versions.
 - `scripts/check-updating.sh` compiles a test entry point with the production updater and toast UI. Disposable ad hoc bundles and a unique preferences domain verify 0.0.1 → 0.0.2 installation, download cleanup, early-exit rollback and its visible notice, without starting menu-bar controllers or changing Meno settings. CI runs it on main and manual runs. `MENO_UPDATE_URL` can point at loopback release JSON; local archive URLs must use the same origin, and normal installer verification still applies.
-- `swift test` runs the MenoCore tests. CI runs them on Linux with Swift 5.10 as well as on both macOS runners. Linux also checks localizations. Internal branches run once per push; pull requests from forks run the same checks in this repository with read-only permissions. Inventory building, reveal counters and divider repair decisions are pure core logic; Accessibility payloads, timers and system effects stay in the app.
+- `swift test` runs the MenoCore tests. CI runs them on Linux with Swift 6 as well as on both macOS runners. Linux also checks localizations. Internal branches run once per push; pull requests from forks run the same checks in this repository with read-only permissions. Inventory building, reveal counters and divider repair decisions are pure core logic; Accessibility payloads, timers and system effects stay in the app.
 - `scripts/check-secure-input.sh` tests waiting and cancellation with real Secure Keyboard Entry, then measures the production window and pointer drag paths on two disposable helper items. It needs Accessibility and a test Mac without another secure-input holder; CI runs it on macOS 15 and 26.
 - `scripts/check-localization.py` lists user-facing strings and checks the translations in `Resources/*.lproj`.
 - `scripts/generate-icon.py` renders `Resources/AppIcon.icns` (needs Pillow and numpy).

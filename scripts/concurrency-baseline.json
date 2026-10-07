@@ -1,0 +1,15 @@
+{
+  "recordedWith": "Swift 6.3.3 / Xcode 26.6",
+  "appWarningLimit": 10,
+  "locations": {
+    "Meno/Automation/CaptureActivity.swift:89": 1,
+    "Meno/MenuBar/ChangeWatcher.swift:84": 1,
+    "Meno/MenuBar/ChangeWatcher.swift:89": 1,
+    "Meno/MenuBar/ItemActivator.swift:54": 1,
+    "Meno/MenuBar/ItemActivator.swift:58": 1,
+    "Meno/UI/Settings/Components.swift:85": 1,
+    "Meno/UI/Tint/TintOverlayController.swift:121": 1,
+    "Meno/UI/Tint/WallpaperSampler.swift:84": 1,
+    "Meno/UI/Tint/WallpaperSampler.swift:90": 2
+  }
+}

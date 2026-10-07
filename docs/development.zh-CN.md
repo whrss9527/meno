@@ -37,6 +37,12 @@ Meno 通过 Developer ID 签名及苹果公证发行，不提供 Mac App Store �
 
 这里列出的是当前实现依赖，不表示每个 API 在所有沙盒应用中都属于私有或被禁止。商店版需要单独精简的产品和更新路径；给当前目标加一个沙盒权限不会保留 Meno 的完整行为。
 
+### 严格并发
+
+包需要 Swift 6（Xcode 16 或更新版本）。`MenoCore` 使用 Swift 6 语言模式，应用和测试保留 Swift 5 模式。`scripts/check-concurrency.sh` 在新的临时目录中执行完整并发检查，避免增量构建隐藏警告；CI 摘要记录核心与应用的警告数。
+
+核心必须零警告。`scripts/concurrency-baseline.json` 记录应用现有的十条诊断、九个源代码位置，以 Swift 6.3.3 / Xcode 26.6 测得。其他工具链可能报告更少；出现新位置、同一位置增加诊断或总数增加时 CI 失败。修复警告后可以降低基线。移动源代码行时，核对诊断后再调整记录位置，不要为了通过检查提高额度。
+
 ### 设置兼容性
 
 `settings.json` 写入 `schemaVersion: 1`，没有版本号的旧文件按同一格式读取。新增键必须提供默认值，保留已有名称和类型，不要改变原有值的含义。破坏兼容的格式变化必须有明确迁移，并在替换前备份。
@@ -57,7 +63,7 @@ scripts            打包 App、生成图标、检查本地化
 
 - `scripts/check-single-instance.sh` 启动两份临时测试 App，调用正式单实例竞争逻辑；两份都启动后同时放行，3 秒后必须恰好保留进程号较小的一份，重复三次。不启动菜单栏控制器，也不修改用户设置；CI 在两个 macOS 版本上运行。
 - `scripts/check-updating.sh` 将测试入口与正式更新器和提示界面一起编译。一次性的 ad hoc 签名 App 和独立的偏好域用于验证 0.0.1 → 0.0.2 安装、下载清理、启动即退出时的回滚和可见提示，不启动菜单栏控制器，也不修改 Meno 设置。CI 在 main 和手动运行时执行。`MENO_UPDATE_URL` 可以指向回环地址的发布 JSON；本地压缩包必须同源，安装器仍会执行全部验证。
-- `swift test` 运行 MenoCore 测试。CI 除了两个 macOS runner，也会在 Linux 上用 Swift 5.10 运行测试和本地化检查。同仓库分支每次推送只运行一次；来自 fork 的 PR 则在本仓库以只读权限运行同样的检查。库存构建、展开计数和分隔符修复决策是核心模块中的纯逻辑；辅助功能对象、计时器和系统操作仍保留在 App 中。
+- `swift test` 运行 MenoCore 测试。CI 除了两个 macOS runner，也会在 Linux 上用 Swift 6 运行测试和本地化检查。同仓库分支每次推送只运行一次；来自 fork 的 PR 则在本仓库以只读权限运行同样的检查。库存构建、展开计数和分隔符修复决策是核心模块中的纯逻辑；辅助功能对象、计时器和系统操作仍保留在 App 中。
 - `scripts/check-secure-input.sh` 用真实的安全键盘输入检查等待和取消，再用两个临时 helper 项目实测窗口与指针两条移动路径。需要辅助功能权限，以及没有其他安全输入持有进程的测试 Mac；CI 在 macOS 15 和 26 上运行。
 - `scripts/check-localization.py` 列出界面文字并检查 `Resources/*.lproj` 中的翻译是否完整。
 - `scripts/generate-icon.py` 生成 `Resources/AppIcon.icns`（需要 Pillow 和 numpy）。
