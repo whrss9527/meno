@@ -22,6 +22,21 @@ make test       # 运行单元测试
 
 也可以用 Xcode 打开 `Package.swift` 进行编辑和调试。不过 Meno 未以 App 包形式运行时，macOS 会把权限归到 Xcode 名下，所以测试与权限相关的功能请使用 `make run`。
 
+### 发行渠道与 App Sandbox
+
+Meno 通过 Developer ID 签名及苹果公证发行，不提供 Mac App Store 版：保留当前完整功能与沙盒构建不兼容。苹果[审核指南 §2.4.5](https://developer.apple.com/app-store/review/guidelines/#hardware-compatibility)要求 Mac App Store 应用使用沙盒，并通过商店更新；[App Sandbox 文档](https://developer.apple.com/documentation/security/protecting-user-data-with-app-sandbox)说明了相关限制。
+
+当前实现依赖：
+
+- `MenuBarScanner.swift` 与 `AX.swift` 读取其他应用的辅助功能树。
+- `EventSynthesizer.swift` 向其他进程发送合成点击与拖拽事件。
+- `WindowCapture.swift` 通过 `dlsym` 查找 `CGWindowListCreateImage`，捕获屏幕外的窗口。它是已不可用的原公共 API，不是私有符号。
+- `PermissionCenter.swift` 运行 `tccutil` 重置辅助功能授权。
+- `SpacingController.swift` 写入当前主机的全局偏好，并终止或重新启动其他进程。
+- `UpdateInstaller.swift` 替换自身已安装的 App 包。
+
+这里列出的是当前实现依赖，不表示每个 API 在所有沙盒应用中都属于私有或被禁止。商店版需要单独精简的产品和更新路径；给当前目标加一个沙盒权限不会保留 Meno 的完整行为。
+
 ### 项目结构
 
 ```

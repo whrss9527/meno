@@ -22,6 +22,21 @@ The default build is signed ad hoc. macOS ties privacy permissions to the signat
 
 You can also open `Package.swift` in Xcode to edit and debug. When Meno runs outside an app bundle, macOS attributes permissions to Xcode instead of Meno, so use `make run` to try permission-related features.
 
+### Distribution and App Sandbox
+
+Meno ships through Developer ID signing and Apple notarization. There is no Mac App Store edition: preserving the current full feature set is incompatible with a sandboxed build. Apple's [review guidelines §2.4.5](https://developer.apple.com/app-store/review/guidelines/#hardware-compatibility) require Mac App Store apps to be sandboxed and use the store for updates; [App Sandbox documentation](https://developer.apple.com/documentation/security/protecting-user-data-with-app-sandbox) describes its restrictions.
+
+The current implementation relies on:
+
+- Reading other apps' Accessibility trees in `MenuBarScanner.swift` and `AX.swift`.
+- Posting synthetic clicks and drags to other processes in `EventSynthesizer.swift`.
+- Looking up `CGWindowListCreateImage` with `dlsym` in `WindowCapture.swift` to capture off-screen windows. This is an unavailable former public API, not a private symbol.
+- Running `tccutil` to reset Accessibility authorization in `PermissionCenter.swift`.
+- Writing current-host global preferences and terminating or relaunching other processes in `SpacingController.swift`.
+- Replacing its own installed app bundle in `UpdateInstaller.swift`.
+
+These are current implementation dependencies, not a claim that every API listed is categorically private or forbidden in every sandboxed app. A store edition would require a separate reduced product and update path; adding a sandbox entitlement to this target does not preserve Meno's behavior.
+
 ### Project layout
 
 ```
