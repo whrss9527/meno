@@ -22,6 +22,12 @@ make test       # 运行单元测试
 
 也可以用 Xcode 打开 `Package.swift` 进行编辑和调试。不过 Meno 未以 App 包形式运行时，macOS 会把权限归到 Xcode 名下，所以测试与权限相关的功能请使用 `make run`。
 
+### 严格并发
+
+包需要 Swift 6（Xcode 16 或更新版本）。`MenoCore` 使用 Swift 6 语言模式，应用和测试保留 Swift 5 模式。`scripts/check-concurrency.sh` 在新的临时目录中执行完整并发检查，避免增量构建隐藏警告；CI 摘要记录核心与应用的警告数。
+
+核心必须零警告。`scripts/concurrency-baseline.json` 记录应用现有的十条诊断、九个源代码位置，以 Swift 6.3.3 / Xcode 26.6 测得。其他工具链可能报告更少；出现新位置、同一位置增加诊断或总数增加时 CI 失败。修复警告后可以降低基线。移动源代码行时，核对诊断后再调整记录位置，不要为了通过检查提高额度。
+
 ### 设置兼容性
 
 `settings.json` 写入 `schemaVersion: 1`，没有版本号的旧文件按同一格式读取。新增键必须提供默认值，保留已有名称和类型，不要改变原有值的含义。破坏兼容的格式变化必须有明确迁移，并在替换前备份。

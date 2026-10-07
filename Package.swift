@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.0
 import PackageDescription
 
 // `MenoCore` holds the platform-independent logic (models, planning, matching)
@@ -12,7 +12,8 @@ var products: [Product] = [
 var targets: [Target] = [
     .target(
         name: "MenoCore",
-        path: "Sources/MenoCore"
+        path: "Sources/MenoCore",
+        swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
         name: "MenoCoreTests",
@@ -45,5 +46,6 @@ let package = Package(
     name: "Meno",
     platforms: [.macOS(.v14)],
     products: products,
-    targets: targets
+    targets: targets,
+    swiftLanguageModes: [.v5]
 )

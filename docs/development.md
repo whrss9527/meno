@@ -22,6 +22,12 @@ The default build is signed ad hoc. macOS ties privacy permissions to the signat
 
 You can also open `Package.swift` in Xcode to edit and debug. When Meno runs outside an app bundle, macOS attributes permissions to Xcode instead of Meno, so use `make run` to try permission-related features.
 
+### Strict concurrency
+
+The package requires Swift 6 (Xcode 16 or later). `MenoCore` uses Swift 6 language mode; the app and tests retain Swift 5 mode. `scripts/check-concurrency.sh` builds in a fresh temporary directory with complete concurrency checking, so cached builds cannot hide warnings. CI records the core and app warning counts in its job summary.
+
+The core must have zero warnings. The app baseline in `scripts/concurrency-baseline.json` records ten existing diagnostics at nine source locations, measured with Swift 6.3.3 / Xcode 26.6. Toolchains may report fewer; new locations, additional diagnostics at an existing location, or a larger total fail CI. Fixing warnings can reduce the baseline. When moving source lines, review the diagnostics before updating their recorded locations; do not raise the budget to make a change pass.
+
 ### Settings compatibility
 
 `settings.json` writes `schemaVersion: 1`; files without a version use the same schema. Add keys with defaults, keep existing names and types, and avoid repurposing values. A breaking schema needs an explicit migration and a backup before replacement.
