@@ -71,6 +71,10 @@ jobs:
       - name: Unit tests
         run: swift test
 
+      - name: Simultaneous launch arbitration
+        timeout-minutes: 3
+        run: scripts/check-single-instance.sh
+
       - name: Secure input gates
         timeout-minutes: 3
         run: scripts/check-secure-input.sh
