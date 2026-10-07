@@ -677,3 +677,6 @@
 "The release has no usable checksum. Meno cannot verify the download." = "此版本没有可用的校验值。Meno 无法验证下载文件。";
 
 "Paste the diagnostic report into your issue before sending it." = "提交问题反馈前，请把诊断报告粘贴进去。";
+
+"Settings from a newer Meno" = "来自新版 Meno 的设置";
+"This settings file uses a newer format. Some features may be unavailable. Unrecognized fields are kept when you save." = "此设置文件使用较新的格式。部分功能可能无法使用，保存时会保留不认识的字段。";

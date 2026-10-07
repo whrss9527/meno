@@ -12,6 +12,17 @@ struct SettingsRootView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     PaneHeader(pane: controller.pane)
+                    if model.settings.usesNewerSchema {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Settings from a newer Meno")
+                                .font(.headline)
+                            Text("This settings file uses a newer format. Some features may be unavailable. Unrecognized fields are kept when you save.")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(14)
+                        .menoGlassCard(cornerRadius: 14)
+                    }
                     content
                 }
                 .padding(.horizontal, 26)

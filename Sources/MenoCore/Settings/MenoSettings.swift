@@ -6,6 +6,18 @@ import Foundation
 /// files written by older versions (with missing keys) still load and fall
 /// back to the defaults declared here.
 public struct MenoSettings: Codable, Equatable, Sendable {
+    public static let currentSchemaVersion = 1
+    /// Retain a newer version number when saving from an older app.
+    public private(set) var schemaVersion = 1
+    public var usesNewerSchema: Bool { schemaVersion > Self.currentSchemaVersion }
+    private var preservedFields = SettingsPreservation()
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, general, reveal, appearance, shelf, zen, tint, spacing, hotkeys
+        case itemHotkeys, itemNames, itemSymbols, revealOnChange, markers, groups, temporaryPlacements
+        case scenes, rules, rulesPaused, onboardingCompleted
+    }
+
     public var general = GeneralSettings()
     public var reveal = RevealSettings()
     public var appearance = AppearanceSettings()
@@ -61,7 +73,12 @@ public struct MenoSettings: Codable, Equatable, Sendable {
 
     /// Decodes settings, filling in defaults for anything missing.
     public static func decode(from data: Data) throws -> MenoSettings {
-        try TolerantJSON.decode(MenoSettings.self, from: data, defaults: MenoSettings())
+        var settings = try TolerantJSON.decode(MenoSettings.self, from: data, defaults: MenoSettings(), mergeDisjointObjects: true)
+        let decoder = TolerantJSON.makeDecoder()
+        let original = try decoder.decode(SettingsJSON.self, from: data)
+        let known = try decoder.decode(SettingsJSON.self, from: TolerantJSON.makeEncoder().encode(settings))
+        settings.preservedFields = SettingsPreservation(original: original, known: known)
+        return settings
     }
 
     /// Why a file picked for importing settings was not imported.
@@ -92,7 +109,9 @@ public struct MenoSettings: Codable, Equatable, Sendable {
 
     /// Encodes settings as pretty-printed JSON with stable key order.
     public func encoded() throws -> Data {
-        try TolerantJSON.makeEncoder().encode(self)
+        let encoder = TolerantJSON.makeEncoder()
+        let known = try TolerantJSON.makeDecoder().decode(SettingsJSON.self, from: encoder.encode(self))
+        return try encoder.encode(preservedFields.merging(into: known))
     }
 }
 

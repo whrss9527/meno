@@ -21,28 +21,30 @@ public enum TolerantJSON {
         return decoder
     }
 
-    public static func decode<T: Codable>(_ type: T.Type, from data: Data, defaults: T) throws -> T {
+    /// Settings sections are structs even when they contain only future keys;
+    /// pass mergeDisjointObjects to keep their known defaults in that case.
+    public static func decode<T: Codable>(_ type: T.Type, from data: Data, defaults: T, mergeDisjointObjects: Bool = false) throws -> T {
         let defaultData = try makeEncoder().encode(defaults)
         let base = try JSONSerialization.jsonObject(with: defaultData, options: [.fragmentsAllowed])
         let stored = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
-        let merged = merge(base, stored)
+        let merged = merge(base, stored, mergeDisjointObjects: mergeDisjointObjects)
         let mergedData = try JSONSerialization.data(withJSONObject: merged, options: [.fragmentsAllowed])
         return try makeDecoder().decode(T.self, from: mergedData)
     }
 
-    static func merge(_ base: Any, _ override: Any) -> Any {
+    static func merge(_ base: Any, _ override: Any, mergeDisjointObjects: Bool = false) -> Any {
         guard let baseObject = base as? [String: Any], let overrideObject = override as? [String: Any] else {
             return override
         }
         let sharesKeys = !Set(baseObject.keys).isDisjoint(with: overrideObject.keys)
-        if !sharesKeys, !overrideObject.isEmpty, !baseObject.isEmpty {
+        if !mergeDisjointObjects, !sharesKeys, !overrideObject.isEmpty, !baseObject.isEmpty {
             // Probably a different enum case: take the stored value as is.
             return overrideObject
         }
         var result = baseObject
         for (key, value) in overrideObject {
             if let existing = baseObject[key] {
-                result[key] = merge(existing, value)
+                result[key] = merge(existing, value, mergeDisjointObjects: mergeDisjointObjects)
             } else {
                 result[key] = value
             }
