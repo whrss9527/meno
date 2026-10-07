@@ -16,36 +16,60 @@ struct SecureInputProbe {
             .sorted { $0.bounds.minX < $1.bounds.minX }
     }
 
+    static func describe(_ windows: [WindowCapture.WindowInfo]) -> String {
+        windows.map { "pid=\($0.pid) id=\($0.id) bounds=\($0.bounds) on_screen=\($0.isOnScreen)" }.joined(separator: "; ")
+    }
+
     static func swap(pids: Set<pid_t>, byWindow: Bool) async throws -> Bool {
-        var before = windows(for: pids)
-        for _ in 0..<30 where before.count != 2 {
+        // Wait for three matching snapshots, rather than the helper's early
+        // AppKit window frame (which can still be x=0 on macOS 26).
+        var before: [WindowCapture.WindowInfo] = []
+        var stable = 0
+        for _ in 0..<50 {
+            let current = windows(for: pids)
+            let unchanged = current.count == 2 && zip(current, before).allSatisfy {
+                $0.id == $1.id && $0.bounds == $1.bounds
+            } && before.count == 2
+            stable = unchanged ? stable + 1 : 0
+            before = current
+            if stable >= 3 { break }
             try await Task.sleep(nanoseconds: 100_000_000)
-            before = windows(for: pids)
         }
-        if before.count != 2 {
-            for info in WindowCapture.windowList(onScreenOnly: false) where pids.contains(info.pid) {
-                print("PROBE_WINDOW pid=\(info.pid) id=\(info.id) layer=\(info.layer) bounds=\(info.bounds)")
+        print("PROBE_WINDOW ready=\(stable >= 3) \(describe(before))")
+        fflush(stdout)
+        precondition(stable >= 3 && before.count == 2, "Both helper items must be visible and stable")
+        precondition(Set(before.map(\.id)).count == 2, "Helpers must resolve to distinct windows")
+        let sourceID = before[1].id, referenceID = before[0].id
+        // Match ItemMover: two window attempts, or three pointer attempts,
+        // progressively slower. Keep moving the same item and reference.
+        for attempt in 0..<(byWindow ? 2 : 3) {
+            let current = windows(for: pids)
+            guard let right = current.first(where: { $0.id == sourceID }),
+                  let left = current.first(where: { $0.id == referenceID }) else {
+                preconditionFailure("A helper window vanished before the probe")
             }
-            print("PROBE_WINDOW expected=2 found=\(before.count)")
+            let inset = min(left.bounds.width * 0.3, 7)
+            let x = byWindow ? left.bounds.minX : left.bounds.minX + inset - CGFloat(attempt) * 3
+            let end = CGPoint(x: x, y: left.bounds.midY)
+            let pace = 1 + Double(attempt) * 0.75
+            if byWindow {
+                await EventSynthesizer.commandDrag(window: right, to: end, target: left, pace: pace)
+            } else {
+                await EventSynthesizer.commandDrag(
+                    from: CGPoint(x: right.bounds.midX, y: right.bounds.midY), to: end, pace: pace
+                )
+            }
+            try await Task.sleep(nanoseconds: 700_000_000)
+            let after = windows(for: pids)
+            print("PROBE_WINDOW path=\(byWindow ? "window" : "pointer") attempt=\(attempt) before=\(describe(current)) after=\(describe(after))")
             fflush(stdout)
+            guard let moved = after.first(where: { $0.id == sourceID }),
+                  let reference = after.first(where: { $0.id == referenceID }) else {
+                preconditionFailure("A helper window vanished during the probe")
+            }
+            if moved.bounds.minX < reference.bounds.minX { return true }
         }
-        precondition(before.count == 2, "Both helper items must be visible")
-        let left = before[0], right = before[1]
-        let end = CGPoint(x: left.bounds.minX, y: left.bounds.midY)
-        if byWindow {
-            await EventSynthesizer.commandDrag(window: right, to: end, target: left)
-        } else {
-            await EventSynthesizer.commandDrag(
-                from: CGPoint(x: right.bounds.midX, y: right.bounds.midY), to: end
-            )
-        }
-        try await Task.sleep(nanoseconds: 700_000_000)
-        let after = windows(for: pids)
-        guard let moved = after.first(where: { $0.id == right.id }),
-              let reference = after.first(where: { $0.id == left.id }) else {
-            preconditionFailure("A helper window vanished during the probe")
-        }
-        return moved.bounds.minX < reference.bounds.minX
+        return false
     }
 
     static func main() async throws {
