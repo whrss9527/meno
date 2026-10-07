@@ -22,6 +22,21 @@ The default build is signed ad hoc. macOS ties privacy permissions to the signat
 
 You can also open `Package.swift` in Xcode to edit and debug. When Meno runs outside an app bundle, macOS attributes permissions to Xcode instead of Meno, so use `make run` to try permission-related features.
 
+### Distribution and App Sandbox
+
+Meno ships through Developer ID signing and Apple notarization. There is no Mac App Store edition: preserving the current full feature set is incompatible with a sandboxed build. Apple's [review guidelines §2.4.5](https://developer.apple.com/app-store/review/guidelines/#hardware-compatibility) require Mac App Store apps to be sandboxed and use the store for updates; [App Sandbox documentation](https://developer.apple.com/documentation/security/protecting-user-data-with-app-sandbox) describes its restrictions.
+
+The current implementation relies on:
+
+- Reading other apps' Accessibility trees in `MenuBarScanner.swift` and `AX.swift`.
+- Posting synthetic clicks and drags to other processes in `EventSynthesizer.swift`.
+- Looking up `CGWindowListCreateImage` with `dlsym` in `WindowCapture.swift` to capture off-screen windows. This is an unavailable former public API, not a private symbol.
+- Running `tccutil` to reset Accessibility authorization in `PermissionCenter.swift`.
+- Writing current-host global preferences and terminating or relaunching other processes in `SpacingController.swift`.
+- Replacing its own installed app bundle in `UpdateInstaller.swift`.
+
+These are current implementation dependencies, not a claim that every API listed is categorically private or forbidden in every sandboxed app. A store edition would require a separate reduced product and update path; adding a sandbox entitlement to this target does not preserve Meno's behavior.
+
 ### Strict concurrency
 
 The package requires Swift 6 (Xcode 16 or later). `MenoCore` uses Swift 6 language mode; the app and tests retain Swift 5 mode. `scripts/check-concurrency.sh` builds in a fresh temporary directory with complete concurrency checking, so cached builds cannot hide warnings. CI records the core and app warning counts in its job summary.
@@ -48,7 +63,7 @@ scripts            App bundling, icon generation, localization check
 
 - `scripts/check-single-instance.sh` starts two disposable bundles with the production single-instance arbitration. Both wait at a shared launch barrier, then exactly the lower-PID copy must survive after three seconds, repeated three times. It does not start menu-bar controllers or change user settings. CI runs it on both macOS versions.
 - `scripts/check-updating.sh` compiles a test entry point with the production updater and toast UI. Disposable ad hoc bundles and a unique preferences domain verify 0.0.1 → 0.0.2 installation, download cleanup, early-exit rollback and its visible notice, without starting menu-bar controllers or changing Meno settings. CI runs it on main and manual runs. `MENO_UPDATE_URL` can point at loopback release JSON; local archive URLs must use the same origin, and normal installer verification still applies.
-- `swift test` runs the MenoCore tests. CI runs them on Linux with Swift 5.10 as well as on both macOS runners. Linux also checks localizations. Internal branches run once per push; pull requests from forks run the same checks in this repository with read-only permissions. Inventory building, reveal counters and divider repair decisions are pure core logic; Accessibility payloads, timers and system effects stay in the app.
+- `swift test` runs the MenoCore tests. CI runs them on Linux with Swift 6 as well as on both macOS runners. Linux also checks localizations. Internal branches run once per push; pull requests from forks run the same checks in this repository with read-only permissions. Inventory building, reveal counters and divider repair decisions are pure core logic; Accessibility payloads, timers and system effects stay in the app.
 - `scripts/check-secure-input.sh` tests waiting and cancellation with real Secure Keyboard Entry, then measures the production window and pointer drag paths on two disposable helper items. It needs Accessibility and a test Mac without another secure-input holder; CI runs it on macOS 15 and 26.
 - `scripts/check-localization.py` lists user-facing strings and checks the translations in `Resources/*.lproj`.
 - `scripts/generate-icon.py` renders `Resources/AppIcon.icns` (needs Pillow and numpy).
