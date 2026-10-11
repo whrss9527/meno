@@ -1,4 +1,5 @@
 import AppKit
+import FritCore
 import Combine
 import MenoCore
 import SwiftUI

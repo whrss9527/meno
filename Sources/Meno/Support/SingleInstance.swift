@@ -1,4 +1,5 @@
 import AppKit
+import FritCore
 import MenoCore
 
 /// Keeps one copy of Meno running at a time. Two would each add their own

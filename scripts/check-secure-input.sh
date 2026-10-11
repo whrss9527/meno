@@ -28,7 +28,7 @@ if [[ "$(sw_vers -productVersion | cut -d. -f1)" -ge 27 ]]; then
 fi
 swift build --package-path "$ROOT" --target MenoCore > /dev/null
 BUILD="$(swift build --package-path "$ROOT" --show-bin-path)"
-swiftc -I "$BUILD/Modules" "$BUILD"/MenoCore.build/*.o \
+swiftc -I "$BUILD/Modules" "$BUILD"/MenoCore.build/*.o "$BUILD"/FritCore.build/*.o \
   "$ROOT/Sources/Meno/Support/AppInfo.swift" \
   "$ROOT/Sources/Meno/Accessibility/AX.swift" \
   "$ROOT/Sources/Meno/MenuBar/MenuBarScanner.swift" \

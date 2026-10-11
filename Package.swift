@@ -12,12 +12,13 @@ var products: [Product] = [
 var targets: [Target] = [
     .target(
         name: "MenoCore",
+        dependencies: [.product(name: "FritCore", package: "Frit")],
         path: "Sources/MenoCore",
         swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
         name: "MenoCoreTests",
-        dependencies: ["MenoCore"],
+        dependencies: ["MenoCore", .product(name: "FritCore", package: "Frit")],
         path: "Tests/MenoCoreTests"
     ),
 ]
@@ -27,7 +28,7 @@ products.append(.executable(name: "Meno", targets: ["Meno"]))
 targets.append(
     .executableTarget(
         name: "Meno",
-        dependencies: ["MenoCore"],
+        dependencies: ["MenoCore", .product(name: "FritCore", package: "Frit")],
         path: "Sources/Meno",
         linkerSettings: [
             .linkedFramework("AppKit"),
@@ -46,6 +47,9 @@ let package = Package(
     name: "Meno",
     platforms: [.macOS(.v14)],
     products: products,
+    dependencies: [
+        .package(url: "https://github.com/whrss9527/Frit", revision: "697eba13b7edc659d71e4a4b0d10b8a149390f25"),
+    ],
     targets: targets,
     swiftLanguageModes: [.v5]
 )

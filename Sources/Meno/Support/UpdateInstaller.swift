@@ -1,4 +1,5 @@
 import AppKit
+import FritCore
 import CoreServices
 import CryptoKit
 import MenoCore

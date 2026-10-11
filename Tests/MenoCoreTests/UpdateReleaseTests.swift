@@ -1,8 +1,27 @@
 import XCTest
+import FritCore
 @testable import MenoCore
 
 final class UpdateReleaseTests: XCTestCase {
     private let repository = "whrss9527/meno"
+
+    func testStableVersionKeepsThePersistedAnnouncementString() throws {
+        for tag in ["v0.12.12", "0.12.12", "0.12.12+build.7"] {
+            let release = UpdateRelease(tagName: tag, htmlURL: URL(string: "https://github.com/x")!)
+            // UpdateChecker persists this string in AnnouncedUpdateVersion.
+            XCTAssertEqual(try XCTUnwrap(release.version).description, "0.12.12")
+            XCTAssertEqual(release.version, AppVersion("0.12.12"))
+        }
+    }
+
+    func testReleaseVersionUsesFritPrereleaseOrdering() throws {
+        let release = UpdateRelease(tagName: "v1.0.0-beta.2", htmlURL: URL(string: "https://github.com/x")!, isPrerelease: true)
+        let version = try XCTUnwrap(release.version)
+        XCTAssertEqual(version.description, "1.0.0-beta.2")
+        XCTAssertLessThan(version, try XCTUnwrap(AppVersion("1.0.0-beta.10")))
+        XCTAssertLessThan(version, try XCTUnwrap(AppVersion("1.0.0")))
+        XCTAssertTrue(release.isPrerelease)
+    }
 
     func testChecksumSourcesAndFailure() throws {
         let hash = String(repeating: "a", count: 64)

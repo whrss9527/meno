@@ -52,7 +52,7 @@ files.append(root / 'scripts/helpers/UpdateDriver.swift')
 pathlib.Path(sys.argv[2]).write_text('\n'.join('"' + str(p) + '"' for p in files))
 PY
 swiftc -parse-as-library -module-name Meno -I "$BIN/Modules" \
-  @"$WORK/sources" "$BIN"/MenoCore.build/*.o \
+  @"$WORK/sources" "$BIN"/MenoCore.build/*.o "$BIN"/FritCore.build/*.o \
   -framework AppKit -framework ApplicationServices -framework Carbon \
   -framework CoreAudio -framework CoreMediaIO -framework IOKit \
   -framework ServiceManagement -o "$WORK/UpdateDriver"

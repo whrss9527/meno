@@ -1,4 +1,5 @@
 import Foundation
+import FritCore
 
 /// A release on GitHub, as far as updating Meno needs it.
 public struct UpdateRelease: Decodable, Equatable, Sendable {

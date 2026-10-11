@@ -14,7 +14,7 @@ swift build > "$WORK/build.log" 2>&1
 BIN="$(swift build --show-bin-path)"
 swiftc -parse-as-library -I "$BIN/Modules" \
   Sources/Meno/Support/{AppInfo,Log,SingleInstance}.swift \
-  scripts/helpers/SingleInstanceDriver.swift "$BIN"/MenoCore.build/*.o \
+  scripts/helpers/SingleInstanceDriver.swift "$BIN"/MenoCore.build/*.o "$BIN"/FritCore.build/*.o \
   -framework AppKit -o "$WORK/Driver"
 for iteration in 1 2 3; do
   SCENE="$WORK/$iteration"

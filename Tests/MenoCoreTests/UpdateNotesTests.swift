@@ -1,4 +1,5 @@
 import XCTest
+import FritCore
 @testable import MenoCore
 
 final class UpdateNotesTests: XCTestCase {
@@ -97,6 +98,18 @@ final class UpdateNotesTests: XCTestCase {
         XCTAssertEqual(notes.versions.map(\.version.description), ["0.12.2"])
         XCTAssertEqual(notes.versions.first?.blocks, [.heading("New"), .item("One thing.")])
         XCTAssertFalse(notes.isComplete)
+    }
+
+    func testPrereleaseOfTheLatestVersionStaysOutOfNotes() throws {
+        let latest = release("v1.0.0")
+        let notes = UpdateNotes(
+            current: try XCTUnwrap(AppVersion("0.12.12")),
+            latest: latest,
+            releases: [latest, release("v1.0.0-beta.2", prerelease: true), release("v0.12.12")],
+            chinese: false
+        )
+        XCTAssertEqual(notes.versions.map(\.version.description), ["1.0.0"])
+        XCTAssertTrue(notes.isComplete)
     }
 
     func testSaysWhenTheListDoesNotReachTheRunningVersion() throws {
