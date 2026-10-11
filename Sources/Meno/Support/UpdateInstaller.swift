@@ -1,5 +1,5 @@
 import AppKit
-import FritCore
+import struct FritCore.AppVersion
 import CoreServices
 import CryptoKit
 import MenoCore

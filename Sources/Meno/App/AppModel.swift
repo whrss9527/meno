@@ -1,5 +1,5 @@
 import AppKit
-import FritCore
+import struct FritCore.AppVersion
 import Combine
 import MenoCore
 import SwiftUI
