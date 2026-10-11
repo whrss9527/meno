@@ -1,4 +1,5 @@
 import Foundation
+import FritCore
 
 /// What changed in every version after the running one, up to a newer
 /// release, taken from the notes of the releases on GitHub.

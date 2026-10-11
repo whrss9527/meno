@@ -1,0 +1,14 @@
+{
+  "originHash" : "529441b6b2167f703230e2d06d18f9326afa5cf5a494f88654baedd67ac2f44c",
+  "pins" : [
+    {
+      "identity" : "frit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/whrss9527/Frit",
+      "state" : {
+        "revision" : "697eba13b7edc659d71e4a4b0d10b8a149390f25"
+      }
+    }
+  ],
+  "version" : 3
+}
