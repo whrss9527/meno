@@ -1,5 +1,5 @@
 import AppKit
-import FritCore
+import struct FritCore.AppVersion
 import MenoCore
 
 /// Looks for a newer release on GitHub and installs it when asked. Meno only

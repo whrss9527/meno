@@ -1,5 +1,5 @@
 import XCTest
-import FritCore
+import struct FritCore.AppVersion
 @testable import MenoCore
 
 final class UpdateReleaseTests: XCTestCase {

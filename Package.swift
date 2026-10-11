@@ -48,7 +48,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: products,
     dependencies: [
-        .package(url: "https://github.com/whrss9527/Frit", revision: "697eba13b7edc659d71e4a4b0d10b8a149390f25"),
+        .package(url: "https://github.com/whrss9527/Frit", revision: "821a4aee0b53d0018134543b3acf29db872cebef"),
     ],
     targets: targets,
     swiftLanguageModes: [.v5]
