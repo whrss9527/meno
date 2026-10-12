@@ -1,1 +1,13 @@
 /* English is the development language: the keys in the source code are the English strings. */
+
+// Widgets
+"Apply a scene, show or hide icons, or turn Zen on and off." = "Apply a scene, show or hide icons, or turn Zen on and off.";
+"Configure scenes" = "Configure scenes";
+"First scene name" = "First scene name";
+"Second scene name" = "Second scene name";
+"Hide icons" = "Hide icons";
+"Show icons" = "Show icons";
+"Menu bar actions" = "Menu bar actions";
+"Zen off" = "Zen off";
+"Zen on" = "Zen on";
+"Meno" = "Meno";

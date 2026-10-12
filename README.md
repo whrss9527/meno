@@ -37,6 +37,8 @@ And **Meno** is just one letter away from **Menu** — a little less, just right
 
 ## Install
 
+On macOS 14 and later, a [menu bar widget](docs/widgets.md) offers scene shortcuts, Show/Hide and explicit Zen on/off actions from the desktop or Notification Center.
+
 Meno runs on macOS 14 Sonoma or later, on Apple silicon and Intel.
 
 With [Homebrew](https://brew.sh):

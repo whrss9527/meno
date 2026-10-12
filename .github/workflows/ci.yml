@@ -86,6 +86,8 @@ jobs:
 
       - name: Build app bundle
         run: make zip
+      - name: Widget embedding and registration
+        run: bash scripts/check-widget-bundle.sh build/Meno.app
 
       # Leaves the app alone for a minute twice, as set up and with other
       # apps' items, hover and a rule; measured for main and runs by hand,

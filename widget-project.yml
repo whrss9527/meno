@@ -1,0 +1,39 @@
+name: MenoWidgets
+options:
+  minimumXcodeGenVersion: 2.44.1
+  deploymentTarget:
+    macOS: '14.0'
+  developmentLanguage: en
+packages:
+  MenoPackage:
+    path: .
+targets:
+  MenoWidgets:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Widgets/MenoWidgets.swift
+      - path: Resources/en.lproj
+        buildPhase: resources
+      - path: Resources/zh-Hans.lproj
+        buildPhase: resources
+      - path: Resources/zh-Hant.lproj
+        buildPhase: resources
+    dependencies:
+      - package: MenoPackage
+        product: MenoCore
+    settings:
+      base:
+        SWIFT_VERSION: '5.0'
+        MACOSX_DEPLOYMENT_TARGET: '14.0'
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.meno.widgets
+        INFOPLIST_FILE: Widgets/Info.plist
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+schemes:
+  MenoWidgets:
+    build:
+      targets:
+        MenoWidgets: all

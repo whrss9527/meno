@@ -16,6 +16,7 @@ LITERAL = r'"((?:[^"\\\n]|\\.)*)"'
 CALLS = [
     "String(localized:", "Text(", "Button(", "Toggle(", "Label(", "TextField(", "Menu(",
     "SettingsCard(", "SettingRow(", "ToggleRow(", "SliderRow(", "Link(", ".alert(",
+    "action(", ".configurationDisplayName(", ".description(",
     ".confirmationDialog(", "Picker(", "ColorPicker(",
 ]
 # Labelled arguments that take a LocalizedStringKey.
@@ -65,7 +66,7 @@ def to_key(literal):
 
 def extract():
     keys = {}
-    for path in sorted(SOURCES.rglob("*.swift")):
+    for path in sorted([*SOURCES.rglob("*.swift"), *(ROOT / "Widgets").rglob("*.swift")]):
         source = path.read_text()
         spots = []
         for call in CALLS:
