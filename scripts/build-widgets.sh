@@ -16,6 +16,7 @@ if [[ ! -x "$GENERATOR" ]]; then
   ditto -x -k "$WORK/xcodegen.zip" "$TOOLS"
 fi
 [[ "$($GENERATOR --version)" == "Version: $XCODEGEN_VERSION" ]]
+mkdir -p .build/widget-project
 "$GENERATOR" generate --spec widget-project.yml --project .build/widget-project
 ARCH_FLAGS=(ONLY_ACTIVE_ARCH=YES)
 if [[ "${UNIVERSAL:-0}" == "1" ]]; then
