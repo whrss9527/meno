@@ -39,6 +39,8 @@
 
 需要 macOS 14 Sonoma 或更高版本，Apple 芯片和 Intel 都支持。
 
+macOS 14 起可添加[菜单栏小组件](docs/widgets.zh-CN.md)，从桌面或通知中心应用场景、显示或隐藏图标、开启或关闭禅模式。
+
 用 [Homebrew](https://brew.sh) 安装：
 
 ```sh

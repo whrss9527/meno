@@ -680,3 +680,15 @@
 
 "Settings from a newer Meno" = "来自新版 Meno 的设置";
 "This settings file uses a newer format. Some features may be unavailable. Unrecognized fields are kept when you save." = "此设置文件使用较新的格式。部分功能可能无法使用，保存时会保留不认识的字段。";
+
+// Widgets
+"Apply a scene, show or hide icons, or turn Zen on and off." = "应用场景、显示或隐藏图标，或开启和关闭禅模式。";
+"Configure scenes" = "设置场景";
+"First scene name" = "第一个场景名称";
+"Second scene name" = "第二个场景名称";
+"Hide icons" = "隐藏图标";
+"Show icons" = "显示图标";
+"Menu bar actions" = "菜单栏快捷操作";
+"Zen off" = "关闭禅模式";
+"Zen on" = "开启禅模式";
+"Meno" = "Meno";

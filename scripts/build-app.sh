@@ -44,6 +44,9 @@ for lproj in "$ROOT"/Resources/*.lproj; do
 done
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
+APP="$APP" VERSION="$VERSION" BUILD_NUMBER="$BUILD_NUMBER" SIGN_IDENTITY="$SIGN_IDENTITY" \
+  bash scripts/build-widgets.sh
+
 echo "==> Signing with identity: $SIGN_IDENTITY"
 if [[ "$SIGN_IDENTITY" == "-" ]]; then
   codesign --force --options runtime --timestamp=none --sign - "$APP"
@@ -54,6 +57,6 @@ else
   fi
   codesign --force --options runtime --timestamp ${keychain_args[@]+"${keychain_args[@]}"} --sign "$SIGN_IDENTITY" "$APP"
 fi
-codesign --verify --strict "$APP"
+codesign --verify --deep --strict "$APP"
 
 echo "==> Done: $APP"
