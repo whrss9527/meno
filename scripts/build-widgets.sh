@@ -16,13 +16,12 @@ if [[ ! -x "$GENERATOR" ]]; then
   ditto -x -k "$WORK/xcodegen.zip" "$TOOLS"
 fi
 [[ "$($GENERATOR --version)" == "Version: $XCODEGEN_VERSION" ]]
-mkdir -p .build/widget-project
-"$GENERATOR" generate --spec widget-project.yml --project .build/widget-project
+"$GENERATOR" generate --spec widget-project.yml
 ARCH_FLAGS=(ONLY_ACTIVE_ARCH=YES)
 if [[ "${UNIVERSAL:-0}" == "1" ]]; then
   ARCH_FLAGS=("ARCHS=arm64 x86_64" ONLY_ACTIVE_ARCH=NO)
 fi
-xcodebuild build -project .build/widget-project/MenoWidgets.xcodeproj -scheme MenoWidgets \
+xcodebuild build -project MenoWidgets.xcodeproj -scheme MenoWidgets \
   -configuration Release -derivedDataPath .build/widgets CODE_SIGNING_ALLOWED=NO \
   "MARKETING_VERSION=$VERSION" "CURRENT_PROJECT_VERSION=$BUILD_NUMBER" "${ARCH_FLAGS[@]}"
 mkdir -p "$APP/Contents/PlugIns"
