@@ -65,9 +65,10 @@ private enum ImageCacheDriver {
         await removesItemsDuringCaptureWithoutThrottlingSurvivors()
         await rejectsResultsFromAnEarlierLifetime()
         await oldFullCaptureCannotClearANewBatch()
+        await cancelledFullCaptureDoesNotDelayRenewal()
         await cleansFailedAttemptsAndKeepsRetryThrottle()
         await reusesCompletedCapturesForThirtySeconds()
-        print("Image-cache lifecycle: 7 production-cache checks passed")
+        print("Image-cache lifecycle: 8 production-cache checks passed")
     }
 
     @MainActor
@@ -182,6 +183,26 @@ private enum ImageCacheDriver {
         require(backend.calls == 2, "An old result cleared the newer full batch")
         await backend.finish(2, images: [b.key: image()])
         require(Set(cache.captured.keys) == [b.key], "The new full batch did not complete")
+    }
+
+    @MainActor
+    private static func cancelledFullCaptureDoesNotDelayRenewal() async {
+        let (cache, backend, clock) = fixture()
+        let a = item("a"), b = item("b")
+        cache.refresh(for: [a, b], captureAllowed: true, renew: true)
+        await backend.waitForCall(1)
+        await backend.finish(1, images: [a.key: image(), b.key: image()])
+        clock.date.addTimeInterval(30)
+        cache.refresh(for: [a, b], captureAllowed: true, renew: true)
+        await backend.waitForCall(2)
+        cache.refresh(for: [b], captureAllowed: true)
+        cache.refresh(for: [b], captureAllowed: true, renew: true)
+        await backend.waitForCall(3)
+        await backend.finish(3, images: [b.key: image(red: 0)])
+        let renewedImage = cache.captured[b.key]
+        await backend.finish(2, images: [a.key: image(), b.key: image()])
+        require(Set(cache.captured.keys) == [b.key] && cache.captured[b.key] === renewedImage,
+                "Cancelled full capture delayed or replaced the next renewal")
     }
 
     @MainActor
