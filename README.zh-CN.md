@@ -69,6 +69,8 @@ brew install --cask whrss9527/tap/meno
 - [开发指南](docs/development.zh-CN.md)：构建运行、项目结构、测试与发布
 - [更新日志](https://github.com/whrss9527/meno/releases)
 
+CI 会在 Linux 和 macOS 15/26 上检查每个 PR，main 推送也会运行。还没有 PR 的分支需要验证时，在 CI 工作流中选择 **Run workflow**。
+
 ## 支持
 
 Meno 免费开源。觉得好用的话，点个 ⭐ Star 就是很大的鼓励；也可以微信扫一扫请我喝杯咖啡。

@@ -69,6 +69,8 @@ Releases from 0.10.0 on are signed with a Developer ID and notarized, so they op
 - [Development](docs/development.md): building, project layout, tests and releases
 - [Release notes](https://github.com/whrss9527/meno/releases)
 
+CI checks every pull request on Linux and macOS 15/26. Main pushes also run CI; use the CI workflow's **Run workflow** action to validate a branch before opening a pull request.
+
 ## Support
 
 Meno is free and open source. If you like it, a ⭐ star means a lot, or you can buy me a coffee with WeChat.
