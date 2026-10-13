@@ -7,7 +7,7 @@
 
 ## 构建和测试
 
-见 [docs/development.md](docs/development.md)：构建、运行、测试、端到端脚本和发版都在那里。提交前至少跑 `swift test` 和 `python3 scripts/check-localization.py`。不在 Mac 上时以 CI 为准：每次推送（任何分支）都会在 macOS 15 和 26 上编译、跑单元测试和端到端脚本。
+见 [docs/development.md](docs/development.md)：构建、运行、测试、端到端脚本和发版都在那里。提交前至少跑 `swift test` 和 `python3 scripts/check-localization.py`。不在 Mac 上时以 CI 为准：main 推送和所有 PR 都会在 macOS 15 和 26 上编译、跑单元测试和端到端脚本。还没有 PR 的分支需要验证时，显式运行 CI 的 `workflow_dispatch`；手动运行与 PR 使用不同并发组，不会取消 PR 的必要检查。
 
 ## 本仓库的约定
 
