@@ -1,10 +1,10 @@
 name: CI
 
-# Internal branches run once on push. External forks also run on pull_request
-# in this repository, with read-only permissions and no release credentials.
+# Pull requests, including forks, run the real required checks with read-only
+# permissions. Main pushes and explicit branch dispatches also run full checks.
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -21,13 +21,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # A branch dispatch must not cancel a PR's required check suite. New commits
+  # still replace obsolete runs of the same PR, main push or branch dispatch.
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   core:
     name: Linux core tests
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     timeout-minutes: 10
     runs-on: ubuntu-latest
     container: swift:6.0-noble
@@ -45,7 +46,6 @@ jobs:
 
   build:
     name: macOS ${{ matrix.name }}
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -89,7 +89,7 @@ jobs:
 
       # Leaves the app alone for a minute twice, as set up and with other
       # apps' items, hover and a rule; measured for main and runs by hand,
-      # not for every push to a branch. Fails above the limits in the script.
+      # not for every PR update. Fails above the limits in the script.
       - name: Scan baseline without gating
         if: github.event_name == 'workflow_dispatch' && inputs.compare_scans
         timeout-minutes: 8
