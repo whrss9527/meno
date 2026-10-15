@@ -27,6 +27,13 @@ private final class Observations: @unchecked Sendable {
     }
 }
 
+private final class ObservationHistory: @unchecked Sendable {
+    private let lock = NSLock()
+    private var history: [[String: CommandChecks.Observation]] = []
+    func record(_ state: [String: CommandChecks.Observation]) { lock.lock(); history.append(state); lock.unlock() }
+    var states: [[String: CommandChecks.Observation]] { lock.lock(); defer { lock.unlock() }; return history }
+}
+
 @main
 private enum CommandChecksDriver {
     private static func wait(_ message: String, timeout: TimeInterval = 3,
@@ -62,12 +69,15 @@ private enum CommandChecksDriver {
         try await replacementStartsWithoutWaitingForTheOldRound(root)
         try await queuedResultsCheckTheirRevisionAtDelivery()
         try await ordinaryStatusAndFiveSecondTimeoutRemain()
-        print("Command checks: 4 production lifecycle checks passed")
+        try await slowCommandsRotateAcrossBoundedRounds(root)
+        try await roundCutoffDoesNotInventFailure(root)
+        try observationFreshnessHasAContinuousDeadline()
+        print("Command checks: 7 production lifecycle/budget checks passed")
     }
 
     private static func pauseStopsTheCurrentGroupAndRemainingNine(_ root: URL) async throws {
         let observed = Observations()
-        let checks = CommandChecks { observed.record($0) }
+        let checks = CommandChecks { observed.record(Set($0.filter { $0.value.succeeded }.keys)) }
         defer { checks.watch([]) }
         let commands = Set((0..<10).map { slowCommand(root, $0) })
         checks.watch(commands)
@@ -95,7 +105,7 @@ private enum CommandChecksDriver {
 
     private static func replacementStartsWithoutWaitingForTheOldRound(_ root: URL) async throws {
         let observed = Observations()
-        let checks = CommandChecks { observed.record($0) }
+        let checks = CommandChecks { observed.record(Set($0.filter { $0.value.succeeded }.keys)) }
         defer { checks.watch([]) }
         checks.watch([slowCommand(root, 10)])
         try await wait("Replacement fixture did not start") { heartbeat(root.appendingPathComponent("beat-10")) > 0 }
@@ -108,7 +118,7 @@ private enum CommandChecksDriver {
 
     private static func queuedResultsCheckTheirRevisionAtDelivery() async throws {
         let observed = Observations()
-        let checks = CommandChecks(deliver: { observed.enqueue($0) }, onChange: { observed.record($0) })
+        let checks = CommandChecks(deliver: { observed.enqueue($0) }, onChange: { observed.record(Set($0.filter { $0.value.succeeded }.keys)) })
         defer { checks.watch([]) }
         checks.watch(["true"])
         try await wait("Success was not queued") { observed.pending >= 2 }
@@ -132,4 +142,49 @@ private enum CommandChecksDriver {
         let elapsed = start.duration(to: .now)
         try require(elapsed >= .seconds(5) && elapsed < .seconds(7), "The five-second command budget changed")
     }
+    private static func slowCommandsRotateAcrossBoundedRounds(_ root: URL) async throws {
+        let history = ObservationHistory()
+        let checks = CommandChecks(timing: .init(interval: 0.35, commandTimeout: 0.25, roundBudget: 0.25),
+                                   deliver: { $0() }, onChange: { history.record($0) })
+        defer { checks.watch([]) }
+        let commands = Set((0..<10).map { index in
+            ": \(String(format: "%02d", index)); echo $$ > " + quote(root.appendingPathComponent("budget-\(index)").path) + "; exec /bin/sleep 30"
+        })
+        checks.watch(commands)
+        try await wait("Slow commands starved behind an earlier round", timeout: 6) { history.states.last?.count == 10 }
+        let partial = history.states.filter { !$0.isEmpty && $0.count < 10 }
+        try require(partial.count >= 9, "Commands were not reported in bounded partial rounds")
+        try require(history.states.last?.values.allSatisfy { !$0.succeeded } == true, "A normal per-command timeout was not observed as failure")
+        for index in 0..<10 {
+            let parent = try pid(root.appendingPathComponent("budget-\(index)"))
+            try require(kill(parent, 0) == -1 && errno == ESRCH, "A budgeted command survived its completed timeout")
+        }
+    }
+
+    private static func roundCutoffDoesNotInventFailure(_ root: URL) async throws {
+        let history = ObservationHistory()
+        let release = root.appendingPathComponent("budget-release")
+        let first = ": a; true"
+        let second = ": b; while [ ! -f " + quote(release.path) + " ]; do /bin/sleep 0.02; done"
+        let checks = CommandChecks(timing: .init(interval: 0.6, commandTimeout: 0.4, roundBudget: 0.4),
+                                   deliver: { $0() }, onChange: { history.record($0) })
+        defer { checks.watch([]) }
+        checks.watch([first, second])
+        try await wait("The partial round did not report its completed command", timeout: 2) {
+            history.states.contains { $0[first]?.succeeded == true && $0[second] == nil }
+        }
+        try Data().write(to: release)
+        try await wait("A cut-off command did not get the next full slot", timeout: 2) { history.states.last?[second]?.succeeded == true }
+        try require(history.states.allSatisfy { $0[second]?.succeeded != false }, "Round exhaustion was published as a command failure")
+    }
+
+    private static func observationFreshnessHasAContinuousDeadline() throws {
+        let start = ContinuousClock.now
+        let value = CommandChecks.Observation(succeeded: true, observedAt: start)
+        try require(value.isFresh(at: start), "New observation was stale")
+        try require(value.isFresh(at: start.advanced(by: .seconds(59))), "Observation expired too soon")
+        try require(!value.isFresh(at: start.advanced(by: .seconds(60))), "Expired observation remained known")
+        try require(!value.isFresh(at: start.advanced(by: .seconds(-1))), "A future observation was trusted")
+    }
+
 }

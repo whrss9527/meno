@@ -34,6 +34,7 @@ final class AutomationController: ObservableObject {
     }
     /// The commands of rule conditions that succeeded when they last ran.
     private(set) var succeededCommands: Set<String> = []
+    private var commandObservations: [String: CommandChecks.Observation] = [:]
     /// The routers of the networks the Mac is on, while a rule depends on them.
     private(set) var routers: Set<String> = []
     /// The interface each of those networks is on.
@@ -49,10 +50,10 @@ final class AutomationController: ObservableObject {
     /// a network briefly drops out, for example while Wi-Fi reconnects
     /// after sleep, and rules should not flip meanwhile.
     private static let routerGrace: TimeInterval = 20
-    private lazy var commandChecks = CommandChecks { [weak self] succeeded in
+    private lazy var commandChecks = CommandChecks { [weak self] observations in
         MainActor.assumeIsolated {
             guard let self else { return }
-            self.succeededCommands = succeeded
+            self.commandObservations = observations
             self.evaluate()
         }
     }
@@ -154,7 +155,10 @@ final class AutomationController: ObservableObject {
             }
         }
         watchCaptureActivity()
-        commandChecks.watch(model.settings.effectiveRules.commands)
+        if commandChecks.watch(model.settings.effectiveRules.commands) {
+            commandObservations = [:]
+            succeededCommands = []
+        }
         evaluate()
     }
 
@@ -176,7 +180,10 @@ final class AutomationController: ObservableObject {
             }
         }
         watchCaptureActivity()
-        commandChecks.watch(model.settings.effectiveRules.commands)
+        if commandChecks.watch(model.settings.effectiveRules.commands) {
+            commandObservations = [:]
+            succeededCommands = []
+        }
         refreshRouters()
         evaluate()
     }
@@ -291,7 +298,8 @@ final class AutomationController: ObservableObject {
         case .microphoneInUse, .cameraInUse:
             guard rules.filter(\.isEnabled).flatMap(\.conditions).contains(condition) else { return nil }
         case .commandSucceeds:
-            guard let command = condition.command, rules.commands.contains(command) else { return nil }
+            guard let command = condition.command, rules.commands.contains(command),
+                  commandObservations[command]?.isFresh(at: .now) == true else { return nil }
         case .network(let router, _):
             guard !router.isEmpty, rules.watchesNetworks else { return nil }
         default:
@@ -302,10 +310,14 @@ final class AutomationController: ObservableObject {
 
     func evaluate() {
         guard isStarted else { return }
+        let instant = ContinuousClock.now
+        let fresh = commandObservations.filter { $0.value.isFresh(at: instant) }
+        succeededCommands = Set(fresh.filter { $0.value.succeeded }.keys)
         let current = SystemSignals.snapshot(
             isOnline: isOnline,
             capture: capture,
             succeededCommands: succeededCommands,
+            knownCommands: Set(fresh.keys),
             routers: routers,
             menuBarScreen: model.statusBar.screen
         )

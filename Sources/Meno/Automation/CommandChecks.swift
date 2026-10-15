@@ -46,35 +46,54 @@ final class CommandChecks: @unchecked Sendable {
     /// Seconds a command may take.
     static let timeout: TimeInterval = 5
 
+    struct Timing: Sendable {
+        var interval: TimeInterval = CommandChecks.interval
+        var commandTimeout: TimeInterval = CommandChecks.timeout
+        var roundBudget: TimeInterval = 5
+    }
+    struct Observation: Equatable, Sendable {
+        let succeeded: Bool
+        let observedAt: ContinuousClock.Instant
+        static let lifetime: Duration = .seconds(60)
+        func isFresh(at time: ContinuousClock.Instant) -> Bool {
+            time >= observedAt && observedAt.duration(to: time) < Self.lifetime
+        }
+    }
+    private enum Outcome { case completed(Bool), budgetExpired, cancelled }
+    private let timing: Timing
     private let queue = DispatchQueue(label: "\(AppInfo.bundleIdentifier).commands", qos: .utility)
-    private let onChange: @Sendable (Set<String>) -> Void
+    private let onChange: @Sendable ([String: Observation]) -> Void
     private let deliver: @Sendable (@escaping @Sendable () -> Void) -> Void
     private let request = CommandCheckRequest()
 
     // Only used on `queue`.
     private var commands: Set<String> = []
-    private var succeeded: Set<String> = []
+    private var observations: [String: Observation] = [:]
+    private var nextCommand = 0
     private var timer: DispatchSourceTimer?
     private var revision: UInt64 = 0
     private var reportedRevision: UInt64?
 
-    /// `onChange` runs on the main queue with the commands that succeed.
-    init(deliver: @escaping @Sendable (@escaping @Sendable () -> Void) -> Void = {
+    /// `onChange` delivers completed observations; consumers check their monotonic age.
+    init(timing: Timing = Timing(), deliver: @escaping @Sendable (@escaping @Sendable () -> Void) -> Void = {
         DispatchQueue.main.async(execute: $0)
-    }, onChange: @escaping @Sendable (Set<String>) -> Void) {
+    }, onChange: @escaping @Sendable ([String: Observation]) -> Void) {
+        self.timing = timing
         self.deliver = deliver
         self.onChange = onChange
     }
 
     /// Starts running these commands, or stops when there are none.
-    func watch(_ commands: Set<String>) {
-        guard let snapshot = request.replace(commands) else { return }
+    @discardableResult
+    func watch(_ commands: Set<String>) -> Bool {
+        guard let snapshot = request.replace(commands) else { return false }
         queue.async { [self] in
             guard request.isCurrent(snapshot.revision) else { return }
             self.commands = snapshot.commands
+            nextCommand = 0
             revision = snapshot.revision
             // A changed request needs fresh results, including after A → off → A.
-            report([], revision: snapshot.revision)
+            report([:], revision: snapshot.revision)
             if snapshot.commands.isEmpty {
                 timer?.cancel()
                 timer = nil
@@ -82,32 +101,49 @@ final class CommandChecks: @unchecked Sendable {
             }
             if timer == nil {
                 let timer = DispatchSource.makeTimerSource(queue: queue)
-                timer.schedule(deadline: .now() + Self.interval, repeating: Self.interval, leeway: .seconds(2))
+                timer.schedule(deadline: .now() + timing.interval, repeating: timing.interval,
+                               leeway: .milliseconds(Int(min(timing.interval / 5, 2) * 1_000)))
                 timer.setEventHandler { [weak self] in self?.runAll() }
                 timer.resume()
                 self.timer = timer
             }
             runAll()
         }
+        return true
     }
 
     private func runAll() {
         let revision = self.revision
-        guard request.isCurrent(revision) else { return }
-        var result: Set<String> = []
-        for command in commands.sorted() {
+        guard request.isCurrent(revision), !commands.isEmpty else { return }
+        let ordered = commands.sorted()
+        let deadline = ProcessInfo.processInfo.systemUptime + timing.roundBudget
+        for index in ordered.indices {
             guard request.isCurrent(revision) else { return }
-            if Self.succeeds(command, isCurrent: { [request] in request.isCurrent(revision) }) {
-                result.insert(command)
+            guard ProcessInfo.processInfo.systemUptime < deadline else { break }
+            let command = ordered[nextCommand % ordered.count]
+            // The first command owns the full round slot, including spawn time.
+            // Later commands cut short by the round get another full slot next time.
+            let result = Self.run(command, timeout: timing.commandTimeout, roundDeadline: deadline,
+                                  fullSlot: index == 0 && timing.roundBudget >= timing.commandTimeout,
+                                  isCurrent: { [request] in request.isCurrent(revision) })
+            guard request.isCurrent(revision) else { return }
+            switch result {
+            case .completed(let succeeded):
+                observations[command] = Observation(succeeded: succeeded, observedAt: .now)
+                nextCommand = (nextCommand + 1) % ordered.count
+            case .budgetExpired:
+                // Retry this command with a full slot next time; no invented failure.
+                report(observations, revision: revision)
+                return
+            case .cancelled: return
             }
         }
-        guard request.isCurrent(revision) else { return }
-        report(result, revision: revision)
+        report(observations, revision: revision)
     }
 
-    private func report(_ result: Set<String>, revision: UInt64) {
-        guard result != succeeded || reportedRevision != revision else { return }
-        succeeded = result
+    private func report(_ result: [String: Observation], revision: UInt64) {
+        guard result != observations || reportedRevision != revision || !result.isEmpty else { return }
+        observations = result
         reportedRevision = revision
         deliver { [request, onChange] in
             guard request.isCurrent(revision) else { return }
@@ -126,35 +162,41 @@ final class CommandChecks: @unchecked Sendable {
 
     /// Runs a command and tells whether it exited with status 0 in time.
     static func succeeds(_ command: String) -> Bool {
-        succeeds(command, isCurrent: { true })
+        if case .completed(true) = run(command, timeout: timeout, roundDeadline: .infinity, isCurrent: { true }) { return true }
+        return false
     }
 
-    private static func succeeds(_ command: String, isCurrent: () -> Bool) -> Bool {
-        guard isCurrent(), !command.utf8.contains(0),
-              !command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+    private static func run(_ command: String, timeout: TimeInterval, roundDeadline: TimeInterval, fullSlot: Bool = false,
+                            isCurrent: () -> Bool) -> Outcome {
+        guard isCurrent() else { return .cancelled }
+        guard !command.utf8.contains(0), !command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .completed(false) }
+        guard ProcessInfo.processInfo.systemUptime < roundDeadline else { return .budgetExpired }
         #if os(macOS)
         let shell = "/bin/zsh"
         #else
         let shell = "/bin/sh"
         #endif
-        guard let pid = spawn([shell, "-c", command]) else { return false }
-        let started = DispatchTime.now().uptimeNanoseconds
+        let started = ProcessInfo.processInfo.systemUptime
+        let commandDeadline = started + timeout
+        guard let pid = spawn([shell, "-c", command]) else { return .completed(false) }
         var status: Int32 = 0
         while true {
-            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - started) / 1_000_000_000
-            if !isCurrent() || elapsed >= timeout {
+            let current = isCurrent()
+            let now = ProcessInfo.processInfo.systemUptime
+            if !current || now >= min(commandDeadline, roundDeadline) {
                 // Only this worker owns and reaps pid. It cannot have been
                 // reused before signaling its independently spawned group.
                 kill(-pid, SIGKILL)
                 while waitpid(pid, &status, 0) == -1, errno == EINTR {}
-                return false
+                if !current { return .cancelled }
+                return roundDeadline < commandDeadline && !fullSlot ? .budgetExpired : .completed(false)
             }
             let result = waitpid(pid, &status, WNOHANG)
             if result == pid {
-                return status == 0
+                return .completed(status == 0)
             }
             if result == -1, errno != EINTR {
-                return false
+                return .completed(false)
             }
             usleep(20_000)
         }

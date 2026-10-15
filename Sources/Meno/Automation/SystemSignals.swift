@@ -9,6 +9,7 @@ enum SystemSignals {
         isOnline: Bool,
         capture: CaptureActivity.State,
         succeededCommands: Set<String>,
+        knownCommands: Set<String>,
         routers: Set<String>,
         menuBarScreen: NSScreen?
     ) -> RuleContext {
@@ -33,6 +34,7 @@ enum SystemSignals {
             microphoneInUse: capture.microphone,
             cameraInUse: capture.camera,
             succeededCommands: succeededCommands,
+            knownCommands: knownCommands,
             routers: routers
         )
     }
