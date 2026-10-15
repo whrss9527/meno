@@ -55,7 +55,7 @@ def configure(output):
     print(target.resolve())
 
 
-def extract(app, binary_directory, work, universal):
+def extract(app, work, configuration, universal):
     binary = app / "Contents/MacOS/Meno"
     architectures = subprocess.check_output(["lipo", "-archs", str(binary)], text=True, timeout=30).split()
     if not set(architectures) <= {"arm64", "x86_64"} or not architectures:
@@ -68,12 +68,12 @@ def extract(app, binary_directory, work, universal):
     developer = subprocess.check_output(["xcode-select", "-p"], text=True, timeout=30).strip()
     xcode = subprocess.check_output(["xcodebuild", "-version"], text=True, timeout=30).splitlines()[-1].split()[-1]
     constants = sorted((ROOT / ".build").rglob("*.swiftconstvalues"))
-    configuration = binary_directory.name.lower()
     evidence = {}
     for architecture in architectures:
         selected = [p for p in constants if p.parent.name == "Meno.build" and p.parent.parent.name.lower() == configuration and any(
             part.startswith(architecture + "-apple-macos") for part in p.parts)]
         if not selected:
+            (work / "constant-inventory.json").write_text(json.dumps([str(p.relative_to(ROOT)) for p in constants], indent=2) + "\n")
             raise ValueError("No compiled app constant values for " + architecture)
         listing = work / (architecture + "-constants.txt")
         listing.write_text("".join(str(p) + "\n" for p in selected))
@@ -89,7 +89,7 @@ def extract(app, binary_directory, work, universal):
         with (work / (architecture + "-extract.log")).open("w") as log:
             subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=120)
         inspect(output / "Metadata.appintents")
-        evidence[architecture] = {"constant_files": len(selected), "metadata_sha256": hashlib.sha256(
+        evidence[architecture] = {"constant_files": [str(p.relative_to(ROOT)) for p in selected], "metadata_sha256": hashlib.sha256(
             (output / "Metadata.appintents/extract.actionsdata").read_bytes()).hexdigest()}
     preferred = platform.machine() if platform.machine() in architectures else architectures[0]
     destination = app / "Contents/Resources/Metadata.appintents"
@@ -108,8 +108,8 @@ def main():
     prepare.add_argument("output", type=Path)
     package = sub.add_parser("extract")
     package.add_argument("app", type=Path)
-    package.add_argument("binary_directory", type=Path)
     package.add_argument("work", type=Path)
+    package.add_argument("--configuration", choices=("debug", "release"), required=True)
     package.add_argument("--universal", action="store_true")
     check = sub.add_parser("check")
     check.add_argument("app", type=Path)
@@ -118,7 +118,7 @@ def main():
         if args.command == "configure":
             configure(args.output.resolve())
         elif args.command == "extract":
-            extract(args.app.resolve(), args.binary_directory.resolve(), args.work.resolve(), args.universal)
+            extract(args.app.resolve(), args.work.resolve(), args.configuration, args.universal)
         else:
             inspect_app(args.app)
     except (OSError, ValueError, KeyError, TypeError, IndexError, subprocess.SubprocessError) as error:

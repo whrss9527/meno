@@ -20,9 +20,9 @@ SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 VERSION="${VERSION:-$(cat "$ROOT/VERSION" 2>/dev/null || echo 0.1.0)}"
 BUILD_NUMBER="${BUILD_NUMBER:-$(git -C "$ROOT" rev-list --count HEAD 2>/dev/null || echo 1)}"
 
-ARCH_FLAGS=()
+ARCHITECTURES=("$(uname -m)")
 if [[ "${UNIVERSAL:-0}" == "1" ]]; then
-  ARCH_FLAGS=(--arch arm64 --arch x86_64)
+  ARCHITECTURES=(arm64 x86_64)
 fi
 
 cd "$ROOT"
@@ -35,13 +35,23 @@ INTENTS_FLAGS=(-Xswiftc -emit-const-values -Xswiftc -Xfrontend
   -Xswiftc -const-gather-protocols-file -Xswiftc -Xfrontend -Xswiftc "$PROTOCOLS")
 
 echo "==> Building $APP_NAME ($CONFIG)"
-swift build -c "$CONFIG" ${ARCH_FLAGS[@]+"${ARCH_FLAGS[@]}"} "${INTENTS_FLAGS[@]}" --product "$APP_NAME"
-BIN_DIR="$(swift build -c "$CONFIG" ${ARCH_FLAGS[@]+"${ARCH_FLAGS[@]}"} "${INTENTS_FLAGS[@]}" --show-bin-path)"
+# A multi-arch SwiftPM invocation selects a different build backend. Build
+# each slice explicitly so its actual constant values can be validated too.
+BINARIES=()
+for architecture in "${ARCHITECTURES[@]}"; do
+  swift build -c "$CONFIG" --arch "$architecture" "${INTENTS_FLAGS[@]}" --product "$APP_NAME"
+  BIN_DIR="$(swift build -c "$CONFIG" --arch "$architecture" "${INTENTS_FLAGS[@]}" --show-bin-path)"
+  BINARIES+=("$BIN_DIR/$APP_NAME")
+done
 
 echo "==> Assembling $APP"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN_DIR/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
+if [[ "${UNIVERSAL:-0}" == "1" ]]; then
+  lipo -create "${BINARIES[@]}" -output "$APP/Contents/MacOS/$APP_NAME"
+else
+  cp "${BINARIES[0]}" "$APP/Contents/MacOS/$APP_NAME"
+fi
 cp "$ROOT/Resources/Info.plist" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$APP/Contents/Info.plist"
@@ -52,7 +62,7 @@ done
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 metadata_args=()
 if [[ "${UNIVERSAL:-0}" == "1" ]]; then metadata_args=(--universal); fi
-python3 scripts/app-intents.py extract "$APP" "$BIN_DIR" "$INTENTS_WORK" ${metadata_args[@]+"${metadata_args[@]}"}
+python3 scripts/app-intents.py extract "$APP" "$INTENTS_WORK" --configuration "$CONFIG" ${metadata_args[@]+"${metadata_args[@]}"}
 
 echo "==> Signing with identity: $SIGN_IDENTITY"
 if [[ "$SIGN_IDENTITY" == "-" ]]; then
