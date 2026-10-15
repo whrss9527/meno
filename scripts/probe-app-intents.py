@@ -52,6 +52,13 @@ def probe(output, generator):
                 binary = subprocess.check_output([*spm, "--show-bin-path"], cwd=source, text=True, timeout=30).strip()
                 sdk = subprocess.check_output(["xcrun", "--show-sdk-path"], text=True, timeout=30).strip()
                 developer = subprocess.check_output(["xcode-select", "-p"], text=True, timeout=30).strip()
+                version = subprocess.check_output(["xcodebuild", "-version"], text=True, timeout=30).splitlines()[-1].split()[-1]
+                sources = work / "sources.txt"
+                sources.write_text("".join(str(path) + "\n" for path in sorted((source / "Sources").glob("*.swift"))))
+                constants = sorted((work / "spm").rglob("*.swiftconstvalues"))
+                constant_list = work / "constants.txt"
+                constant_list.write_text("".join(str(path) + "\n" for path in constants))
+                report["swiftpm_constant_files"] = len(constants)
                 destination = output / "swiftpm"
                 destination.mkdir()
                 command = ["xcrun", "appintentsmetadataprocessor", "--module-name", "MenoIntentProbe",
@@ -59,6 +66,8 @@ def probe(output, generator):
                            "--sdk-root", sdk, "--platform-family", "macOS", "--deployment-target", "14.0",
                            "--target-triple", platform.machine() + "-apple-macos14.0",
                            "--bundle-identifier", "io.github.whrss9527.meno.metadata-probe",
+                           "--source-file-list", str(sources), "--swift-const-vals-list", str(constant_list),
+                           "--xcode-version", version,
                            "--toolchain-dir", str(Path(developer) / "Toolchains/XcodeDefault.xctoolchain")]
                 commands["spm-extract"] = invoke(output, "spm-extract", command, source, timeout=90)
                 report["swiftpm_metadata"] = inspect(destination / "Metadata.appintents")
