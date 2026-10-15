@@ -82,3 +82,9 @@ CI requires a nonempty release notes file for `VERSION`. The release workflow ch
 ### Shared release archive verification
 
 The release workflow and `frit-ref` pin Frit 0.4.1 to `2291523e16c91afae06868d7c4e188efc36cd70b`. Notarization remains required. Before publication, the final ZIP is re-extracted and checked for all-architecture signatures, validated ticket coverage for each root architecture, and enabled Gatekeeper policy with a notarized Developer ID. Failures keep the original archive; public releases are not overwritten. The existing `dry_run` input builds and verifies the current source without creating tags or releases, even for an already public version. Workflow-only adoption keeps Meno's version and Swift package dependency unchanged.
+
+## App Intents metadata probe
+
+Before adding Shortcuts actions to the SwiftPM app, run the **App Intents metadata probe** workflow. It builds an isolated fixture with Xcode 16.4 and the newest stable Xcode, tries metadata extraction from its ordinary SwiftPM executable, and compares a native Xcode application build of the same source. The fixture never initializes Meno or accesses its settings or accessibility APIs.
+
+The artifact preserves command exit codes, complete logs, toolchain details and generated metadata. `report.json` distinguishes `swiftpm_metadata` and `native_metadata`; a successful workflow requires the native control to contain both the Intent and AppShortcut. It does not mean the SwiftPM attempt succeeded, prove that every possible SwiftPM configuration is unsupported, or verify real Shortcuts/Spotlight indexing. Keep the production packaging path unchanged until an actual integration passes the complete app and signed-distribution gates.

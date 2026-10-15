@@ -82,3 +82,9 @@ CI 要求 `VERSION` 对应的发布说明文件存在且非空。发版工作流
 ### 共用发行归档验收
 
 发行workflow与`frit-ref`一起固定Frit0.4.1的`2291523e16c91afae06868d7c4e188efc36cd70b`，继续要求公证。公开前重新解压最终ZIP，核对全架构签名、已校验票据对每个根架构的覆盖，以及启用的Gatekeeper与明确公证Developer ID来源。失败保留原归档，公开发行不覆盖。已有`dry_run`在当前源码构建并验收，不创建标签或发行，也可用于已经公开的版本。纯workflow升级保留Meno版本与Swift包依赖。
+
+## App Intents 元数据探测
+
+给 SwiftPM App 加入快捷指令动作前，先运行 **App Intents metadata probe** 工作流。它用 Xcode 16.4 和最新正式版构建隔离样例，尝试从普通 SwiftPM 可执行文件提取元数据，再用相同源码的原生 Xcode App 构建作对照。样例不初始化 Meno，不读取其设置或调用辅助功能接口。
+
+artifact 保留命令退出码、完整日志、工具链与实际元数据。`report.json` 分别记录 `swiftpm_metadata` 与 `native_metadata`；工作流成功要求原生对照确实包含 Intent 和 AppShortcut，不表示 SwiftPM 路径已成功、不证明所有 SwiftPM 配置都不可行，也不等于真实快捷指令或 Spotlight 索引已验收。在实际接入通过完整 App 与签名发行门禁前，保持生产打包路径。

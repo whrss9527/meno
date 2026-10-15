@@ -1,0 +1,43 @@
+name: App Intents metadata probe
+on:
+  push:
+    branches: [codex/meno-app-intents-metadata]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        xcode: ['16.4', latest]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode
+        env:
+          XCODE_VERSION: ${{ matrix.xcode }}
+        run: |
+          if [ "$XCODE_VERSION" = latest ]; then
+            selected=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate -e '_rc' | sort -V | tail -1)
+          else
+            selected="/Applications/Xcode_${XCODE_VERSION}.app"
+          fi
+          sudo xcode-select -s "$selected"
+      - name: Install pinned XcodeGen
+        run: |
+          curl --fail --location --retry 2 -o "$RUNNER_TEMP/xcodegen.zip" \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.44.1/xcodegen.zip
+          echo 'a2e905fb68446e9bb4008cdfe2e13e3f176d0cbcca828b71770f8e53fca91b73'"  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          ditto -x -k "$RUNNER_TEMP/xcodegen.zip" "$RUNNER_TEMP/xcodegen-probe"
+      - name: Compare real metadata outputs
+        run: python3 scripts/probe-app-intents.py --output build/app-intents-probe --xcodegen "$RUNNER_TEMP/xcodegen-probe/xcodegen/bin/xcodegen"
+      - name: Preserve probe logs and metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-intents-probe-xcode-${{ matrix.xcode }}-attempt-${{ github.run_attempt }}
+          path: build/app-intents-probe
+          if-no-files-found: warn
+          retention-days: 14
