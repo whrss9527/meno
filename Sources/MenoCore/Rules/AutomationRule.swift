@@ -28,6 +28,8 @@ public struct RuleContext: Equatable, Sendable {
     public var cameraInUse: Bool
     /// The shell commands of rule conditions whose last run succeeded.
     public var succeededCommands: Set<String>
+    /// Freshly observed commands, or nil for legacy snapshots with complete boolean results.
+    public var knownCommands: Set<String>?
     /// The networks the Mac is on, as `NetworkIdentity` identifies them.
     public var routers: Set<String>
 
@@ -47,6 +49,7 @@ public struct RuleContext: Equatable, Sendable {
         microphoneInUse: Bool = false,
         cameraInUse: Bool = false,
         succeededCommands: Set<String> = [],
+        knownCommands: Set<String>? = nil,
         routers: Set<String> = []
     ) {
         self.frontmostBundleID = frontmostBundleID
@@ -64,6 +67,7 @@ public struct RuleContext: Equatable, Sendable {
         self.microphoneInUse = microphoneInUse
         self.cameraInUse = cameraInUse
         self.succeededCommands = succeededCommands
+        self.knownCommands = knownCommands
         self.routers = routers
     }
 }
@@ -354,12 +358,22 @@ public struct AutomationRule: Codable, Hashable, Identifiable, Sendable {
         conditions.contains { $0.kind.changesBackQuickly } ? 3 : 0
     }
 
-    public func matches(_ context: RuleContext) -> Bool {
+    public func matches(_ context: RuleContext) -> Bool { matchStatus(context) == true }
+
+    /// Unknown command observations cannot on their own change an existing rule.
+    fileprivate func matchStatus(_ context: RuleContext) -> Bool? {
         guard isEnabled, !conditions.isEmpty else { return false }
         let context = Self.context(context, for: conditions, requiresAll: requiresAll)
-        return requiresAll
-            ? conditions.allSatisfy { $0.isSatisfied(by: context) }
-            : conditions.contains { $0.isSatisfied(by: context) }
+        let values: [Bool?] = conditions.map { condition in
+            if let command = condition.command, let known = context.knownCommands, !known.contains(command) { return nil }
+            return condition.isSatisfied(by: context)
+        }
+        if requiresAll {
+            if values.contains(false) { return false }
+            return values.contains(nil) ? nil : true
+        }
+        if values.contains(true) { return true }
+        return values.contains(nil) ? nil : false
     }
 
     /// The state that conditions are checked against together. After
@@ -445,7 +459,12 @@ public struct RuleEvaluator: Sendable {
         var waiting: [UUID: Date] = [:]
         for rule in rules {
             let wasActive = activeRuleIDs.contains(rule.id)
-            var isActive = rule.matches(context)
+            guard let status = rule.matchStatus(context) else {
+                if wasActive { nowActive.insert(rule.id) }
+                // Unobserved time does not count towards a pending minimum duration.
+                continue
+            }
+            var isActive = status
             if isActive != wasActive, rule.isEnabled, rule.minimumDuration > 0 {
                 let since = changedSince[rule.id] ?? now
                 if now.timeIntervalSince(since) < rule.minimumDuration {
