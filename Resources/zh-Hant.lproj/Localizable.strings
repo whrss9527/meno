@@ -680,3 +680,17 @@
 
 "Settings from a newer Meno" = "來自新版 Meno 的設定";
 "This settings file uses a newer format. Some features may be unavailable. Unrecognized fields are kept when you save." = "此設定檔使用較新的格式。部分功能可能無法使用，儲存時會保留無法辨識的欄位。";
+
+/* Shortcuts and App Intents. */
+"Allow Meno in Accessibility before running this action." = "請先在輔助使用中允許 Meno，再執行此動作。";
+"Another copy of Meno owns the menu bar. Run this shortcut with that copy." = "另一份 Meno 正在管理選單列。請使用該版本執行此捷徑。";
+"Apply Saved Scene" = "套用已儲存的場景";
+"Apply a saved Meno menu bar layout." = "套用已儲存的 Meno 選單列佈局。";
+"Enabled" = "啟用";
+"Meno could not apply the scene. Check its permissions and menu bar items." = "Meno 無法套用場景。請檢查權限和選單列項目。";
+"Meno is not ready. Open Meno and try again." = "Meno 尚未就緒。請開啟 Meno 後再試。";
+"Saved Scene" = "已儲存的場景";
+"Saved scenes could not be read. Open Meno to check your settings." = "無法讀取已儲存的場景。請開啟 Meno 檢查設定。";
+"Set Zen Mode" = "設定禪模式";
+"This saved scene no longer exists. Choose another scene." = "此場景已不存在。請選擇另一個場景。";
+"Turn Meno's Zen mode on or off and return its current state." = "開啟或關閉 Meno 的禪模式，並傳回目前狀態。";

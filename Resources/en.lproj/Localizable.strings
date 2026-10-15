@@ -1,1 +1,15 @@
 /* English is the development language: the keys in the source code are the English strings. */
+
+/* Shortcuts and App Intents. */
+"Allow Meno in Accessibility before running this action." = "Allow Meno in Accessibility before running this action.";
+"Another copy of Meno owns the menu bar. Run this shortcut with that copy." = "Another copy of Meno owns the menu bar. Run this shortcut with that copy.";
+"Apply Saved Scene" = "Apply Saved Scene";
+"Apply a saved Meno menu bar layout." = "Apply a saved Meno menu bar layout.";
+"Enabled" = "Enabled";
+"Meno could not apply the scene. Check its permissions and menu bar items." = "Meno could not apply the scene. Check its permissions and menu bar items.";
+"Meno is not ready. Open Meno and try again." = "Meno is not ready. Open Meno and try again.";
+"Saved Scene" = "Saved Scene";
+"Saved scenes could not be read. Open Meno to check your settings." = "Saved scenes could not be read. Open Meno to check your settings.";
+"Set Zen Mode" = "Set Zen Mode";
+"This saved scene no longer exists. Choose another scene." = "This saved scene no longer exists. Choose another scene.";
+"Turn Meno's Zen mode on or off and return its current state." = "Turn Meno's Zen mode on or off and return its current state.";

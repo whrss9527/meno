@@ -1,4 +1,5 @@
 import AppKit
+import MenoCore
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -12,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = InterfaceLanguageSetting.atLaunch
         // One copy runs at a time; a newer one that runs takes the links.
         guard SingleInstance.claim(forwarding: waitingURLs) else {
+            MenoIntentSupport.runtime.fail(.secondaryInstance)
             waitingURLs = []
             NSApp.terminate(nil)
             return
@@ -21,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let model = AppModel()
         self.model = model
         model.start()
+        MenoIntentSupport.runtime.publish(model)
         let urls = waitingURLs
         waitingURLs = []
         for url in urls {
@@ -29,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        MenoIntentSupport.runtime.fail(.terminated)
         model?.prepareForTermination()
     }
 
