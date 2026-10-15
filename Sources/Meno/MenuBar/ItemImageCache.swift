@@ -7,7 +7,7 @@ import MenoCore
 final class ItemImageCache: ObservableObject {
     @Published private(set) var revision = 0
 
-    private var captured: [MenuItemKey: NSImage] = [:]
+    private(set) var captured: [MenuItemKey: NSImage] = [:]
     /// Symbols the person picked for items, by item key.
     private var customSymbols: [String: String] = [:]
     private var captureTask: Task<Void, Never>?
@@ -15,13 +15,31 @@ final class ItemImageCache: ObservableObject {
     private var lastFullCapture: Date?
     /// When each item was last tried, so that one without a window that can
     /// be captured is not tried on every scan.
-    private var attempts: [MenuItemKey: Date] = [:]
+    private(set) var attempts: [MenuItemKey: Date] = [:]
     /// Counts captures, and names the capture of all items on its way.
     private var generation = 0
-    private var fullCaptureGeneration: Int?
+    private struct Batch {
+        let keys: Set<MenuItemKey>
+        let isFull: Bool
+        let previousFullCapture: Date?
+    }
+    private var activeBatch: Batch?
+    private var currentKeys: Set<MenuItemKey> = []
+    private let capture: @MainActor ([WindowCapture.Request]) async -> [MenuItemKey: CGImage]
+    private let now: () -> Date
     /// How long captures are reused before a window that shows them captures
     /// them again: macOS shows its screen recording indicator each time.
     private static let reuseSpan: TimeInterval = 30
+
+    init(
+        capture: @escaping @MainActor ([WindowCapture.Request]) async -> [MenuItemKey: CGImage] = {
+            await WindowCapture.captureItems($0)
+        },
+        now: @escaping () -> Date = Date.init
+    ) {
+        self.capture = capture
+        self.now = now
+    }
 
     /// Capturing individual item windows only works up to macOS 26.
     static var captureIsSupported: Bool {
@@ -67,22 +85,48 @@ final class ItemImageCache: ObservableObject {
     /// artwork yet are captured.
     func refresh(for items: [MenuBarItem], captureAllowed: Bool, renew: Bool = false) {
         guard captureAllowed, Self.captureIsSupported else {
+            invalidateCapture()
+            currentKeys = []
+            attempts.removeAll()
+            lastFullCapture = nil
             if !captured.isEmpty {
                 captured.removeAll()
                 revision += 1
             }
             return
         }
-        let now = Date()
+        let now = self.now()
         let capturable = items.filter { $0.kind != .marker && $0.frame.width > 0 }
+        let present = Set(capturable.map(\.key))
+        if present != currentKeys {
+            // A removed item can return under the same key. An older request
+            // must not supply the artwork of its previous lifetime.
+            invalidateCapture()
+            currentKeys = present
+        }
+        let removed = Set(captured.keys).subtracting(present)
+        if !removed.isEmpty {
+            for key in removed { captured[key] = nil }
+            revision += 1
+        }
+        attempts = attempts.filter { present.contains($0.key) }
         let isStale = lastFullCapture.map { now.timeIntervalSince($0) >= Self.reuseSpan } ?? true
         let all = renew && isStale
         // A capture of all items on its way covers the missing ones.
-        if !all, fullCaptureGeneration != nil { return }
-        let wanted = all ? capturable : capturable.filter { item in
+        if !all, activeBatch?.isFull == true { return }
+        var wanted = all ? capturable : capturable.filter { item in
             captured[item.key] == nil && (attempts[item.key].map { now.timeIntervalSince($0) >= Self.reuseSpan } ?? true)
         }
         guard !wanted.isEmpty else { return }
+        if !all, let batch = activeBatch {
+            let requested = Set(wanted.map(\.key))
+            // Replacing an unfinished partial request also retries its missing
+            // items; cancellation is not a failed capture to throttle.
+            wanted += capturable.filter { batch.keys.contains($0.key) && captured[$0.key] == nil && !requested.contains($0.key) }
+        }
+        invalidateCapture()
+        let current = generation
+        activeBatch = Batch(keys: Set(wanted.map(\.key)), isFull: all, previousFullCapture: lastFullCapture)
         if all {
             lastFullCapture = now
         }
@@ -90,23 +134,16 @@ final class ItemImageCache: ObservableObject {
             attempts[item.key] = now
         }
         let requests = wanted.map { WindowCapture.Request(key: $0.key, frame: $0.frame) }
-        let present = Set(capturable.map(\.key))
-        generation += 1
-        let current = generation
-        if all {
-            fullCaptureGeneration = current
-        }
-        captureTask?.cancel()
+        let capture = self.capture
         captureTask = Task { [weak self] in
-            let images = await WindowCapture.captureItems(requests)
+            let images = await capture(requests)
             guard let self else { return }
-            if self.fullCaptureGeneration == current {
-                self.fullCaptureGeneration = nil
-            }
             guard !Task.isCancelled, self.generation == current else { return }
+            self.activeBatch = nil
+            self.captureTask = nil
             // Earlier captures of items still there are kept.
-            var updated = all ? [:] : self.captured.filter { present.contains($0.key) }
-            for (key, image) in images {
+            var updated = all ? [:] : self.captured.filter { self.currentKeys.contains($0.key) }
+            for (key, image) in images where self.currentKeys.contains(key) {
                 let scale = NSScreen.main?.backingScaleFactor ?? 2
                 let size = NSSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)
                 let glyph = NSImage(cgImage: image, size: size)
@@ -118,6 +155,18 @@ final class ItemImageCache: ObservableObject {
             self.captured = updated
             self.revision += 1
         }
+    }
+
+    /// Invalidates work on its way without recording it as a failed attempt.
+    private func invalidateCapture() {
+        generation += 1
+        captureTask?.cancel()
+        captureTask = nil
+        if let batch = activeBatch {
+            for key in batch.keys { attempts[key] = nil }
+            if batch.isFull { lastFullCapture = batch.previousFullCapture }
+        }
+        activeBatch = nil
     }
 
     static func systemSymbolName(for item: MenuBarItem) -> String? {

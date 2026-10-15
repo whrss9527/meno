@@ -76,6 +76,10 @@ jobs:
       - name: Unit tests
         run: swift test
 
+      - name: Image-cache lifecycle
+        timeout-minutes: 3
+        run: scripts/check-image-cache.sh
+
       - name: Simultaneous launch arbitration
         timeout-minutes: 3
         run: scripts/check-single-instance.sh
