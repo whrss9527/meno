@@ -30,8 +30,15 @@ private final class Observations: @unchecked Sendable {
 private final class ObservationHistory: @unchecked Sendable {
     private let lock = NSLock()
     private var history: [[String: CommandChecks.Observation]] = []
-    func record(_ state: [String: CommandChecks.Observation]) { lock.lock(); history.append(state); lock.unlock() }
+    private var firstCompletedPIDs: [pid_t]?
+    func record(_ state: [String: CommandChecks.Observation], completedPIDs: [pid_t]? = nil) {
+        lock.lock()
+        history.append(state)
+        if firstCompletedPIDs == nil, let completedPIDs { firstCompletedPIDs = completedPIDs }
+        lock.unlock()
+    }
     var states: [[String: CommandChecks.Observation]] { lock.lock(); defer { lock.unlock() }; return history }
+    var completedPIDs: [pid_t]? { lock.lock(); defer { lock.unlock() }; return firstCompletedPIDs }
 }
 
 @main
@@ -145,7 +152,14 @@ private enum CommandChecksDriver {
     private static func slowCommandsRotateAcrossBoundedRounds(_ root: URL) async throws {
         let history = ObservationHistory()
         let checks = CommandChecks(timing: .init(interval: 0.35, commandTimeout: 0.25, roundBudget: 0.25),
-                                   deliver: { $0() }, onChange: { history.record($0) })
+                                   deliver: { $0() }, onChange: { state in
+            // This callback runs on the worker before its next periodic round.
+            // Capture identities here; later reads can see a newer live process.
+            let identities: [pid_t]? = state.count == 10 ? (0..<10).compactMap {
+                try? pid(root.appendingPathComponent("budget-\($0)"))
+            } : nil
+            history.record(state, completedPIDs: identities)
+        })
         defer { checks.watch([]) }
         let commands = Set((0..<10).map { index in
             ": \(String(format: "%02d", index)); echo $$ > " + quote(root.appendingPathComponent("budget-\(index)").path) + "; exec /bin/sleep 30"
@@ -155,9 +169,18 @@ private enum CommandChecksDriver {
         let partial = history.states.filter { !$0.isEmpty && $0.count < 10 }
         try require(partial.count >= 9, "Commands were not reported in bounded partial rounds")
         try require(history.states.last?.values.allSatisfy { !$0.succeeded } == true, "A normal per-command timeout was not observed as failure")
-        for index in 0..<10 {
-            let parent = try pid(root.appendingPathComponent("budget-\(index)"))
-            try require(kill(parent, 0) == -1 && errno == ESRCH, "A budgeted command survived its completed timeout")
+        let completed = history.completedPIDs ?? []
+        try require(completed.count == 10, "The completed round did not capture all process identities")
+        // Deliberately let a later generation overwrite a PID file before the
+        // consumer checks the completed generation. Its snapshot must stay fixed.
+        try await wait("The fixture did not advance to another periodic round") {
+            guard let next = try? pid(root.appendingPathComponent("budget-0")) else { return false }
+            return next != completed[0]
+        }
+        for (index, parent) in completed.enumerated() {
+            let gone = kill(parent, 0) == -1 && errno == ESRCH
+            let latest = (try? pid(root.appendingPathComponent("budget-\(index)"))).map(String.init) ?? "missing"
+            try require(gone, "A budgeted command survived its completed timeout: captured=\(parent), latest=\(latest), pgid=\(getpgid(parent))")
         }
     }
 

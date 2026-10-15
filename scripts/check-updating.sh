@@ -117,10 +117,12 @@ PYCLEAN
     echo "Updating missing checksum rejection passed"
     continue
   fi
+  wait_file 30 "$SCENE/launched-0.0.2" "$SCENE"
+  # "installing" is written before the async download begins. Only the new
+  # verified copy's launch establishes that its checksum request has completed.
   if [[ "$scene" == checksums ]]; then
     /usr/bin/grep -q 'GET /SHA256SUMS.txt.*200' "$SCENE/server.log" || fail 'Fallback checksum was not downloaded'
   fi
-  wait_file 30 "$SCENE/launched-0.0.2" "$SCENE"
   LEFTOVERS="$(cat "$SCENE/leftovers-path")"
   [[ -f "$LEFTOVERS/Meno.zip" ]] || fail 'Download folder was not retained during startup'
   if [[ "$scene" == rollback ]]; then
