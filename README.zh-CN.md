@@ -97,3 +97,5 @@ Meno 0.1.0 以 MIT 许可协议发布，这个版本仍然适用 MIT 许可协�
   <a href="https://github.com/whrss9527/stox"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/stox.svg" width="30%" alt="Stox：一眼看盘，一键隐身"></a>
   <a href="https://github.com/whrss9527/proxi"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/proxi.svg" width="30%" alt="Proxi：一个开关，管好所有代理"></a>
 </div>
+
+从0.13起，在快捷指令的“App → Meno”中可设置禅模式、应用已存场景；两者都会打开Meno，场景改名后保留原快捷指令。输入、结果和验证方式见[App Intents和快捷指令](docs/development.zh-CN.md#app-intents-和快捷指令)。

@@ -97,3 +97,5 @@ Meno 0.1.0 was released under the MIT License, and that version stays available 
   <a href="https://github.com/whrss9527/stox"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/stox.svg" width="30%" alt="Stox"></a>
   <a href="https://github.com/whrss9527/proxi"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/proxi.svg" width="30%" alt="Proxi"></a>
 </div>
+
+From 0.13, Shortcuts can set Zen mode and apply saved scenes from **Apps → Meno**. Both actions open Meno; scenes keep their identity after renaming. See [App Intents and Shortcuts](docs/development.md#app-intents-and-shortcuts) for inputs, results and verification.

@@ -664,6 +664,8 @@ final class AppModel: ObservableObject {
     ) async -> Bool {
         do {
             try await mover.apply(scene.layout, automatic: automatic, proceeds: proceeds)
+            try Task.checkCancellation()
+            guard proceeds?() ?? true else { return false }
             activeSceneID = scene.id
             if announce {
                 toasts.show(String(localized: "Scene “\(scene.name)” applied."), symbol: scene.symbol)

@@ -10,10 +10,14 @@ final class Storage {
     /// What the pending writes would write, so they can be done at once.
     private var pendingEncoders: [String: () throws -> Data] = [:]
 
-    init() {
+    static var defaultDirectory: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
-        directory = base.appendingPathComponent("Meno", isDirectory: true)
+        return base.appendingPathComponent("Meno", isDirectory: true)
+    }
+
+    init() {
+        directory = Self.defaultDirectory
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 

@@ -14,7 +14,7 @@ LITERAL = r'"((?:[^"\\\n]|\\.)*)"'
 
 # Calls whose first string literal is a LocalizedStringKey or LocalizationValue.
 CALLS = [
-    "String(localized:", "Text(", "Button(", "Toggle(", "Label(", "TextField(", "Menu(",
+    "String(localized:", "LocalizedStringResource(", "Text(", "Button(", "Toggle(", "Label(", "TextField(", "Menu(",
     "SettingsCard(", "SettingRow(", "ToggleRow(", "SliderRow(", "Link(", ".alert(",
     ".confirmationDialog(", "Picker(", "ColorPicker(",
 ]

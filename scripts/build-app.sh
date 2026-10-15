@@ -27,9 +27,16 @@ fi
 
 cd "$ROOT"
 
+# The two SDK contracts come from the successful native/SwiftPM probe in #80.
+# Emit constants during the actual app build; ordinary SwiftPM emits no intents.
+INTENTS_WORK="$OUT_DIR/app-intents"
+PROTOCOLS="$(python3 scripts/app-intents.py configure "$INTENTS_WORK")"
+INTENTS_FLAGS=(-Xswiftc -emit-const-values -Xswiftc -Xfrontend
+  -Xswiftc -const-gather-protocols-file -Xswiftc -Xfrontend -Xswiftc "$PROTOCOLS")
+
 echo "==> Building $APP_NAME ($CONFIG)"
-swift build -c "$CONFIG" ${ARCH_FLAGS[@]+"${ARCH_FLAGS[@]}"} --product "$APP_NAME"
-BIN_DIR="$(swift build -c "$CONFIG" ${ARCH_FLAGS[@]+"${ARCH_FLAGS[@]}"} --show-bin-path)"
+swift build -c "$CONFIG" ${ARCH_FLAGS[@]+"${ARCH_FLAGS[@]}"} "${INTENTS_FLAGS[@]}" --product "$APP_NAME"
+BIN_DIR="$(swift build -c "$CONFIG" ${ARCH_FLAGS[@]+"${ARCH_FLAGS[@]}"} "${INTENTS_FLAGS[@]}" --show-bin-path)"
 
 echo "==> Assembling $APP"
 rm -rf "$APP"
@@ -43,6 +50,9 @@ for lproj in "$ROOT"/Resources/*.lproj; do
   cp -R "$lproj" "$APP/Contents/Resources/"
 done
 printf 'APPL????' > "$APP/Contents/PkgInfo"
+metadata_args=()
+if [[ "${UNIVERSAL:-0}" == "1" ]]; then metadata_args=(--universal); fi
+python3 scripts/app-intents.py extract "$APP" "$BIN_DIR" "$INTENTS_WORK" ${metadata_args[@]+"${metadata_args[@]}"}
 
 echo "==> Signing with identity: $SIGN_IDENTITY"
 if [[ "$SIGN_IDENTITY" == "-" ]]; then
