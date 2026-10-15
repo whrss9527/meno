@@ -78,3 +78,7 @@ New versions are published by pushing a `v*` tag or by running the *Release* wor
 Periodic catch-up scans on macOS 26 and earlier reuse completed scans only when status-window IDs, owners and bounds are unchanged. Explicit refreshes still scan, and macOS 27 keeps its existing behavior. Diagnostic scan lines distinguish `mode=full` from `mode=skipped`. The footprint summary includes skipped-check percentage and CPU across surviving processes; background runner activity affects this measurement. Manually dispatch CI with `compare_scans` to measure both disabled and enabled gating, or set `MENO_SCAN_GATE=0` for a local baseline.
 
 CI requires a nonempty release notes file for `VERSION`. The release workflow checks the requested version or tag against `VERSION` before building; a mismatch or missing notes stops publication.
+
+### Shared release archive verification
+
+The release workflow and `frit-ref` pin Frit 0.4.1 to `2291523e16c91afae06868d7c4e188efc36cd70b`. Notarization remains required. Before publication, the final ZIP is re-extracted and checked for all-architecture signatures, validated ticket coverage for each root architecture, and enabled Gatekeeper policy with a notarized Developer ID. Failures keep the original archive; public releases are not overwritten. The existing `dry_run` input builds and verifies the current source without creating tags or releases, even for an already public version. Workflow-only adoption keeps Meno's version and Swift package dependency unchanged.
