@@ -41,6 +41,9 @@ jobs:
           scripts/check-release.sh
           python3 -m unittest discover -s scripts/tests
       - run: swift test
+      - name: Command-check cancellation
+        timeout-minutes: 3
+        run: scripts/check-command-checks.sh
       - name: Localization
         run: python3 scripts/check-localization.py
 
@@ -79,6 +82,10 @@ jobs:
       - name: Image-cache lifecycle
         timeout-minutes: 3
         run: scripts/check-image-cache.sh
+
+      - name: Command-check cancellation
+        timeout-minutes: 3
+        run: scripts/check-command-checks.sh
 
       - name: Simultaneous launch arbitration
         timeout-minutes: 3
