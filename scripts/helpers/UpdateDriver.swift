@@ -33,11 +33,13 @@ private final class UpdateDriverDelegate: NSObject, NSApplicationDelegate {
         let endpoint = Bundle.main.object(forInfoDictionaryKey: "MenoUpdateTestEndpoint") as! String
         setenv("MENO_UPDATE_URL", endpoint, 1)
         setenv("MENO_DIAG", "1", 1)
-        record("launched-\(AppInfo.version)", String(AppInfo.ownPID))
         if let leftovers = UserDefaults.standard.string(forKey: "UpdateLeftovers") {
             record("leftovers-path", leftovers)
             record("bundle-path", Bundle.main.bundlePath)
         }
+        // Publish the launch signal after the context consumed by the shell
+        // has been written, so observing the signal cannot race those files.
+        record("launched-\(AppInfo.version)", String(AppInfo.ownPID))
         if Bundle.main.object(forInfoDictionaryKey: "MenoUpdateTestBroken") as? Bool == true {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { exit(42) }
             return
