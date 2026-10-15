@@ -35,7 +35,8 @@ def inspect(metadata):
 def probe(output, generator):
     output.mkdir(parents=True, exist_ok=True)
     output = output.resolve()
-    report = {"commands": {}, "swiftpm_metadata": False, "native_metadata": False}
+    report = {"commands": {}, "swiftpm_metadata": False, "native_metadata": False,
+              "swiftpm_explicit_constants_metadata": False}
     commands = report["commands"]
     fixture = Path(__file__).with_name("fixtures") / "app-intents-probe"
     try:
@@ -80,6 +81,37 @@ def probe(output, generator):
             report["native_metadata"] = inspect(metadata)
             if metadata.is_dir():
                 shutil.copytree(metadata, output / "native/Metadata.appintents")
+            # Use the selected SDK's real compiler contract, not a guessed list of protocols.
+            contracts = sorted((work / "native").rglob("MenoIntentProbe_const_extract_protocols.json"))
+            report["native_constant_contract_files"] = len(contracts)
+            if (report["native_metadata"] and contracts and
+                    commands["spm-build"].get("exit_code") == 0):
+                contract = output / "native-constant-protocols.json"
+                shutil.copyfile(contracts[0], contract)
+                explicit_scratch = work / "spm-explicit"
+                explicit_build = spm.copy()
+                explicit_build[explicit_build.index("--scratch-path") + 1] = str(explicit_scratch)
+                explicit_build += ["-Xswiftc", "-emit-const-values", "-Xswiftc", "-Xfrontend",
+                                   "-Xswiftc", "-const-gather-protocols-file", "-Xswiftc", "-Xfrontend",
+                                   "-Xswiftc", str(contract)]
+                commands["spm-explicit-build"] = invoke(output, "spm-explicit-build", explicit_build, source)
+                if commands["spm-explicit-build"].get("exit_code") == 0:
+                    explicit_constants = sorted(explicit_scratch.rglob("*.swiftconstvalues"))
+                    report["swiftpm_explicit_constant_files"] = len(explicit_constants)
+                    explicit_list = work / "explicit-constants.txt"
+                    explicit_list.write_text("".join(str(path) + "\n" for path in explicit_constants))
+                    explicit_output = output / "swiftpm-explicit"
+                    explicit_output.mkdir()
+                    explicit_command = command.copy()
+                    for option, value in {
+                        "--binary-file": explicit_scratch / Path(binary).relative_to(work / "spm") / "MenoIntentProbe",
+                        "--output": explicit_output,
+                        "--swift-const-vals-list": explicit_list,
+                    }.items():
+                        explicit_command[explicit_command.index(option) + 1] = str(value)
+                    explicit_command.append("--compile-time-extraction")
+                    commands["spm-explicit-extract"] = invoke(output, "spm-explicit-extract", explicit_command, source, timeout=90)
+                    report["swiftpm_explicit_constants_metadata"] = inspect(explicit_output / "Metadata.appintents")
     finally:
         (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))

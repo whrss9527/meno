@@ -85,6 +85,6 @@ CI 要求 `VERSION` 对应的发布说明文件存在且非空。发版工作流
 
 ## App Intents 元数据探测
 
-给 SwiftPM App 加入快捷指令动作前，先运行 **App Intents metadata probe** 工作流。它用 Xcode 16.4 和最新正式版构建隔离样例，尝试从普通 SwiftPM 可执行文件提取元数据，再用相同源码的原生 Xcode App 构建作对照。样例不初始化 Meno，不读取其设置或调用辅助功能接口。
+给 SwiftPM App 加入快捷指令动作前，先运行 **App Intents metadata probe** 工作流。它用 Xcode 16.4 和最新正式版构建隔离样例，尝试从普通 SwiftPM 可执行文件提取元数据，再用相同源码的原生 Xcode App 构建作对照。另取当前 SDK 实际生成的编译器协议清单，验证显式导出常量值的 SwiftPM 路径，保留清单与独立结果。样例不初始化 Meno，不读取其设置或调用辅助功能接口。
 
-artifact 保留命令退出码、完整日志、工具链与实际元数据。`report.json` 分别记录 `swiftpm_metadata` 与 `native_metadata`；工作流成功要求原生对照确实包含 Intent 和 AppShortcut，不表示 SwiftPM 路径已成功、不证明所有 SwiftPM 配置都不可行，也不等于真实快捷指令或 Spotlight 索引已验收。在实际接入通过完整 App 与签名发行门禁前，保持生产打包路径。
+artifact 保留命令退出码、完整日志、工具链与实际元数据。`report.json` 分别记录 `swiftpm_metadata`、`swiftpm_explicit_constants_metadata` 与 `native_metadata`；工作流成功要求原生对照确实包含 Intent 和 AppShortcut，不表示 SwiftPM 路径已成功、不证明所有 SwiftPM 配置都不可行，也不等于真实快捷指令或 Spotlight 索引已验收。在实际接入通过完整 App 与签名发行门禁前，保持生产打包路径。
