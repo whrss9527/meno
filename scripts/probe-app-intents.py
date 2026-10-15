@@ -116,6 +116,7 @@ def probe(output, generator):
         (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
     if (commands["native-build"].get("exit_code") != 0 or not report["native_metadata"] or
+            commands.get("spm-explicit-extract", {}).get("exit_code") != 0 or
             not report["swiftpm_explicit_constants_metadata"]):
         raise SystemExit("Native or explicit SwiftPM metadata missing; inspect preserved logs before choosing a build path")
 
