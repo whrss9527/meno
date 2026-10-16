@@ -56,6 +56,7 @@ cp "$ROOT/Resources/Info.plist" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$APP/Contents/Info.plist"
 cp "$ROOT/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+cp "$ROOT/docs/donate-wechat.png" "$APP/Contents/Resources/donate-wechat.png"
 for lproj in "$ROOT"/Resources/*.lproj; do
   cp -R "$lproj" "$APP/Contents/Resources/"
 done
