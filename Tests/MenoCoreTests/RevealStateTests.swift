@@ -68,4 +68,25 @@ final class RevealStateTests: XCTestCase {
         state.reveal(all: false)
         XCTAssertEqual(state.visibility, .revealedAll)
     }
+
+    func testUserRevealWhileRestoringIsNotUndoneWhenTheMoveFinishes() {
+        for all in [false, true] {
+            var state = RevealState()
+            _ = state.beginLayoutSession()
+            state.reveal(all: true)
+            state.reveal(all: all, userInitiated: true)
+            let expected: SectionVisibility = all ? .revealedAll : .revealed
+            XCTAssertEqual(state.endLayoutSession(), .restore(expected))
+            XCTAssertEqual(state.visibility, expected)
+            XCTAssertFalse(state.barState(zenActive: false).hiddenCollapsed)
+        }
+    }
+
+    func testUserRevealOverridesTheActivationSnapshotToo() {
+        var state = RevealState()
+        state.beginActivation()
+        state.reveal(all: false)
+        state.reveal(all: true, userInitiated: true)
+        XCTAssertEqual(state.endActivation(), .revealedAll)
+    }
 }

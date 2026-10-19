@@ -203,14 +203,12 @@ final class RevealCoordinator: ObservableObject {
         outsideClickTask = nil
         let wasCollapsed = visibility == .collapsed
         let target: SectionVisibility = all || visibility == .revealedAll ? .revealedAll : .revealed
-        guard target != visibility || trigger == .activation else {
-            scheduleRehide()
-            return
-        }
         if target != visibility {
             revealedAt = Date()
         }
-        state.reveal(all: all)
+        // A repeated command must reapply the physical divider lengths too.
+        // AppKit can have rebuilt a status item while logical state stayed put.
+        state.reveal(all: all, userInitiated: Self.personTriggers.contains(trigger))
         if wasCollapsed {
             pointerVisitedSinceReveal = pointerIsInMenuBar
         }

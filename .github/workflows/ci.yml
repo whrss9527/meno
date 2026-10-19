@@ -79,6 +79,10 @@ jobs:
       - name: Unit tests
         run: swift test
 
+      - name: Hiding and restart lifecycle
+        timeout-minutes: 5
+        run: scripts/check-hiding-lifecycle.sh
+
       - name: Image-cache lifecycle
         timeout-minutes: 3
         run: scripts/check-image-cache.sh
@@ -120,7 +124,7 @@ jobs:
         run: scripts/check-hiding.sh build/Meno.app
 
       - name: Moving end to end
-        timeout-minutes: 5
+        timeout-minutes: 7
         run: scripts/check-moving.sh build/Meno.app
 
       - name: Updating end to end

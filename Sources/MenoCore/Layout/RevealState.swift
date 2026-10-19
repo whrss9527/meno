@@ -19,8 +19,13 @@ public struct RevealState: Equatable, Sendable {
 
     public init(visibility: SectionVisibility = .collapsed) { self.visibility = visibility }
 
-    public mutating func reveal(all: Bool) {
+    public mutating func reveal(all: Bool, userInitiated: Bool = false) {
         visibility = all || visibility == .revealedAll ? .revealedAll : .revealed
+        if userInitiated {
+            let requested: SectionVisibility = all ? .revealedAll : .revealed
+            if layoutSessions > 0 { visibilityBeforeLayout = requested }
+            if activations > 0 { visibilityBeforeActivation = requested }
+        }
     }
 
     /// A collapse requested during a move is applied once the last session ends.
