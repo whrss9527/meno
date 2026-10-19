@@ -78,9 +78,12 @@ final class LayoutKeeper {
         let since = lastScanStart ?? model.startedAt
         // Stable window fingerprints can validate reused positions without AX.
         let scanStart = validatedAt ?? model.inventory.scannedAt ?? now
-        lastScanStart = scanStart
         let recentDrops = drops.filter { $0.date >= since }
-        drops.removeAll { $0.date < scanStart }
+        // A mixed-layout scan has not observed the result of a drag yet.
+        if model.inventory.lastScanWasSettled {
+            lastScanStart = scanStart
+            drops.removeAll { $0.date < scanStart }
+        }
         var misplaced = keeper.observe(observations, at: now, includesStash: model.settings.general.stashEnabled)
         for observation in observations {
             guard let section = observation.section, let saved = keeper.memory[observation.key.rawValue] else { continue }
