@@ -66,7 +66,12 @@ final class LayoutKeeper {
         let now = Date()
         // An item that seems to move while the dividers settle would count
         // as moved on purpose.
-        guard now.timeIntervalSince(model.startedAt) >= Self.settling, !model.mover.isMoving else { return }
+        let elapsed = now.timeIntervalSince(model.startedAt)
+        guard elapsed >= Self.settling else {
+            model.inventory.scheduleRefresh(after: Self.settling - elapsed + 0.1)
+            return
+        }
+        guard !model.mover.isMoving else { return }
         defer { saveIfNeeded() }
         // The scan read the menu bar from when it began, so a drag that
         // ended after the previous scan began may not be in that one.
@@ -184,6 +189,7 @@ final class LayoutKeeper {
             // Drags a scan has taken in long ago no longer matter.
             drops.removeAll { now.timeIntervalSince($0.date) > 300 }
             drops.append((point: ScreenGeometry.quartzPoint(fromCocoa: location), date: now))
+            model.inventory.scheduleRefresh(after: max(0.45, Self.settling - now.timeIntervalSince(model.startedAt) + 0.1))
         default:
             break
         }
