@@ -46,6 +46,16 @@ extension View {
         self.buttonStyle(FrostedButtonStyle(prominent: prominent))
         #endif
     }
+
+    /// Keeps primary actions legible over glass and arbitrary wallpapers.
+    @ViewBuilder
+    func menoActionButtonStyle(prominent: Bool = false) -> some View {
+        if prominent {
+            self.buttonStyle(HighContrastButtonStyle())
+        } else {
+            self.menoGlassButtonStyle()
+        }
+    }
 }
 
 #if compiler(>=6.2)
@@ -154,6 +164,25 @@ struct FrostedButtonStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.75 : 1)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+private struct HighContrastButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        let dark = colorScheme == .dark
+        return configuration.label
+            .fontWeight(.semibold)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .foregroundStyle(dark ? Color.black : Color.white)
+            .background {
+                Capsule().fill(dark ? Color.white : Color.black)
+            }
+            .contentShape(Capsule())
+            .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.45)
     }
 }
 
