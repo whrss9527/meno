@@ -21,6 +21,11 @@ private final class LifecycleDelegate: NSObject, NSApplicationDelegate {
     private var probe: NSStatusItem?
     private let keys = (0..<8).map { MenuItemKey(owner: "test.lifecycle.\($0)", token: "solo") }
 
+    private var probeIsVisible: Bool {
+        guard let frame = probe?.button?.window?.frame, !frame.isEmpty else { return false }
+        return NSScreen.screens.contains { $0.frame.contains(NSPoint(x: frame.midX, y: frame.midY)) }
+    }
+
     private struct Failure: Error, CustomStringConvertible {
         let description: String
         init(_ description: String) { self.description = description }
@@ -83,11 +88,13 @@ private final class LifecycleDelegate: NSObject, NSApplicationDelegate {
         let probe = NSStatusBar.system.statusItem(withLength: 24)
         self.probe = probe
         probe.button?.title = "T"
+        model.reveal.requestReveal(all: true, trigger: .link)
+        try await wait("initial real probe is visible") { probeIsVisible }
 
         for engine in [HidingEngine.wide, .stepped] {
             model.settings.general.hidingEngine = engine
             model.setZen(true, announce: false)
-            try await wait("Zen state applied") { model.statusBar.state.zen }
+            try await wait("Zen physically hides the probe") { model.statusBar.state.zen && !probeIsVisible }
             model.statusBar.toggle?.button?.performClick(nil)
             guard !model.isZenActive, model.reveal.visibility == .revealed else {
                 throw Failure("One click must exit Zen and reveal Hidden with \(engine)")
@@ -97,13 +104,13 @@ private final class LifecycleDelegate: NSObject, NSApplicationDelegate {
                 (model.statusBar.hiddenDivider?.length ?? 999) < 100
                     && (model.statusBar.stashDivider?.length ?? 999) < 100
             }
-            try await wait("real probe is visible") {
-                guard let frame = probe.button?.window?.frame, !frame.isEmpty else { return false }
-                return NSScreen.screens.contains { $0.frame.contains(NSPoint(x: frame.midX, y: frame.midY)) }
-            }
+            try await wait("real probe is visible") { probeIsVisible }
 
             // Simulate a physical divider being rebuilt while logical state remains revealed.
             model.statusBar.hiddenDivider?.length = 3000
+            try await wait("physical divider actually grows") {
+                (model.statusBar.hiddenDivider?.button?.window?.frame.width ?? 0) >= 1000
+            }
             model.reveal.requestReveal(all: true, trigger: .menu)
             try await wait("repeated reveal repairs physical divider") {
                 (model.statusBar.hiddenDivider?.length ?? 999) < 100
