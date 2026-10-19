@@ -140,13 +140,13 @@ private struct UpdateCard: View {
                             Button("Install and Relaunch") {
                                 Task { await updates.install() }
                             }
-                            .menoGlassButtonStyle(prominent: true)
+                            .menoActionButtonStyle(prominent: true)
                             .disabled(updates.phase != .idle)
                         } else {
                             Button("Download") {
                                 NSWorkspace.shared.open(release.htmlURL)
                             }
-                            .menoGlassButtonStyle(prominent: true)
+                            .menoActionButtonStyle(prominent: true)
                         }
                     }
                 }
