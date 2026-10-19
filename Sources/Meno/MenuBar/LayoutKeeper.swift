@@ -153,13 +153,15 @@ final class LayoutKeeper {
         let includesStash = model.settings.general.stashEnabled
         for key in keys {
             guard let item = model.inventory.item(for: key), model.inventory.knowsSection(of: key) else { continue }
+            var section = item.section
             if restoring, let saved = keeper.memory[key.rawValue] {
                 let target: ItemSection = saved.section == .stash && !includesStash ? .hidden : saved.section
                 // A conditional restore can be skipped after another change.
                 // That is not a successful move to a new preferred section.
                 guard item.section == target else { continue }
+                section = saved.section
             }
-            keeper.record(key, in: item.section, process: item.pid, at: now, includesStash: includesStash)
+            keeper.record(key, in: section, process: item.pid, at: now, includesStash: includesStash)
             startupKeys.remove(key.rawValue)
             waiting[key] = nil
             offered.remove(key)
