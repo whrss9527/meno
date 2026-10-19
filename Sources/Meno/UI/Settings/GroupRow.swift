@@ -94,7 +94,6 @@ struct GroupRow: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(Color.accentColor.opacity(isTargeted ? 0.8 : 0), lineWidth: 1.5)
         }
-        .animation(.easeOut(duration: 0.15), value: isTargeted)
     }
 
     /// Swaps an item with its shown neighbour, which changes where it
