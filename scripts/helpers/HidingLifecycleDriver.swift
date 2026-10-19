@@ -93,6 +93,8 @@ private final class LifecycleDelegate: NSObject, NSApplicationDelegate {
 
         for engine in [HidingEngine.wide, .stepped] {
             model.settings.general.hidingEngine = engine
+            model.reveal.requestReveal(all: true, trigger: .link)
+            try await wait("\(engine) begins with a physically visible probe") { probeIsVisible }
             model.setZen(true, announce: false)
             try await wait("Zen physically hides the probe") { model.statusBar.state.zen && !probeIsVisible }
             model.statusBar.toggle?.button?.performClick(nil)
@@ -123,6 +125,7 @@ private final class LifecycleDelegate: NSObject, NSApplicationDelegate {
             guard model.reveal.visibility == .revealedAll, !model.statusBar.state.hiddenCollapsed else {
                 throw Failure("Finishing a restore undid the user's reveal with \(engine)")
             }
+            try await wait("layout restore physically leaves the probe visible") { probeIsVisible }
             print("\(engine): one-click Zen exit, real expansion, repeated reveal and layout overlap passed")
         }
         model.settings.appearance.showsDividers = false
