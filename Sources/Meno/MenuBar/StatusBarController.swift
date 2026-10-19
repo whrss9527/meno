@@ -40,6 +40,8 @@ final class StatusBarController: NSObject {
     /// The icons of item groups.
     private var groupItems: [UUID: NSStatusItem] = [:]
     private(set) var state = BarState()
+    /// Invalidates scans that overlap a divider or display transition.
+    private(set) var layoutGeneration: UInt64 = 0
     private var applyTask: Task<Void, Never>?
     /// When the state was last applied; the menu bar takes a moment to
     /// follow.
@@ -118,6 +120,7 @@ final class StatusBarController: NSObject {
     @objc private func itemWindowMoved(_ notification: Notification) {
         guard let window = notification.object as? NSWindow,
               [toggle, hiddenDivider, stashDivider].contains(where: { $0?.button?.window === window }) else { return }
+        layoutGeneration &+= 1
         // A Hidden divider without width (hidden dividers, items shown) is
         // not out of order, and a scan here would only delay the one after
         // showing the items.
@@ -357,6 +360,7 @@ final class StatusBarController: NSObject {
     // MARK: - State
 
     func apply(_ newState: BarState) {
+        layoutGeneration &+= 1
         state = newState
         appliedAt = Date()
         applyTask?.cancel()
@@ -750,7 +754,7 @@ final class StatusBarController: NSObject {
             return
         }
         if state.zen {
-            model.setZen(false)
+            model.reveal.requestReveal(all: NSApp.currentEvent?.modifierFlags.contains(.option) == true, trigger: .click)
             return
         }
         if NSApp.currentEvent?.modifierFlags.contains(.option) == true {
@@ -766,7 +770,7 @@ final class StatusBarController: NSObject {
             return
         }
         if state.zen {
-            model.setZen(false)
+            model.reveal.requestReveal(all: false, trigger: .click)
             return
         }
         let wasCollapsed = model.reveal.visibility == .collapsed

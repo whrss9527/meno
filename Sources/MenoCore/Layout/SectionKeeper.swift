@@ -9,6 +9,8 @@ import Foundation
 /// appears with its app (the app launched or restarted, or Meno just
 /// started) in another section than it was left in was put there by its
 /// app or by macOS, so it belongs back.
+/// A pending restore keeps that saved target through further scans; only
+/// reaching it or an explicitly accepted move changes that decision.
 ///
 /// Only items of apps that appeared a moment before the item did go back:
 /// an item that shows up in an app that was there all along was most likely
@@ -57,7 +59,7 @@ public struct SectionKeeper: Sendable {
         }
     }
 
-    /// How often an item is put back while Meno runs before its app wins.
+    /// How often an item is put back while Meno runs before retries stop.
     public static let putBackLimit = 3
     /// How long after an app appeared its new items count as appearing
     /// with it.
@@ -81,6 +83,9 @@ public struct SectionKeeper: Sendable {
     /// When each process in the menu bar was first seen.
     private var processes: [Int32: Date] = [:]
     private var putBacks: [MenuItemKey: Int] = [:]
+    /// A scan is not confirmation that a misplaced item belongs there.
+    /// Keep its target until it arrives, or an explicit move accepts it.
+    private var pending: Set<MenuItemKey> = []
 
     public init(memory: [String: Remembered] = [:]) {
         self.memory = memory
@@ -111,6 +116,15 @@ public struct SectionKeeper: Sendable {
                 continue
             }
             current[key] = Sighting(section: found, process: observation.process, appearedWithApp: false)
+            if pending.contains(key), let remembered = memory[key.rawValue] {
+                if Self.effective(remembered.section, includesStash: includesStash) == found {
+                    pending.remove(key)
+                } else if putBacks[key, default: 0] < Self.putBackLimit {
+                    misplaced.append(Misplacement(key: key, found: found, belongs: remembered.section))
+                }
+                touch(key, at: date)
+                continue
+            }
             if let before, let section = before.section {
                 // Moved while in the menu bar: on purpose.
                 if section != found {
@@ -124,9 +138,11 @@ public struct SectionKeeper: Sendable {
             let remembered = memory[key.rawValue]
             if let remembered,
                Self.effective(remembered.section, includesStash: includesStash) != found,
-               withApp,
-               putBacks[key, default: 0] < Self.putBackLimit {
-                misplaced.append(Misplacement(key: key, found: found, belongs: remembered.section))
+               withApp {
+                pending.insert(key)
+                if putBacks[key, default: 0] < Self.putBackLimit {
+                    misplaced.append(Misplacement(key: key, found: found, belongs: remembered.section))
+                }
                 touch(key, at: date)
             } else if remembered.map({ Self.effective($0.section, includesStash: includesStash) }) == found {
                 touch(key, at: date)
@@ -142,6 +158,7 @@ public struct SectionKeeper: Sendable {
     /// rule or a scene: that is where it belongs now.
     public mutating func record(_ key: MenuItemKey, in section: ItemSection, process: Int32, at date: Date, includesStash: Bool) {
         guard key.isSteady else { return }
+        pending.remove(key)
         remember(section, for: key, at: date)
         previous[key] = Sighting(
             section: Self.effective(section, includesStash: includesStash),
@@ -162,6 +179,7 @@ public struct SectionKeeper: Sendable {
     /// Keeps the items where they are now, for when they are not put back.
     public mutating func accept(_ misplacements: [Misplacement], at date: Date) {
         for misplacement in misplacements {
+            pending.remove(misplacement.key)
             remember(misplacement.found, for: misplacement.key, at: date)
         }
     }

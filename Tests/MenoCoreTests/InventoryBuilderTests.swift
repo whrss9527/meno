@@ -45,6 +45,35 @@ final class InventoryBuilderTests: XCTestCase {
         XCTAssertEqual(result.items.map(\.sourceIndex), [2, 1, 0])
     }
 
+    func testDividerOnAnotherDisplayDoesNotCoverThisMenuBar() {
+        let key = MenuItemKey(owner: "test.app", token: "solo")
+        let result = InventoryBuilder.build(raw: [item(x: 300)], dividers: .init(layout: layout, ownFrames: [CGRect(x: 0, y: 1080, width: 3000, height: 24)]), cached: .init(sections: [key: .hidden]))
+        XCTAssertEqual(result.items.first?.section, .visible)
+        XCTAssertEqual(result.reliablySectioned, [key])
+    }
+
+    func testScanAcrossRevealDoesNotReplaceSavedSectionsOrPositions() {
+        let key = MenuItemKey(owner: "test.app", token: "solo")
+        let cache = InventoryBuilder.Cache(sections: [key: .stash], positions: [key: -400])
+        let result = InventoryBuilder.build(raw: [item(x: 300)], dividers: .init(layout: layout, isSettled: false), cached: cache)
+        XCTAssertEqual(result.items.first?.section, .stash)
+        XCTAssertEqual(result.cached.sections, cache.sections)
+        XCTAssertEqual(result.cached.positions, cache.positions)
+        XCTAssertTrue(result.reliablySectioned.isEmpty)
+        let settled = InventoryBuilder.build(raw: [item(x: 40)], dividers: .init(layout: layout), cached: result.cached)
+        XCTAssertEqual(settled.items.first?.section, .stash)
+        XCTAssertEqual(settled.reliablySectioned, [key])
+    }
+
+    func testZeroWidthOverflowDoesNotOverwriteRememberedStash() {
+        let key = MenuItemKey(owner: "test.app", token: "solo")
+        var overflow = item(x: -400, width: 0, onScreen: false)
+        overflow.isWithinScreenWidth = false
+        let result = InventoryBuilder.build(raw: [overflow], dividers: .init(layout: layout), cached: .init(sections: [key: .stash]))
+        XCTAssertEqual(result.items.first?.section, .stash)
+        XCTAssertTrue(result.reliablySectioned.isEmpty)
+    }
+
     func testHostedDuplicatesLeaveOriginalPayloadIndex() {
         let raw = [item("com.apple.controlcenter", x: 300, identifier: "test.app"), item(x: 300)]
         let result = InventoryBuilder.build(raw: raw, dividers: .init(layout: layout), cached: .init())

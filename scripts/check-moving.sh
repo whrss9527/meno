@@ -163,6 +163,34 @@ wait_for 30 item_in visible || fail "Applying a scene did not move the item into
 log_has "^MENO_DIAG move $KEY by window" || fail "Meno moved the item without going through its window"
 wait_for 15 helper_on_screen 1 || fail "The item is in Visible but not in the menu bar"
 
+echo "==> Keeping its section across Meno and helper restarts"
+section_saved() {
+  python3 - "$SUPPORT/sections.json" "$KEY" <<'PY'
+import json, pathlib, sys
+try:
+    saved = json.loads(pathlib.Path(sys.argv[1]).read_text())
+    raise SystemExit(0 if saved[sys.argv[2]]['section'] == 'visible' else 1)
+except (OSError, ValueError, KeyError):
+    raise SystemExit(1)
+PY
+}
+wait_for 10 section_saved || fail "The Visible section was not saved"
+kill "$meno"; wait "$meno" 2>/dev/null || true
+LOG="$WORK/meno-restarted.log"
+MENO_DIAG=1 "$BINARY" > "$LOG" 2>&1 &
+meno=$!
+wait_for 60 log_has '^MENO_DIAG ready' || fail "Meno did not restart"
+wait_for 30 item_in visible || fail "Meno forgot the section after restarting"
+wait_for 15 helper_on_screen 1 || fail "Restarting Meno hid a Visible item"
+kill "$helper"; wait "$helper" 2>/dev/null || true
+HELPER_LOG="$WORK/helper-restarted.log"
+"$WORK/MenoE2EMove" > "$HELPER_LOG" 2>&1 &
+helper=$!
+wait_for 15 grep -q '^E2E_ITEM ' "$HELPER_LOG" || fail "The helper did not restart"
+wait_for 45 item_in visible || fail "The restarted helper did not return to Visible"
+wait_for 15 helper_on_screen 1 || fail "The restarted helper is not visible"
+echo "Meno and helper restart section retention passed"
+
 echo "==> Moving it back to the Stash"
 open "meno://scene/Stashed"
 wait_for 30 item_in stash || fail "Applying a scene did not move the item back into the Stash"

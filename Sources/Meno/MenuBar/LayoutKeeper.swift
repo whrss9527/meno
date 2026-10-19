@@ -13,6 +13,15 @@ final class LayoutKeeper {
     unowned let model: AppModel
 
     private var keeper: SectionKeeper
+    /// Saved items may all return misplaced after login; restore that batch
+    /// without replacing their saved sections with the startup arrangement.
+    private var startupKeys: Set<String>
+    private var restoring: Set<MenuItemKey> = []
+    private var restoreQueue: [SectionKeeper.Misplacement] = []
+    private var restorationTask: Task<Void, Never>?
+    private var failedAttempts: [MenuItemKey: Int] = [:]
+    private var retryAfter: [MenuItemKey: Date] = [:]
+    private var offered: Set<MenuItemKey> = []
     /// Items found elsewhere while Zen kept the menu bar still, by key.
     private var waiting: [MenuItemKey: SectionKeeper.Misplacement] = [:]
     /// When the scan taken in last began.
@@ -37,8 +46,10 @@ final class LayoutKeeper {
 
     init(model: AppModel) {
         self.model = model
-        keeper = SectionKeeper(memory: model.storage.loadSectionMemory())
-        keeper.forget(notSeenSince: Date().addingTimeInterval(-Self.memorySpan))
+        var loaded = SectionKeeper(memory: model.storage.loadSectionMemory())
+        loaded.forget(notSeenSince: Date().addingTimeInterval(-Self.memorySpan))
+        keeper = loaded
+        startupKeys = Set(loaded.memory.keys)
         // Drags made while Meno starts count too.
         if model.settings.general.keepsSections {
             dragMonitor.start()
@@ -55,7 +66,7 @@ final class LayoutKeeper {
         let now = Date()
         // An item that seems to move while the dividers settle would count
         // as moved on purpose.
-        guard now.timeIntervalSince(model.startedAt) >= Self.settling else { return }
+        guard now.timeIntervalSince(model.startedAt) >= Self.settling, !model.mover.isMoving else { return }
         defer { saveIfNeeded() }
         // The scan read the menu bar from when it began, so a drag that
         // ended after the previous scan began may not be in that one.
@@ -66,6 +77,15 @@ final class LayoutKeeper {
         let recentDrops = drops.filter { $0.date >= since }
         drops.removeAll { $0.date < scanStart }
         var misplaced = keeper.observe(observations, at: now, includesStash: model.settings.general.stashEnabled)
+        for observation in observations {
+            guard let section = observation.section, let saved = keeper.memory[observation.key.rawValue] else { continue }
+            let target: ItemSection = saved.section == .stash && !model.settings.general.stashEnabled ? .hidden : saved.section
+            if section == target {
+                startupKeys.remove(observation.key.rawValue)
+                waiting[observation.key] = nil
+                offered.remove(observation.key)
+            }
+        }
         guard model.settings.general.keepsSections else {
             dragMonitor.stop()
             drops = []
@@ -84,6 +104,8 @@ final class LayoutKeeper {
             misplaced.removeAll { keys.contains($0.key) }
             for key in keys {
                 waiting[key] = nil
+                startupKeys.remove(key.rawValue)
+                offered.remove(key)
             }
         }
         for misplacement in misplaced {
@@ -93,28 +115,46 @@ final class LayoutKeeper {
         guard !waiting.isEmpty, mayPutBack else { return }
         let due = waiting.values.filter { misplacement in
             // Only items that are still where they were found.
-            model.inventory.item(for: misplacement.key)?.section == misplacement.found
+            model.inventory.knowsSection(of: misplacement.key)
+                && model.inventory.item(for: misplacement.key)?.section == misplacement.found
+                && !restoring.contains(misplacement.key)
         }
-        waiting = [:]
         guard !due.isEmpty else { return }
-        if due.count > Self.automaticLimit {
-            keeper.accept(due, at: now)
-            offerToPutBack(due)
-        } else {
-            for misplacement in due {
+        let automatic = due.filter { misplacement in
+            (due.count <= Self.automaticLimit || startupKeys.contains(misplacement.key.rawValue))
+                && failedAttempts[misplacement.key, default: 0] < SectionKeeper.putBackLimit
+        }
+        for misplacement in automatic {
+            if retryAfter[misplacement.key, default: .distantPast] <= now {
+                waiting[misplacement.key] = nil
                 putBack(misplacement)
             }
+        }
+        let automaticKeys = Set(automatic.map(\.key))
+        let needsOffer = due.filter { !automaticKeys.contains($0.key) && !offered.contains($0.key) }
+        if !needsOffer.isEmpty {
+            offered.formUnion(needsOffer.map(\.key))
+            offerToPutBack(needsOffer)
         }
     }
 
     /// Takes in where Meno just placed items, for example for a rule or a
     /// scene: that is where they belong now.
-    func menoPlaced(_ keys: [MenuItemKey]) {
+    func menoPlaced(_ keys: [MenuItemKey], restoring: Bool = false) {
         let now = Date()
         let includesStash = model.settings.general.stashEnabled
         for key in keys {
             guard let item = model.inventory.item(for: key), model.inventory.knowsSection(of: key) else { continue }
+            if restoring, let saved = keeper.memory[key.rawValue] {
+                let target: ItemSection = saved.section == .stash && !includesStash ? .hidden : saved.section
+                // A conditional restore can be skipped after another change.
+                // That is not a successful move to a new preferred section.
+                guard item.section == target else { continue }
+            }
             keeper.record(key, in: item.section, process: item.pid, at: now, includesStash: includesStash)
+            startupKeys.remove(key.rawValue)
+            waiting[key] = nil
+            offered.remove(key)
         }
         saveIfNeeded()
     }
@@ -151,28 +191,44 @@ final class LayoutKeeper {
 
     private func putBack(_ misplacement: SectionKeeper.Misplacement) {
         let key = misplacement.key
-        Task {
-            do {
-                // Asked again right before dragging: waiting for an idle
-                // moment can take a while, and Zen may have come on.
-                try await model.mover.move(
-                    key,
-                    to: misplacement.belongs,
-                    automatic: true,
-                    onlyFrom: misplacement.found,
-                    restoring: true
-                ) { [weak self] in
-                    self?.mayPutBack ?? false
-                }
-                keeper.didPutBack(key)
-                Log.move.info("Put \(key.rawValue, privacy: .public) back in \(misplacement.belongs.rawValue, privacy: .public)")
-            } catch ItemMover.MoveError.skipped {
-                if model.settings.general.keepsSections {
-                    waiting[key] = misplacement
-                }
-            } catch {
-                Log.move.error("Putting \(key.rawValue, privacy: .public) back failed: \(error.localizedDescription, privacy: .public)")
+        guard restoring.insert(key).inserted else { return }
+        restoreQueue.append(misplacement)
+        guard restorationTask == nil else { return }
+        restorationTask = Task {
+            defer { restorationTask = nil }
+            while !restoreQueue.isEmpty {
+                await restore(restoreQueue.removeFirst())
             }
+        }
+    }
+
+    private func restore(_ misplacement: SectionKeeper.Misplacement) async {
+        let key = misplacement.key
+        defer { restoring.remove(key) }
+        do {
+            // Asked again right before dragging: waiting for an idle
+            // moment can take a while, and Zen may have come on.
+            try await model.mover.move(
+                key,
+                to: misplacement.belongs,
+                automatic: true,
+                onlyFrom: misplacement.found,
+                restoring: true
+            ) { [weak self] in
+                guard let self else { return false }
+                return self.mayPutBack && self.keeper.memory[key.rawValue]?.section == misplacement.belongs
+            }
+            keeper.didPutBack(key)
+            Log.move.info("Put \(key.rawValue, privacy: .public) back in \(misplacement.belongs.rawValue, privacy: .public)")
+        } catch ItemMover.MoveError.skipped {
+            if model.settings.general.keepsSections {
+                waiting[key] = misplacement
+            }
+        } catch {
+            failedAttempts[key, default: 0] += 1
+            retryAfter[key] = Date().addingTimeInterval(10)
+            waiting[key] = misplacement
+            Log.move.error("Putting \(key.rawValue, privacy: .public) back failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -202,7 +258,7 @@ final class LayoutKeeper {
 
     private func saveIfNeeded() {
         guard keeper.hasUnsavedChanges else { return }
-        keeper.markSaved()
         model.storage.saveSectionMemory(keeper.memory)
+        keeper.markSaved()
     }
 }

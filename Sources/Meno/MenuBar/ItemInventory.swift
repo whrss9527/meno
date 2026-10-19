@@ -21,6 +21,7 @@ final class ItemInventory: ObservableObject {
 
     typealias SkippedElements = InventoryBuilder.SkippedElements
     private var cached = InventoryBuilder.Cache()
+    private var lastScanWasSettled = false
     private var scanGate = MenuBarScanGate()
     private(set) var fullScans = 0
     private(set) var skippedScans = 0
@@ -40,6 +41,10 @@ final class ItemInventory: ObservableObject {
     init(model: AppModel) {
         self.model = model
         knownItems = model.storage.loadKnownItems()
+        cached.sections = Dictionary(uniqueKeysWithValues: model.storage.loadSectionMemory().compactMap { raw, value in
+            guard let key = MenuItemKey(rawValue: raw), key.isSteady else { return nil }
+            return (key, value.section == .stash && !model.settings.general.stashEnabled ? .hidden : value.section)
+        })
     }
 
     // MARK: - Queries
@@ -141,11 +146,19 @@ final class ItemInventory: ObservableObject {
 
         let fingerprint = usesScanGate ? WindowCapture.menuBarFingerprint() : nil
         let started = Date()
+        let generation = model.statusBar.layoutGeneration
+        let layout = model.statusBar.dividerLayout
+        let ownFrames = model.statusBar.ownFrames
+        let reported = positionsAreReported
         let raw = await MenuBarScanner.scan(MenuBarScanner.currentTargets())
+        let settled = generation == model.statusBar.layoutGeneration
+            && layout == model.statusBar.dividerLayout && ownFrames == model.statusBar.ownFrames
+            && reported == positionsAreReported
         // Sections come from where items are next to Meno's dividers, which
         // macOS may not have placed yet right after launch.
-        let sectioned = model.statusBar.isInOrder
-        let built = keepingBriefAbsences(build(from: raw))
+        let sectioned = settled && model.statusBar.isInOrder
+        lastScanWasSettled = settled
+        let built = keepingBriefAbsences(build(from: raw, settled: settled))
         if built != items {
             items = built
         }
@@ -153,6 +166,7 @@ final class ItemInventory: ObservableObject {
         lastRefresh = Date()
         refreshDependentState(sectioned: sectioned)
         fullScans += 1
+        if !settled { scheduleRefresh(after: 0.45) }
         if usesScanGate {
             // An empty or partially unresolved AX result must be retried even
             // when the windows have settled, especially just after launch.
@@ -198,6 +212,10 @@ final class ItemInventory: ObservableObject {
     /// Whether item positions reflect the menu bar right now. While the
     /// stepped engine hides items, their positions are not reported.
     var framesAreReliable: Bool {
+        lastScanWasSettled && positionsAreReported
+    }
+
+    private var positionsAreReported: Bool {
         let state = model.statusBar.state
         switch model.statusBar.engine {
         case .wide:
@@ -224,7 +242,7 @@ final class ItemInventory: ObservableObject {
         return (built + kept).sorted { $0.frame.minX < $1.frame.minX }
     }
 
-    private func build(from raw: [RawMenuBarItem]) -> [MenuBarItem] {
+    private func build(from raw: [RawMenuBarItem], settled: Bool) -> [MenuBarItem] {
         let dividers = model.statusBar.dividerLayout
         let rawValues = raw.map { entry in
             InventoryBuilder.RawItem(
@@ -238,7 +256,7 @@ final class ItemInventory: ObservableObject {
         }
         let built = InventoryBuilder.build(
             raw: rawValues,
-            dividers: .init(layout: dividers, ownFrames: model.statusBar.ownFrames, framesAreReliable: framesAreReliable),
+            dividers: .init(layout: dividers, ownFrames: model.statusBar.ownFrames, framesAreReliable: positionsAreReported, isSettled: settled),
             cached: cached
         )
         cached = built.cached
