@@ -21,7 +21,8 @@ final class ItemInventory: ObservableObject {
 
     typealias SkippedElements = InventoryBuilder.SkippedElements
     private var cached = InventoryBuilder.Cache()
-    private var lastScanWasSettled = false
+    private(set) var lastScanWasSettled = false
+    private var unsettledScans = 0
     private var scanGate = MenuBarScanGate()
     private(set) var fullScans = 0
     private(set) var skippedScans = 0
@@ -166,7 +167,14 @@ final class ItemInventory: ObservableObject {
         lastRefresh = Date()
         refreshDependentState(sectioned: sectioned)
         fullScans += 1
-        if !settled { scheduleRefresh(after: 0.45) }
+        if settled {
+            unsettledScans = 0
+        } else {
+            unsettledScans += 1
+            // An app that keeps resizing its icon must not create an AX
+            // retry loop. Periodic scans and explicit reveals still retry.
+            if unsettledScans <= 3 { scheduleRefresh(after: 0.45) }
+        }
         if usesScanGate {
             // An empty or partially unresolved AX result must be retried even
             // when the windows have settled, especially just after launch.
