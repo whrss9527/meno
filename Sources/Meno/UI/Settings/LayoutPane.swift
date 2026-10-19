@@ -4,8 +4,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// Editor for the menu bar layout. Clicking an item offers where to move it;
-/// items can also be dragged to any place in a section, before or after the
-/// items there, which make room where it will land.
+/// items can also be dragged to any place in a section, with a static line
+/// showing where they will land.
 struct LayoutPane: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var inventory: ItemInventory
@@ -16,9 +16,8 @@ struct LayoutPane: View {
     @State private var draggedKey: MenuItemKey?
     /// Where the dragged item would land.
     @State private var dropTarget: LaneDropTarget?
-    /// Where each item, and the gap opened for the dragged one, are drawn in
-    /// their section's lane.
-    @State private var laneFrames: [ItemSection: [LaneEntryID: CGRect]] = [:]
+    /// Stable item frames; drop feedback never changes the lane's layout.
+    @State private var laneFrames: [ItemSection: [MenuItemKey: CGRect]] = [:]
     @State private var savingScene = false
     @State private var sceneName = ""
     @State private var isRenaming = false
@@ -64,7 +63,7 @@ struct LayoutPane: View {
             groupsCard
             SettingsCard("Good to know", symbol: "lightbulb") {
                 tip("cursorarrow.click", "Click an item to choose where it goes: another section, or one step to the left or right.")
-                tip("hand.draw", "Or drag it to any place in a section to put the items in order. The other items make room where it will land.")
+                tip("hand.draw", "Or drag it to another section or position. A line marks where it will land.")
                 tip("command", "You can also hold ⌘ and drag icons directly in the menu bar. Meno's dividers mark the sections: the single chevron starts the Hidden section, the double chevron the Stash.")
                 tip("cursorarrow.motionlines", "Meno moves items without the pointer where it can. On macOS 27, or when that does not work, it briefly takes over the pointer and puts it back when it is done.")
                 tip("bell", "Choose Show When It Changes for a hidden item, and Meno shows it for a moment when its icon or text changes, for example when a sync fails. Icons are compared when Screen Recording is allowed.")
@@ -82,7 +81,7 @@ struct LayoutPane: View {
                 }
             }
         }
-        // A drag that ends outside the lanes, or is called off, leaves no gap.
+        // A drag that ends outside the lanes, or is called off, clears its target.
         .onChange(of: draggedKey) { _, key in
             if key == nil { dropTarget = nil }
         }
@@ -278,23 +277,23 @@ struct LayoutPane: View {
                     }
             } else {
                 FlowLayout(spacing: 8, lineSpacing: 8) {
-                    ForEach(entries(of: items, in: section)) { entry in
-                        Group {
-                            if let index = entry.index {
-                                chip(items[index], left: index > 0 ? items[index - 1] : nil, right: index + 1 < items.count ? items[index + 1] : nil)
-                            } else {
-                                dropGap
-                            }
-                        }
+                    ForEach(Array(items.enumerated()), id: \.element.key) { index, item in
+                        chip(item, left: index > 0 ? items[index - 1] : nil, right: index + 1 < items.count ? items[index + 1] : nil)
                         .background {
                             GeometryReader { proxy in
-                                Color.clear.preference(key: LaneFramesKey.self, value: [entry.id: proxy.frame(in: Self.laneSpace(section))])
+                                Color.clear.preference(key: LaneFramesKey.self, value: [item.key: proxy.frame(in: Self.laneSpace(section))])
+                            }
+                        }
+                        .overlay(alignment: .leading) {
+                            insertionMarker(in: section, at: index).offset(x: -5)
+                        }
+                        .overlay(alignment: .trailing) {
+                            if index == items.count - 1 {
+                                insertionMarker(in: section, at: items.count).offset(x: 5)
                             }
                         }
                     }
                 }
-                .animation(.easeInOut(duration: 0.2), value: items.map(\.key))
-                .animation(.easeInOut(duration: 0.18), value: dropTarget)
             }
         }
         .padding(16)
@@ -318,22 +317,16 @@ struct LayoutPane: View {
             target: $dropTarget,
             drop: { key, gap in drop(key, into: gap, of: section) }
         ))
-        .animation(.easeOut(duration: 0.15), value: dropTarget?.section)
+        .transaction {
+            $0.animation = nil
+            $0.disablesAnimations = true
+        }
     }
 
     /// The coordinates of a section's lane, in which drops and the frames of
     /// its items are measured.
     private static func laneSpace(_ section: ItemSection) -> NamedCoordinateSpace {
         .named(section)
-    }
-
-    /// The items of a section, with a gap where the dragged item would land.
-    private func entries(of items: [MenuBarItem], in section: ItemSection) -> [LaneEntry] {
-        var entries = items.indices.map { LaneEntry(id: .item(items[$0].key), index: $0) }
-        if let dropTarget, dropTarget.section == section {
-            entries.insert(LaneEntry(id: .gap, index: nil), at: min(dropTarget.gap, entries.count))
-        }
-        return entries
     }
 
     /// Moves the dragged item into a gap among a section's items: right
@@ -351,20 +344,18 @@ struct LayoutPane: View {
         }
     }
 
-    /// The place the dragged item would land, the size of the item.
-    private var dropGap: some View {
-        let size = draggedKey.flatMap { key in
-            laneFrames.values.lazy.compactMap { $0[.item(key)] }.first?.size
-        } ?? CGSize(width: 90, height: 32)
-        return RoundedRectangle(cornerRadius: 11, style: .continuous)
-            .fill(Color.accentColor.opacity(0.12))
-            .overlay {
-                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .strokeBorder(Color.accentColor.opacity(0.8), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-            }
-            .frame(width: size.width, height: size.height)
-            .transition(.opacity)
-            .accessibilityHidden(true)
+    /// Marks the drop position without moving neighbouring items.
+    @ViewBuilder
+    private func insertionMarker(in section: ItemSection, at gap: Int) -> some View {
+        if dropTarget == LaneDropTarget(section: section, gap: gap) {
+            Capsule()
+                .fill(Color.accentColor)
+                .frame(width: 3)
+                .padding(.vertical, 3)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+                .transition(.identity)
+        }
     }
 
     private func chip(_ item: MenuBarItem, left: MenuBarItem?, right: MenuBarItem?) -> some View {
@@ -443,33 +434,21 @@ private struct LaneDropTarget: Equatable {
     let gap: Int
 }
 
-/// An item of a lane, or the gap opened for the dragged one.
-private enum LaneEntryID: Hashable {
-    case item(MenuItemKey)
-    case gap
-}
-
-private struct LaneEntry: Identifiable {
-    let id: LaneEntryID
-    /// The item's place among the section's items; nil for the gap.
-    let index: Int?
-}
-
 /// Where the items of a lane are drawn.
 private struct LaneFramesKey: PreferenceKey {
-    static let defaultValue: [LaneEntryID: CGRect] = [:]
+    static let defaultValue: [MenuItemKey: CGRect] = [:]
 
-    static func reduce(value: inout [LaneEntryID: CGRect], nextValue: () -> [LaneEntryID: CGRect]) {
+    static func reduce(value: inout [MenuItemKey: CGRect], nextValue: () -> [MenuItemKey: CGRect]) {
         value.merge(nextValue()) { $1 }
     }
 }
 
-/// Follows an item dragged over a section's lane: opens a gap where it
-/// would land, and moves it there when it is dropped.
+/// Tracks the insertion position against stationary items and moves the
+/// dragged item only when it is dropped.
 private struct LaneDropDelegate: DropDelegate {
     let section: ItemSection
     let items: [MenuBarItem]
-    let frames: [LaneEntryID: CGRect]
+    let frames: [MenuItemKey: CGRect]
     let draggedKey: MenuItemKey?
     let isBusy: Bool
     @Binding var target: LaneDropTarget?
@@ -506,12 +485,7 @@ private struct LaneDropDelegate: DropDelegate {
             target = nil
             return
         }
-        // Over the gap already open the target stays: the gap pushes the
-        // items after it aside, and following them would make it jump.
-        if target?.section == section, let gap = frames[.gap], gap.insetBy(dx: -4, dy: -4).contains(point) {
-            return
-        }
-        let itemFrames = items.compactMap { frames[.item($0.key)] }
+        let itemFrames = items.compactMap { frames[$0.key] }
         // Until every item has been laid out, the gaps are not known.
         guard itemFrames.count == items.count else { return }
         let gap = LaneDrop.target(

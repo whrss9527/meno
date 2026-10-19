@@ -51,14 +51,14 @@ enum EventSynthesizer {
         postMouse(.leftMouseDown, at: start, source: source, flags: .maskCommand)
         await pause(milliseconds: scaled(150))
 
-        let distance = abs(end.x - start.x)
-        let steps = max(10, Int(distance / 10))
-        for step in 1...steps {
-            let fraction = CGFloat(step) / CGFloat(steps)
-            let point = CGPoint(x: start.x + (end.x - start.x) * fraction, y: start.y + (end.y - start.y) * fraction)
-            postMouse(.leftMouseDragged, at: point, source: source, flags: .maskCommand)
-            await pause(milliseconds: scaled(12))
-        }
+        // Cross the drag threshold once, then go straight to the drop point.
+        // Travel distance should not add an animation or extra waiting.
+        let distance = hypot(end.x - start.x, end.y - start.y)
+        let fraction = min(8 / max(distance, 1), 1)
+        let lift = CGPoint(x: start.x + (end.x - start.x) * fraction, y: start.y + (end.y - start.y) * fraction)
+        postMouse(.leftMouseDragged, at: lift, source: source, flags: .maskCommand)
+        await pause(milliseconds: scaled(30))
+        postMouse(.leftMouseDragged, at: end, source: source, flags: .maskCommand)
         await pause(milliseconds: scaled(150))
         postMouse(.leftMouseUp, at: end, source: source, flags: .maskCommand)
         await pause(milliseconds: scaled(60))
