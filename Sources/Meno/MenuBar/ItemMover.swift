@@ -176,7 +176,7 @@ final class ItemMover: ObservableObject {
             if !restoring {
                 model.temporary.forget(Self.keys(of: request))
             }
-            model.keeper.menoPlaced(Self.keys(of: request))
+            model.keeper.menoPlaced(Self.keys(of: request), restoring: restoring)
             return
         }
         guard !isMoving else { throw MoveError.busy }
@@ -233,14 +233,14 @@ final class ItemMover: ObservableObject {
             }
         } catch {
             Diagnostics.event("move failed: \(error.localizedDescription)")
-            model.keeper.menoPlaced(placed)
+            model.keeper.menoPlaced(placed, restoring: restoring)
             finish(before: before, moved: moved, automatic: automatic || restoring, isUndo: isUndo)
             if moved, !restoring {
                 model.forgetActiveScene()
             }
             throw error
         }
-        model.keeper.menoPlaced(placed)
+        model.keeper.menoPlaced(placed, restoring: restoring)
         finish(before: before, moved: moved, automatic: automatic || restoring, isUndo: isUndo)
         // Applying a scene marks it again once this returns; any other change
         // leaves the scene behind. Putting items back keeps it.

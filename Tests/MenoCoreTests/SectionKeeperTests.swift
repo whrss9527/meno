@@ -56,6 +56,39 @@ final class SectionKeeperTests: XCTestCase {
         XCTAssertEqual(keeper.observe([seen(dropbox, .hidden, process: 300)], at: now, includesStash: true), [])
     }
 
+    func testUnfinishedRestorationSurvivesFurtherScansAndIntermediatePositions() {
+        var keeper = SectionKeeper(memory: [dropbox.rawValue: .init(section: .hidden, seen: now)])
+        for (index, found) in [ItemSection.stash, .stash, .visible, .visible].enumerated() {
+            let misplaced = keeper.observe([seen(dropbox, found)], at: now.addingTimeInterval(Double(index)), includesStash: true)
+            XCTAssertEqual(misplaced, [.init(key: dropbox, found: found, belongs: .hidden)])
+            XCTAssertEqual(keeper.memory[dropbox.rawValue]?.section, .hidden)
+        }
+        XCTAssertEqual(keeper.observe([seen(dropbox, .hidden)], at: now, includesStash: true), [])
+    }
+
+    func testExplicitDragAcceptsTheNewPlaceWhileRestorationIsPending() {
+        var keeper = SectionKeeper(memory: [dropbox.rawValue: .init(section: .hidden, seen: now)])
+        let misplaced = keeper.observe([seen(dropbox, .visible)], at: now, includesStash: true)
+        keeper.accept(misplaced, at: now)
+        XCTAssertEqual(keeper.observe([seen(dropbox, .visible)], at: now, includesStash: true), [])
+        XCTAssertEqual(keeper.memory[dropbox.rawValue]?.section, .visible)
+    }
+
+    func testManyRestartedItemsKeepTheirSavedSectionsUntilRestored() throws {
+        let keys = (0..<8).map { MenuItemKey(owner: "test.app.\($0)", token: "solo") }
+        let memory = Dictionary(uniqueKeysWithValues: keys.map { ($0.rawValue, SectionKeeper.Remembered(section: .visible, seen: now)) })
+        var keeper = SectionKeeper(memory: memory)
+        for round in 0..<3 {
+            let misplaced = keeper.observe(keys.map { seen($0, .stash) }, at: now.addingTimeInterval(Double(round)), includesStash: true)
+            XCTAssertEqual(misplaced.count, keys.count)
+            XCTAssertEqual(keeper.memory, memory)
+        }
+        let data = try JSONEncoder().encode(keeper.memory)
+        let saved = try JSONDecoder().decode([String: SectionKeeper.Remembered].self, from: data)
+        var restarted = SectionKeeper(memory: saved)
+        XCTAssertEqual(restarted.observe(keys.map { seen($0, .stash) }, at: now, includesStash: true).count, keys.count)
+    }
+
     func testAnItemThatShowsUpInAnAppThatWasThereCountsWhereItIs() {
         // An app that was running all along adds an item: that was on purpose.
         let timer = MenuItemKey(owner: "com.example.tools", token: "id:timer")
@@ -91,7 +124,10 @@ final class SectionKeeperTests: XCTestCase {
         }
         _ = keeper.observe([], at: now, includesStash: true)
         XCTAssertEqual(keeper.observe([seen(dropbox, .visible, process: 900)], at: now, includesStash: true), [])
-        XCTAssertEqual(keeper.memory[dropbox.rawValue]?.section, .visible)
+        XCTAssertEqual(keeper.memory[dropbox.rawValue]?.section, .hidden)
+        // A retry limit must not erase the saved preference for the next launch.
+        var restarted = SectionKeeper(memory: keeper.memory)
+        XCTAssertEqual(restarted.observe([seen(dropbox, .visible)], at: now, includesStash: true).count, 1)
     }
 
     func testOnlySteadyKeysAreKept() {

@@ -9,7 +9,8 @@ final class Helper: NSObject, NSApplicationDelegate {
     private var signalSource: DispatchSourceSignal?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let width = ProcessInfo.processInfo.environment["MENO_E2E_ITEM_WIDTH"].flatMap(Double.init)
+        let item = NSStatusBar.system.statusItem(withLength: width.map { CGFloat($0) } ?? NSStatusItem.variableLength)
         item.button?.title = "E2E"
         self.item = item
         signal(SIGUSR1, SIG_IGN)

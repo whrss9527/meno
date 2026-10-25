@@ -47,7 +47,9 @@ enum Diagnostics {
             let menuBarHeight = Int(frame.maxY - screen.visibleFrame.maxY)
             let notch = screen.safeAreaInsets.top > 0 ? "notch" : "no notch"
             let items = ScreenGeometry.displayID(of: screen) == itemsDisplay ? " · items here" : ""
+            let display = ScreenGeometry.displayID(of: screen).map { String($0) } ?? "unknown"
             lines.append("Screen: \(Int(frame.width))×\(Int(frame.height)) @\(screen.backingScaleFactor)x · menu bar \(menuBarHeight) pt · \(notch)"
+                + " · origin \(Int(frame.minX)),\(Int(frame.minY)) · display \(display)"
                 + (ScreenGeometry.isBuiltIn(screen) ? " · built in" : "") + items)
         }
         lines.append("Meno icon \(describe(model.statusBar.toggleFrame))"
@@ -58,7 +60,8 @@ enum Diagnostics {
             lines.append("Skipped \(label) elements: " + counts.sorted { $0.key < $1.key }.map { "\($0.key) ×\($0.value)" }.joined(separator: ", "))
         }
         let inventory = model.inventory
-        lines.append("Scans: \(inventory.fullScans) full, \(inventory.skippedScans) skipped")
+        lines.append("Scans: \(inventory.fullScans) full, \(inventory.skippedScans) skipped"
+            + " · layout settled \(inventory.lastScanWasSettled ? "yes" : "no")")
         let items = model.inventory.items
         lines.append("Items (\(items.count)):")
         for item in items {
@@ -96,7 +99,7 @@ enum Diagnostics {
 
     private static func describe(_ frame: CGRect?) -> String {
         guard let frame else { return "none" }
-        return "x=\(Int(frame.minX)) w=\(Int(frame.width))"
+        return "x=\(Int(frame.minX)) w=\(Int(frame.width)) y=\(Int(frame.minY)) h=\(Int(frame.height))"
     }
 }
 

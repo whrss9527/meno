@@ -68,8 +68,8 @@ final class AppModel: ObservableObject {
         self?.recordDirectClick()
     }
 
-    init() {
-        let storage = Storage()
+    init(storage: Storage? = nil) {
+        let storage = storage ?? Storage()
         self.storage = storage
         settings = storage.loadSettings()
         usage = storage.loadUsage()

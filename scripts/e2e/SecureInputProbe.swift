@@ -55,6 +55,7 @@ struct SecureInputProbe {
             if byWindow {
                 await EventSynthesizer.commandDrag(window: right, to: end, target: left, pace: pace)
             } else {
+                precondition(abs(end.x - right.bounds.midX) >= 100, "The pointer probe must cover a long move")
                 await EventSynthesizer.commandDrag(
                     from: CGPoint(x: right.bounds.midX, y: right.bounds.midY), to: end, pace: pace
                 )

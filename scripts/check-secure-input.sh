@@ -38,7 +38,8 @@ swiftc -I "$BUILD/Modules" "$BUILD"/MenoCore.build/*.o "$BUILD"/FritCore.build/*
 swiftc "$ROOT/scripts/e2e/SecureInputHolder.swift" -o "$WORK/holder"
 swiftc "$ROOT/scripts/e2e/StatusItemHelper.swift" -o "$WORK/MenoSecureA"
 cp "$WORK/MenoSecureA" "$WORK/MenoSecureB"
-"$WORK/MenoSecureA" > "$WORK/first.log" 2>&1 &
+# A wide helper makes the pointer probe cover more than an adjacent-icon nudge.
+MENO_E2E_ITEM_WIDTH=220 "$WORK/MenoSecureA" > "$WORK/first.log" 2>&1 &
 first=$!
 "$WORK/MenoSecureB" > "$WORK/second.log" 2>&1 &
 second=$!

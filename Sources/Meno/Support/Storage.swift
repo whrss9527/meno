@@ -16,9 +16,9 @@ final class Storage {
         return base.appendingPathComponent("Meno", isDirectory: true)
     }
 
-    init() {
-        directory = Self.defaultDirectory
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    init(directory: URL? = nil) {
+        self.directory = directory ?? Self.defaultDirectory
+        try? FileManager.default.createDirectory(at: self.directory, withIntermediateDirectories: true)
     }
 
     func url(for name: String) -> URL {

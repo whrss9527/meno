@@ -94,7 +94,8 @@ final class ChipMouseView: NSView, NSDraggingSource {
         let image = makeDragImage()
         let item = NSDraggingItem(pasteboardWriter: key.rawValue as NSString)
         item.setDraggingFrame(NSRect(origin: .zero, size: image.size), contents: image)
-        beginDraggingSession(with: [item], event: event, source: self)
+        let session = beginDraggingSession(with: [item], event: event, source: self)
+        session.animatesToStartingPositionsOnCancelOrFail = false
     }
 
     override func mouseUp(with event: NSEvent) {

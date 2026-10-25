@@ -132,7 +132,7 @@ struct ToastView: View {
                         center.perform(action)
                     }
                     .controlSize(.small)
-                    .menoGlassButtonStyle(prominent: action.id == toast.actions.first?.id)
+                    .menoActionButtonStyle(prominent: action.id == toast.actions.first?.id)
                 }
                 if !toast.actions.isEmpty {
                     Button {

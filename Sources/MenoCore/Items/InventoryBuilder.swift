@@ -32,11 +32,14 @@ public enum InventoryBuilder {
         public var layout: DividerLayout?
         public var ownFrames: [CGRect]
         public var framesAreReliable: Bool
+        /// The scan and divider positions came from the same layout.
+        public var isSettled: Bool
 
-        public init(layout: DividerLayout?, ownFrames: [CGRect] = [], framesAreReliable: Bool = true) {
+        public init(layout: DividerLayout?, ownFrames: [CGRect] = [], framesAreReliable: Bool = true, isSettled: Bool = true) {
             self.layout = layout
             self.ownFrames = ownFrames
             self.framesAreReliable = framesAreReliable
+            self.isSettled = isSettled
         }
     }
 
@@ -97,7 +100,7 @@ public enum InventoryBuilder {
         // Remove leftovers before counting siblings and deriving their keys.
         named = named.filter { index in
             let entry = raw[index]
-            guard entry.frame.width < 1, dividers.framesAreReliable, entry.isWithinScreenWidth else { return true }
+            guard entry.frame.width < 1, dividers.framesAreReliable, dividers.isSettled, entry.isWithinScreenWidth else { return true }
             skipped.empty[entry.owner, default: 0] += 1
             return false
         }
@@ -114,7 +117,8 @@ public enum InventoryBuilder {
                 let entry = raw[index]
                 let key = MenuItemKey(owner: owner, token: token)
                 var frame = entry.frame
-                let trustworthy = (dividers.framesAreReliable || entry.isOnScreen) && !overlaps(frame, dividers.ownFrames)
+                let trustworthy = dividers.isSettled && frame.width > 0 && frame.height > 0
+                    && (dividers.framesAreReliable || entry.isOnScreen) && !overlaps(frame, dividers.ownFrames)
                 let section: ItemSection
                 if trustworthy, let layout = dividers.layout {
                     section = SectionResolver.section(of: HorizontalSpan(minX: Double(frame.minX), maxX: Double(frame.maxX)), dividers: layout)
@@ -136,7 +140,7 @@ public enum InventoryBuilder {
     }
 
     public static func overlaps(_ frame: CGRect, _ ownFrames: [CGRect]) -> Bool {
-        ownFrames.contains { $0.minX < frame.midX && frame.midX < $0.maxX }
+        ownFrames.contains { $0.minX < frame.midX && frame.midX < $0.maxX && $0.minY < frame.midY && frame.midY < $0.maxY }
     }
 
     private static func displayName(for entry: RawItem, siblings: Int) -> String {
