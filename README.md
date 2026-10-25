@@ -75,6 +75,8 @@ CI checks every pull request on Linux and macOS 15/26. Main pushes also run CI; 
 
 Meno is free and open source. If you like it, a ⭐ star means a lot, or you can buy me a coffee with WeChat.
 
+The same code is available in Settings → About → Buy Me a Coffee.
+
 <p align="center"><img src="docs/donate-wechat.png" width="240" alt="WeChat tip code: buy me a coffee"></p>
 
 ## License

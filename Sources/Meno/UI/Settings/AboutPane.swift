@@ -5,6 +5,10 @@ struct AboutPane: View {
     @EnvironmentObject private var model: AppModel
     /// Other copies of Meno on this Mac, such as "Meno 2" next to "Meno".
     @State private var otherCopies: [URL] = []
+    @State private var showsDonation = false
+
+    @MainActor private static let donationImage = Bundle.main.url(forResource: "donate-wechat", withExtension: "png")
+        .flatMap { NSImage(contentsOf: $0) }
 
     private let columns = [GridItem(.adaptive(minimum: 200), spacing: 12)]
 
@@ -80,6 +84,29 @@ struct AboutPane: View {
             Text("Paste the diagnostic report into your issue before sending it.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
+
+            if let image = Self.donationImage {
+                Button {
+                    showsDonation = true
+                } label: {
+                    Label("Buy Me a Coffee", systemImage: "heart")
+                }
+                .menoGlassButtonStyle()
+                .popover(isPresented: $showsDonation) {
+                    VStack(spacing: 10) {
+                        Image(nsImage: image)
+                            .resizable()
+                            .interpolation(.high)
+                            .scaledToFit()
+                            .frame(width: 270)
+                            .accessibilityLabel(Text("WeChat donation code"))
+                        Text("Scan with WeChat")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(12)
+                }
+            }
         }
         .onAppear { otherCopies = SingleInstance.otherCopies }
     }
