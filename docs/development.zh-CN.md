@@ -41,7 +41,7 @@ Meno 通过 Developer ID 签名及苹果公证发行，不提供 Mac App Store �
 
 包需要 Swift 6（Xcode 16 或更新版本）。`MenoCore` 使用 Swift 6 语言模式，应用和测试保留 Swift 5 模式。`scripts/check-concurrency.sh` 在新的临时目录中执行完整并发检查，避免增量构建隐藏警告；CI 摘要记录核心与应用的警告数。
 
-核心必须零警告。`scripts/concurrency-baseline.json` 记录应用现有的十条诊断、九个源代码位置，以 Swift 6.3.3 / Xcode 26.6 测得。其他工具链可能报告更少；出现新位置、同一位置增加诊断或总数增加时 CI 失败。修复警告后可以降低基线。移动源代码行时，核对诊断后再调整记录位置，不要为了通过检查提高额度。
+核心必须零警告。`scripts/concurrency-baseline.json` 记录应用现有的四条诊断、四个源代码位置，以 Swift 6.3.3 / Xcode 26.6 测得。其他工具链可能报告更少；出现新位置、同一位置增加诊断或总数增加时 CI 失败。修复警告后可以降低基线。移动源代码行时，核对诊断后再调整记录位置，不要为了通过检查提高额度。
 
 ### 设置兼容性
 

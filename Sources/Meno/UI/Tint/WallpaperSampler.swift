@@ -41,7 +41,7 @@ final class WallpaperSampler {
 
     /// Reads the wallpapers that changed since they were last read, and
     /// calls `changed` once what is known changed.
-    func refresh(changed: @escaping @MainActor () -> Void) {
+    func refresh(changed: @escaping @MainActor @Sendable () -> Void) {
         let dark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         var targets: [Target] = []
         var present = Set<CGDirectDisplayID>()
@@ -79,7 +79,7 @@ final class WallpaperSampler {
         let changedAlready = didChange
         queue.async { [weak self] in
             let results = reader.read(wanted, keeping: screens)
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     var didChangeNow = changedAlready

@@ -116,7 +116,7 @@ final class TintOverlayController {
         }
         // Wallpapers with a light and a dark version change with it.
         appearanceObservation = NSApp.observe(\.effectiveAppearance) { [weak self] _, _ in
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 MainActor.assumeIsolated {
                     self?.refreshWallpaper()
                 }
