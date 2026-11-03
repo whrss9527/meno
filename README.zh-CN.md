@@ -47,7 +47,7 @@ brew install --cask whrss9527/tap/meno
 
 或者手动安装：
 
-1. 从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.zip`，解压后把 Meno.app 移到“应用程序”。
+1. 从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.dmg`，打开后把 Meno.app 拖到右侧“应用程序”。
 2. 打开后，在“系统设置 › 隐私与安全性 › 辅助功能”里允许 Meno。
 3. 有新版本时选“安装并重新打开”，Meno 会自己更新。
 

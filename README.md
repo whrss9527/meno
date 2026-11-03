@@ -47,7 +47,7 @@ brew install --cask whrss9527/tap/meno
 
 Or by hand:
 
-1. Download `Meno.zip` from the [latest release](https://github.com/whrss9527/meno/releases/latest), unzip it and move Meno.app to *Applications*.
+1. Download `Meno.dmg` from the [latest release](https://github.com/whrss9527/meno/releases/latest), open it and drag Meno.app to *Applications* on the right.
 2. Open it and allow Meno in *System Settings › Privacy & Security › Accessibility*.
 3. When a new version is out, choose *Install and Relaunch* and Meno updates itself.
 

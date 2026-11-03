@@ -6,7 +6,7 @@
 
 需要 macOS 14 Sonoma 或更高版本。液态玻璃需要 macOS 26，并使用 Xcode 26 构建。
 
-从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.zip`，解压后把 Meno.app 移到“应用程序”文件夹。该版本为通用二进制（支持 Apple 芯片与 Intel）。从 0.10.0 起用 Developer ID 签名并经过苹果公证，双击就能打开。0.10.0 之前的版本使用临时签名，首次打开时请右键点按 Meno.app 并选择“打开”，或运行 `xattr -dr com.apple.quarantine /Applications/Meno.app`。
+从[最新版本](https://github.com/whrss9527/meno/releases/latest)下载 `Meno.dmg`，打开后把 Meno.app 拖到右侧“应用程序”文件夹。该版本为通用二进制（支持 Apple 芯片与 Intel）。从 0.10.0 起用 Developer ID 签名并经过苹果公证，双击就能打开。0.10.0 之前的版本使用临时签名，首次打开时请右键点按 Meno.app 并选择“打开”，或运行 `xattr -dr com.apple.quarantine /Applications/Meno.app`。
 
 Meno 可以自己安装更新：检查到新版本后，在提示、“设置 › 关于”或 Meno 的菜单里选择“安装并重新打开”即可。“设置 › 关于”还会从新到旧列出你当前版本之后每个版本的改动。Meno 会从 GitHub 下载新版本，核对校验和、版本号与代码签名，替换自身后重新打开。如果 Meno 所在的文件夹不可写入，则会改为提供下载链接。
 
