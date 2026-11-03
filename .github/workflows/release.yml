@@ -43,7 +43,7 @@ jobs:
   release:
     needs: metadata
     # Frit is pinned to a commit; change the @ below and frit-ref together.
-    uses: whrss9527/frit/.github/workflows/release-app.yml@bb416f3399ef522a1d114dd5382b3ab9ba213e4a
+    uses: whrss9527/frit/.github/workflows/release-app.yml@fd38175605b58e78d778c91ccaf1e336412dbf28
     with:
       app-name: Meno
       tag: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', inputs.version) }}
@@ -58,6 +58,6 @@ jobs:
       dmg-archive: build/Meno.zip
       notes-command: scripts/release-notes.sh
       require-notarization: true
-      frit-ref: bb416f3399ef522a1d114dd5382b3ab9ba213e4a
+      frit-ref: fd38175605b58e78d778c91ccaf1e336412dbf28
       runner: macos-26
     secrets: inherit
