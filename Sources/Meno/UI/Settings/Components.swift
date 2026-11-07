@@ -82,7 +82,7 @@ struct SettingsCard<Content: View>: View {
 }
 
 private struct SettingTitleKey: EnvironmentKey {
-    static let defaultValue: LocalizedStringKey? = nil
+    static var defaultValue: LocalizedStringKey? { nil }
 }
 
 extension EnvironmentValues {

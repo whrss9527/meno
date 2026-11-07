@@ -68,17 +68,18 @@ final class AppModel: ObservableObject {
         self?.recordDirectClick()
     }
 
-    init(storage: Storage? = nil) {
+    init(storage: Storage? = nil, permissions: PermissionCenter? = nil, images: ItemImageCache? = nil,
+         loginState: (enabled: Bool, requiresApproval: Bool)? = nil) {
         let storage = storage ?? Storage()
         self.storage = storage
         settings = storage.loadSettings()
         usage = storage.loadUsage()
-        permissions = PermissionCenter()
-        images = ItemImageCache()
+        self.permissions = permissions ?? PermissionCenter()
+        self.images = images ?? ItemImageCache()
         hotkeys = HotkeyCenter()
         toasts = ToastCenter()
-        launchAtLogin = LaunchAtLogin.isEnabled
-        launchAtLoginNeedsApproval = LaunchAtLogin.requiresApproval
+        launchAtLogin = loginState?.enabled ?? LaunchAtLogin.isEnabled
+        launchAtLoginNeedsApproval = loginState?.requiresApproval ?? LaunchAtLogin.requiresApproval
     }
 
     // MARK: - Lifecycle

@@ -8,18 +8,27 @@ import CoreGraphics
 /// - Screen Recording (optional) to show the real artwork of hidden items.
 @MainActor
 final class PermissionCenter: ObservableObject {
-    @Published private(set) var accessibility = AXIsProcessTrusted()
-    @Published private(set) var screenRecording = CGPreflightScreenCaptureAccess()
+    @Published private(set) var accessibility: Bool
+    @Published private(set) var screenRecording: Bool
     /// Set once Screen Recording was granted while Meno was running; macOS
     /// applies it only after a relaunch.
     @Published private(set) var screenRecordingNeedsRelaunch = false
     /// Whether Accessibility was granted at some point before.
-    @Published private(set) var accessibilityWasGranted = UserDefaults.standard.bool(forKey: PermissionCenter.grantedKey)
+    @Published private(set) var accessibilityWasGranted: Bool
 
     private var pollTask: Task<Void, Never>?
     private var activeObserver: NSObjectProtocol?
-    private let grantedAtLaunch = CGPreflightScreenCaptureAccess()
+    private let grantedAtLaunch: Bool
     private static let grantedKey = "AccessibilityWasGranted"
+
+    init(accessibility: Bool? = nil, screenRecording: Bool? = nil, accessibilityWasGranted: Bool? = nil) {
+        self.accessibility = accessibility ?? AXIsProcessTrusted()
+        let capture = screenRecording ?? CGPreflightScreenCaptureAccess()
+        self.screenRecording = capture
+        grantedAtLaunch = capture
+        self.accessibilityWasGranted = accessibilityWasGranted
+            ?? UserDefaults.standard.bool(forKey: Self.grantedKey)
+    }
 
     /// Accessibility was granted before but no longer applies. After an
     /// update, System Settings keeps the old entry switched on, but it

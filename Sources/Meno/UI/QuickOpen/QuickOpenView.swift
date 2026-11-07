@@ -17,6 +17,7 @@ struct QuickOpenView: View {
     var body: some View {
         VStack(spacing: 0) {
             searchField
+                .layoutPriority(1)
             if !controller.results.isEmpty {
                 Divider().opacity(0.5)
                 resultList
@@ -30,8 +31,11 @@ struct QuickOpenView: View {
             }
             Divider().opacity(0.5)
             footer
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
         }
-        .frame(width: 600)
+        .frame(width: controller.availableContentSize.width)
+        .frame(maxHeight: controller.availableContentSize.height)
         .menoGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
         .padding(24)
         .onAppear(perform: focusField)
@@ -60,6 +64,8 @@ struct QuickOpenView: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
+                .help(Text("Clear Search"))
+                .accessibilityLabel(Text("Clear Search"))
             }
         }
         .padding(.horizontal, 20)
@@ -71,7 +77,10 @@ struct QuickOpenView: View {
             ScrollView {
                 LazyVStack(spacing: 2) {
                     ForEach(Array(controller.results.enumerated()), id: \.element.id) { index, result in
-                        Group {
+                        Button {
+                            controller.selection = index
+                            controller.activateSelection(secondary: false)
+                        } label: {
                             switch result {
                             case .item(let item):
                                 QuickOpenRow(
@@ -90,12 +99,13 @@ struct QuickOpenView: View {
                                 )
                             }
                         }
+                        .buttonStyle(.plain)
                         .id(result.id)
                         .contentShape(Rectangle())
-                        .onTapGesture {
-                            controller.selection = index
-                            controller.activateSelection(secondary: false)
-                        }
+                        .help(Text(verbatim: title(of: result)))
+                        .accessibilityLabel(Text(verbatim: title(of: result)))
+                        .accessibilityValue(Text(verbatim: details(of: result)))
+                        .accessibilityAddTraits(index == controller.selection ? .isSelected : [])
                         .contextMenu {
                             if case .item(let item) = result {
                                 CommandMenuItems(commands: controller.actions(for: item))
@@ -110,9 +120,10 @@ struct QuickOpenView: View {
                         }
                     }
                 }
+                .accessibilityElement(children: .contain)
                 .padding(6)
             }
-            .frame(height: listHeight)
+            .frame(minHeight: 0, idealHeight: listHeight, maxHeight: listHeight)
             .onPreferenceChange(SelectedRowFrameKey.self) { [controller] frame in
                 MainActor.assumeIsolated {
                     controller.selectedRowFrame = frame
@@ -126,16 +137,50 @@ struct QuickOpenView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 14) {
-            KeyHint(keys: "↩", label: "Open")
-            KeyHint(keys: "⌘↩", label: "Secondary click")
-            KeyHint(keys: "⌥↩", label: "Show in menu bar")
-            KeyHint(keys: "⌘K", label: "Actions")
-            Spacer()
-            KeyHint(keys: "esc", label: "Close")
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 14) {
+                KeyHint(keys: "↩", label: "Open")
+                KeyHint(keys: "⌘↩", label: "Secondary click")
+                KeyHint(keys: "⌥↩", label: "Show in menu bar")
+                KeyHint(keys: "⌘K", label: "Actions")
+                Spacer()
+                KeyHint(keys: "esc", label: "Close")
+            }
+            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 6) {
+                GridRow {
+                    KeyHint(keys: "↩", label: "Open")
+                    KeyHint(keys: "esc", label: "Close")
+                }
+                GridRow {
+                    KeyHint(keys: "⌘↩", label: "Secondary click")
+                    KeyHint(keys: "⌘K", label: "Actions")
+                }
+                GridRow {
+                    KeyHint(keys: "⌥↩", label: "Show in menu bar")
+                        .gridCellColumns(2)
+                }
+            }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)
+    }
+
+    private func title(of result: QuickOpenResult) -> String {
+        switch result {
+        case .item(let item): return item.displayName
+        case .command(let command): return command.title
+        }
+    }
+
+    private func details(of result: QuickOpenResult) -> String {
+        switch result {
+        case .item(let item):
+            var parts = [item.section.title]
+            if item.appName != item.displayName { parts.insert(item.appName, at: 0) }
+            if changes.changedItems.contains(item.key) { parts.append(String(localized: "Changed")) }
+            return parts.joined(separator: ", ")
+        case .command: return String(localized: "Action")
+        }
     }
 
     private func focusField() {
@@ -245,8 +290,6 @@ private struct QuickOpenRow: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(0.22) : Color.clear)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -290,8 +333,6 @@ private struct QuickCommandRow: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(0.22) : Color.clear)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -329,5 +370,6 @@ struct KeyHint: View {
                 .font(.system(size: 11))
         }
         .foregroundStyle(.secondary)
+        .fixedSize(horizontal: true, vertical: false)
     }
 }

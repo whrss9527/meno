@@ -86,7 +86,7 @@ final class CaptureActivity: @unchecked Sendable {
         }
         guard new != state else { return }
         state = new
-        DispatchQueue.main.async { [onChange] in onChange(new) }
+        DispatchQueue.main.async { [onChange, new] in onChange(new) }
     }
 
     private func startPolling() {

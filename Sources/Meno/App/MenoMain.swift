@@ -3,6 +3,9 @@ import AppKit
 @main
 enum MenoMain {
     static func main() {
+#if MENO_UI_FIXTURE
+        MenoUIFixture.run()
+#else
         MainActor.assumeIsolated {
             let app = NSApplication.shared
             let delegate = AppDelegate()
@@ -12,5 +15,6 @@ enum MenoMain {
                 app.run()
             }
         }
+#endif
     }
 }

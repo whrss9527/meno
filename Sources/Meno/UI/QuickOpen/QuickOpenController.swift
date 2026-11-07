@@ -45,6 +45,17 @@ enum QuickOpenResult: Identifiable {
 final class QuickOpenController: ObservableObject {
     unowned let model: AppModel
 
+    /// An offline source can exercise the production palette without reading
+    /// or operating another app's menu bar.
+    struct ContentSource {
+        var items: [MenuBarItem]
+        var commands: [QuickCommand]
+        var activate: (QuickOpenResult) -> Void
+        var workspace: (() -> (screen: CGRect, visible: CGRect))? = nil
+        var didLayout: ((CGRect, CGRect) -> Void)? = nil
+    }
+    private let contentSource: ContentSource?
+
     @Published var query = "" {
         // A new search starts at its best match.
         didSet { recompute(keepingSelection: false) }
@@ -54,6 +65,7 @@ final class QuickOpenController: ObservableObject {
     @Published private(set) var isVisible = false
     /// Bumped whenever the palette opens, so the view can focus its field.
     @Published private(set) var presentation = 0
+    @Published private(set) var availableContentSize = CGSize(width: 600, height: CGFloat.greatestFiniteMagnitude)
 
     /// Where the selected row is in the palette, in SwiftUI's coordinates.
     var selectedRowFrame: CGRect?
@@ -67,6 +79,7 @@ final class QuickOpenController: ObservableObject {
     private var isPoppingUpActions = false
     private var isShowingActions: Bool { openMenus > 0 || isPoppingUpActions }
     private var hostingView: NSHostingView<QuickOpenView>?
+    private var layoutTask: Task<Void, Never>?
     private var subscriptions: Set<AnyCancellable> = []
     private lazy var keyMonitor = LocalEventMonitor(mask: [.keyDown]) { [weak self] event in
         self?.handleKey(event) ?? false
@@ -78,8 +91,9 @@ final class QuickOpenController: ObservableObject {
     static let rowHeight: CGFloat = 46
     static let maximumVisibleRows = 8
 
-    init(model: AppModel) {
+    init(model: AppModel, contentSource: ContentSource? = nil) {
         self.model = model
+        self.contentSource = contentSource
     }
 
     func toggle() {
@@ -91,7 +105,11 @@ final class QuickOpenController: ObservableObject {
     }
 
     func show() {
-        model.shelf.hide()
+        if contentSource == nil { model.shelf.hide() }
+        // The usable area excludes the Dock and menu bar. Establish it before
+        // SwiftUI measures a palette opened on a different display.
+        screen = ScreenGeometry.screen(containingCocoa: NSEvent.mouseLocation)
+        updateContentBounds()
         openMenus = 0
         query = ""
         selection = 0
@@ -101,7 +119,6 @@ final class QuickOpenController: ObservableObject {
         shownAt = Date()
         presentation += 1
         // It stays on the screen it opened on while results change.
-        screen = ScreenGeometry.screen(containingCocoa: NSEvent.mouseLocation)
         layoutSoon()
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
@@ -110,6 +127,7 @@ final class QuickOpenController: ObservableObject {
             panel.animator().alphaValue = 1
         }
         keyMonitor.start()
+        guard contentSource == nil else { return }
         outsideClickMonitor.start()
         Task { [weak self] in
             guard let model = self?.model else { return }
@@ -119,6 +137,8 @@ final class QuickOpenController: ObservableObject {
     }
 
     func hide() {
+        layoutTask?.cancel()
+        layoutTask = nil
         guard isVisible else { return }
         isVisible = false
         openMenus = 0
@@ -134,7 +154,7 @@ final class QuickOpenController: ObservableObject {
     /// changes while the palette is open.
     func recompute(keepingSelection: Bool = true) {
         let selectedID = keepingSelection && results.indices.contains(selection) ? results[selection].id : nil
-        let items = model.inventory.items.filter { $0.kind != .marker }
+        let items = (contentSource?.items ?? model.inventory.items).filter { $0.kind != .marker }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let usage = model.usage
         if trimmed.isEmpty {
@@ -173,6 +193,7 @@ final class QuickOpenController: ObservableObject {
 
     /// Meno's actions that can be found by name.
     private func commands() -> [QuickCommand] {
+        if let contentSource { return contentSource.commands }
         let model = self.model
         var commands = model.settings.scenes.map { scene in
             QuickCommand(
@@ -256,6 +277,7 @@ final class QuickOpenController: ObservableObject {
         guard results.indices.contains(selection) else { return }
         let result = results[selection]
         hide()
+        if let contentSource { contentSource.activate(result); return }
         switch result {
         case .item(let item):
             Task {
@@ -268,6 +290,12 @@ final class QuickOpenController: ObservableObject {
 
     /// What can be done with an item, as its actions menu offers it.
     func actions(for item: MenuBarItem) -> [MoveCommand] {
+        if let contentSource {
+            return [MoveCommand(title: String(localized: "Open"), symbol: "cursorarrow.click") {
+                self.hide()
+                contentSource.activate(.item(item))
+            }]
+        }
         let model = self.model
         var commands = [
             MoveCommand(title: String(localized: "Open"), symbol: "cursorarrow.click") { [weak self] in
@@ -395,6 +423,7 @@ final class QuickOpenController: ObservableObject {
 
     private func reveal(_ item: MenuBarItem) {
         hide()
+        if let contentSource { contentSource.activate(.item(item)); return }
         if item.section != .visible || model.isZenActive {
             // Zen keeps every section folded.
             if model.isZenActive {
@@ -490,25 +519,42 @@ final class QuickOpenController: ObservableObject {
     /// Sizes the panel now and again once SwiftUI has applied pending
     /// changes, since `fittingSize` reflects the last rendered state.
     private func layoutSoon() {
+        layoutTask?.cancel()
+        layoutTask = nil
+        guard isVisible else { return }
         layout()
-        Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 30_000_000)
-            self?.layout()
+        layoutTask = Task { [weak self] in
+            do { try await Task.sleep(nanoseconds: 30_000_000) }
+            catch { return }
+            guard !Task.isCancelled, let self else { return }
+            self.layoutTask = nil
+            self.layout()
         }
     }
 
     /// The screen Quick Open opened on.
     private var screen: NSScreen?
 
+    private func updateContentBounds() {
+        guard let area = workspace() else { return }
+        let size = QuickOpenGeometry.contentSize(in: area.visible.size)
+        if availableContentSize != size { availableContentSize = size }
+    }
+
+    private func workspace() -> (screen: CGRect, visible: CGRect)? {
+        if let area = contentSource?.workspace?() { return area }
+        guard let screen = screen ?? NSScreen.main ?? NSScreen.screens.first else { return nil }
+        return (screen.frame, screen.visibleFrame)
+    }
+
     private func layout() {
         guard isVisible, let panel, let hostingView else { return }
+        updateContentBounds()
         let size = hostingView.fittingSize
         guard size.width > 0, size.height > 0 else { return }
-        guard let screen = self.screen ?? NSScreen.main ?? NSScreen.screens.first else {
-            return
-        }
-        let top = screen.frame.maxY - screen.frame.height * 0.2
-        let frame = NSRect(x: screen.frame.midX - size.width / 2, y: top - size.height, width: size.width, height: size.height)
+        guard let area = workspace() else { return }
+        let frame = QuickOpenGeometry.frame(preferredSize: size, in: area.visible)
         panel.setFrame(frame, display: true)
+        contentSource?.didLayout?(panel.frame, area.visible)
     }
 }

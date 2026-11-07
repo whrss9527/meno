@@ -41,7 +41,7 @@ These are current implementation dependencies, not a claim that every API listed
 
 The package requires Swift 6 (Xcode 16 or later). `MenoCore` uses Swift 6 language mode; the app and tests retain Swift 5 mode. `scripts/check-concurrency.sh` builds in a fresh temporary directory with complete concurrency checking, so cached builds cannot hide warnings. CI records the core and app warning counts in its job summary.
 
-The core must have zero warnings. The app baseline in `scripts/concurrency-baseline.json` records ten existing diagnostics at nine source locations, measured with Swift 6.3.3 / Xcode 26.6. Toolchains may report fewer; new locations, additional diagnostics at an existing location, or a larger total fail CI. Fixing warnings can reduce the baseline. When moving source lines, review the diagnostics before updating their recorded locations; do not raise the budget to make a change pass.
+The core must have zero warnings. The app baseline in `scripts/concurrency-baseline.json` records four existing diagnostics at four source locations, measured with Swift 6.3.3 / Xcode 26.6. Toolchains may report fewer; new locations, additional diagnostics at an existing location, or a larger total fail CI. Fixing warnings can reduce the baseline. When moving source lines, review the diagnostics before updating their recorded locations; do not raise the budget to make a change pass.
 
 ### Settings compatibility
 
