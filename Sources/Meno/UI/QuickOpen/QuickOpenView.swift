@@ -73,7 +73,10 @@ struct QuickOpenView: View {
             ScrollView {
                 LazyVStack(spacing: 2) {
                     ForEach(Array(controller.results.enumerated()), id: \.element.id) { index, result in
-                        Group {
+                        Button {
+                            controller.selection = index
+                            controller.activateSelection(secondary: false)
+                        } label: {
                             switch result {
                             case .item(let item):
                                 QuickOpenRow(
@@ -92,12 +95,13 @@ struct QuickOpenView: View {
                                 )
                             }
                         }
+                        .buttonStyle(.plain)
                         .id(result.id)
                         .contentShape(Rectangle())
-                        .onTapGesture {
-                            controller.selection = index
-                            controller.activateSelection(secondary: false)
-                        }
+                        .help(Text(verbatim: title(of: result)))
+                        .accessibilityLabel(Text(verbatim: title(of: result)))
+                        .accessibilityValue(Text(verbatim: details(of: result)))
+                        .accessibilityAddTraits(index == controller.selection ? .isSelected : [])
                         .contextMenu {
                             if case .item(let item) = result {
                                 CommandMenuItems(commands: controller.actions(for: item))
@@ -112,6 +116,7 @@ struct QuickOpenView: View {
                         }
                     }
                 }
+                .accessibilityElement(children: .contain)
                 .padding(6)
             }
             .frame(height: listHeight)
@@ -138,6 +143,24 @@ struct QuickOpenView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)
+    }
+
+    private func title(of result: QuickOpenResult) -> String {
+        switch result {
+        case .item(let item): return item.displayName
+        case .command(let command): return command.title
+        }
+    }
+
+    private func details(of result: QuickOpenResult) -> String {
+        switch result {
+        case .item(let item):
+            var parts = [item.section.title]
+            if item.appName != item.displayName { parts.insert(item.appName, at: 0) }
+            if changes.changedItems.contains(item.key) { parts.append(String(localized: "Changed")) }
+            return parts.joined(separator: ", ")
+        case .command: return String(localized: "Action")
+        }
     }
 
     private func focusField() {
@@ -247,8 +270,6 @@ private struct QuickOpenRow: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(0.22) : Color.clear)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -292,8 +313,6 @@ private struct QuickCommandRow: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(0.22) : Color.clear)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
