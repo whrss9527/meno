@@ -51,6 +51,8 @@ final class QuickOpenController: ObservableObject {
         var items: [MenuBarItem]
         var commands: [QuickCommand]
         var activate: (QuickOpenResult) -> Void
+        var workspace: (() -> (screen: CGRect, visible: CGRect))? = nil
+        var didLayout: ((CGRect, CGRect) -> Void)? = nil
     }
     private let contentSource: ContentSource?
 
@@ -63,6 +65,7 @@ final class QuickOpenController: ObservableObject {
     @Published private(set) var isVisible = false
     /// Bumped whenever the palette opens, so the view can focus its field.
     @Published private(set) var presentation = 0
+    @Published private(set) var availableContentSize = CGSize(width: 600, height: CGFloat.greatestFiniteMagnitude)
 
     /// Where the selected row is in the palette, in SwiftUI's coordinates.
     var selectedRowFrame: CGRect?
@@ -103,6 +106,10 @@ final class QuickOpenController: ObservableObject {
 
     func show() {
         if contentSource == nil { model.shelf.hide() }
+        // The usable area excludes the Dock and menu bar. Establish it before
+        // SwiftUI measures a palette opened on a different display.
+        screen = ScreenGeometry.screen(containingCocoa: NSEvent.mouseLocation)
+        updateContentBounds()
         openMenus = 0
         query = ""
         selection = 0
@@ -112,7 +119,6 @@ final class QuickOpenController: ObservableObject {
         shownAt = Date()
         presentation += 1
         // It stays on the screen it opened on while results change.
-        screen = ScreenGeometry.screen(containingCocoa: NSEvent.mouseLocation)
         layoutSoon()
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
@@ -529,15 +535,26 @@ final class QuickOpenController: ObservableObject {
     /// The screen Quick Open opened on.
     private var screen: NSScreen?
 
+    private func updateContentBounds() {
+        guard let area = workspace() else { return }
+        let size = QuickOpenGeometry.contentSize(in: area.visible.size)
+        if availableContentSize != size { availableContentSize = size }
+    }
+
+    private func workspace() -> (screen: CGRect, visible: CGRect)? {
+        if let area = contentSource?.workspace?() { return area }
+        guard let screen = screen ?? NSScreen.main ?? NSScreen.screens.first else { return nil }
+        return (screen.frame, screen.visibleFrame)
+    }
+
     private func layout() {
         guard isVisible, let panel, let hostingView else { return }
+        updateContentBounds()
         let size = hostingView.fittingSize
         guard size.width > 0, size.height > 0 else { return }
-        guard let screen = self.screen ?? NSScreen.main ?? NSScreen.screens.first else {
-            return
-        }
-        let top = screen.frame.maxY - screen.frame.height * 0.2
-        let frame = NSRect(x: screen.frame.midX - size.width / 2, y: top - size.height, width: size.width, height: size.height)
+        guard let area = workspace() else { return }
+        let frame = QuickOpenGeometry.frame(preferredSize: size, in: area.visible)
         panel.setFrame(frame, display: true)
+        contentSource?.didLayout?(panel.frame, area.visible)
     }
 }

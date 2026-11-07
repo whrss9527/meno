@@ -17,6 +17,7 @@ struct QuickOpenView: View {
     var body: some View {
         VStack(spacing: 0) {
             searchField
+                .layoutPriority(1)
             if !controller.results.isEmpty {
                 Divider().opacity(0.5)
                 resultList
@@ -30,8 +31,11 @@ struct QuickOpenView: View {
             }
             Divider().opacity(0.5)
             footer
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
         }
-        .frame(width: 600)
+        .frame(width: controller.availableContentSize.width)
+        .frame(maxHeight: controller.availableContentSize.height)
         .menoGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
         .padding(24)
         .onAppear(perform: focusField)
@@ -119,7 +123,7 @@ struct QuickOpenView: View {
                 .accessibilityElement(children: .contain)
                 .padding(6)
             }
-            .frame(height: listHeight)
+            .frame(minHeight: 0, idealHeight: listHeight, maxHeight: listHeight)
             .onPreferenceChange(SelectedRowFrameKey.self) { [controller] frame in
                 MainActor.assumeIsolated {
                     controller.selectedRowFrame = frame
@@ -133,13 +137,29 @@ struct QuickOpenView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 14) {
-            KeyHint(keys: "↩", label: "Open")
-            KeyHint(keys: "⌘↩", label: "Secondary click")
-            KeyHint(keys: "⌥↩", label: "Show in menu bar")
-            KeyHint(keys: "⌘K", label: "Actions")
-            Spacer()
-            KeyHint(keys: "esc", label: "Close")
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 14) {
+                KeyHint(keys: "↩", label: "Open")
+                KeyHint(keys: "⌘↩", label: "Secondary click")
+                KeyHint(keys: "⌥↩", label: "Show in menu bar")
+                KeyHint(keys: "⌘K", label: "Actions")
+                Spacer()
+                KeyHint(keys: "esc", label: "Close")
+            }
+            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 6) {
+                GridRow {
+                    KeyHint(keys: "↩", label: "Open")
+                    KeyHint(keys: "esc", label: "Close")
+                }
+                GridRow {
+                    KeyHint(keys: "⌘↩", label: "Secondary click")
+                    KeyHint(keys: "⌘K", label: "Actions")
+                }
+                GridRow {
+                    KeyHint(keys: "⌥↩", label: "Show in menu bar")
+                        .gridCellColumns(2)
+                }
+            }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)
@@ -350,5 +370,6 @@ struct KeyHint: View {
                 .font(.system(size: 11))
         }
         .foregroundStyle(.secondary)
+        .fixedSize(horizontal: true, vertical: false)
     }
 }

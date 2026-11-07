@@ -7,6 +7,8 @@ import SwiftUI
 @MainActor
 final class MenoUIFixture: NSObject, NSApplicationDelegate, ObservableObject {
     @Published var lastAction = "No action yet / 尚未操作"
+    @Published var geometry = "No layout yet"
+    private var workspaceMode = 0
     private var window: NSWindow?
     private var model: AppModel?
     private var palette: QuickOpenController?
@@ -53,9 +55,12 @@ final class MenoUIFixture: NSObject, NSApplicationDelegate, ObservableObject {
             case .item(let item): self?.lastAction = "Opened / 已打开: \(item.displayName)"
             case .command(let command): self?.lastAction = "Ran / 已运行: \(command.title)"
             }
+        }, workspace: { [weak self] in self?.workspace() ?? (.zero, .zero) }, didLayout: { [weak self] frame, available in
+            let value = "Panel \(Int(frame.width))×\(Int(frame.height)) · available \(Int(available.width))×\(Int(available.height)) · contained: \(available.contains(frame))"
+            if self?.geometry != value { self?.geometry = value }
         }))
         installMenu()
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 190),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 240),
                               styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         window.title = "Meno UI Fixture — isolated production Quick Open"
         window.contentView = NSHostingView(rootView: FixtureControls(fixture: self))
@@ -68,6 +73,21 @@ final class MenoUIFixture: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func openPalette() { palette?.show() }
+
+    func setWorkspace(_ mode: Int) { workspaceMode = mode; palette?.hide(); palette?.show() }
+
+    private func workspace() -> (screen: CGRect, visible: CGRect) {
+        guard let actual = NSScreen.main else { return (.zero, .zero) }
+        guard workspaceMode != 0 else { return (actual.frame, actual.visibleFrame) }
+        let screen = CGRect(x: actual.frame.midX - 400, y: actual.frame.midY - 300, width: 800, height: 600)
+        if workspaceMode == 1 {
+            return (screen, CGRect(x: screen.minX, y: screen.minY + 80, width: 800, height: 496))
+        }
+        return (screen, CGRect(x: screen.minX + 140, y: screen.minY + 120, width: 520, height: 360))
+    }
+
+    @objc private func showControls(_ sender: Any?) { window?.makeKeyAndOrderFront(nil) }
+    @objc private func showPalette(_ sender: Any?) { openPalette() }
 
     func language(_ code: String) {
         let process = Process()
@@ -89,7 +109,14 @@ final class MenoUIFixture: NSObject, NSApplicationDelegate, ObservableObject {
             edit.addItem(withTitle: title, action: action, keyEquivalent: key)
         }
         let editItem = NSMenuItem(); editItem.submenu = edit; menu.addItem(editItem)
-        NSApp.mainMenu = menu
+        let windowTitle = "Window"
+        let windows = NSMenu(title: windowTitle)
+        let controls = windows.addItem(withTitle: "Show Controls", action: #selector(showControls(_:)), keyEquivalent: "0")
+        controls.target = self; controls.keyEquivalentModifierMask = [.command, .option]
+        let palette = windows.addItem(withTitle: "Open Quick Open", action: #selector(showPalette(_:)), keyEquivalent: "p")
+        palette.target = self; palette.keyEquivalentModifierMask = [.command, .option]
+        let windowItem = NSMenuItem(); windowItem.submenu = windows; menu.addItem(windowItem)
+        NSApp.mainMenu = menu; NSApp.windowsMenu = windows
     }
 }
 
@@ -106,6 +133,12 @@ private struct FixtureControls: View {
                 Button(action: { fixture.language("en") }) { Text(verbatim: "English ↻") }
                 Button(action: { fixture.language("zh-Hans") }) { Text(verbatim: "中文 ↻") }
             }
+            HStack {
+                Button(action: { fixture.setWorkspace(0) }) { Text(verbatim: "Actual desktop") }
+                Button(action: { fixture.setWorkspace(1) }) { Text(verbatim: "Simulated Dock 800×496") }
+                Button(action: { fixture.setWorkspace(2) }) { Text(verbatim: "Simulated compact 520×360") }
+            }
+            Text(verbatim: fixture.geometry).font(.caption).monospacedDigit()
             Text(fixture.lastAction).lineLimit(2).textSelection(.enabled)
         }.padding(20).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
