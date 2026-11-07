@@ -45,6 +45,15 @@ enum QuickOpenResult: Identifiable {
 final class QuickOpenController: ObservableObject {
     unowned let model: AppModel
 
+    /// An offline source can exercise the production palette without reading
+    /// or operating another app's menu bar.
+    struct ContentSource {
+        var items: [MenuBarItem]
+        var commands: [QuickCommand]
+        var activate: (QuickOpenResult) -> Void
+    }
+    private let contentSource: ContentSource?
+
     @Published var query = "" {
         // A new search starts at its best match.
         didSet { recompute(keepingSelection: false) }
@@ -79,8 +88,9 @@ final class QuickOpenController: ObservableObject {
     static let rowHeight: CGFloat = 46
     static let maximumVisibleRows = 8
 
-    init(model: AppModel) {
+    init(model: AppModel, contentSource: ContentSource? = nil) {
         self.model = model
+        self.contentSource = contentSource
     }
 
     func toggle() {
@@ -92,7 +102,7 @@ final class QuickOpenController: ObservableObject {
     }
 
     func show() {
-        model.shelf.hide()
+        if contentSource == nil { model.shelf.hide() }
         openMenus = 0
         query = ""
         selection = 0
@@ -111,6 +121,7 @@ final class QuickOpenController: ObservableObject {
             panel.animator().alphaValue = 1
         }
         keyMonitor.start()
+        guard contentSource == nil else { return }
         outsideClickMonitor.start()
         Task { [weak self] in
             guard let model = self?.model else { return }
@@ -137,7 +148,7 @@ final class QuickOpenController: ObservableObject {
     /// changes while the palette is open.
     func recompute(keepingSelection: Bool = true) {
         let selectedID = keepingSelection && results.indices.contains(selection) ? results[selection].id : nil
-        let items = model.inventory.items.filter { $0.kind != .marker }
+        let items = (contentSource?.items ?? model.inventory.items).filter { $0.kind != .marker }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let usage = model.usage
         if trimmed.isEmpty {
@@ -176,6 +187,7 @@ final class QuickOpenController: ObservableObject {
 
     /// Meno's actions that can be found by name.
     private func commands() -> [QuickCommand] {
+        if let contentSource { return contentSource.commands }
         let model = self.model
         var commands = model.settings.scenes.map { scene in
             QuickCommand(
@@ -259,6 +271,7 @@ final class QuickOpenController: ObservableObject {
         guard results.indices.contains(selection) else { return }
         let result = results[selection]
         hide()
+        if let contentSource { contentSource.activate(result); return }
         switch result {
         case .item(let item):
             Task {
@@ -271,6 +284,12 @@ final class QuickOpenController: ObservableObject {
 
     /// What can be done with an item, as its actions menu offers it.
     func actions(for item: MenuBarItem) -> [MoveCommand] {
+        if let contentSource {
+            return [MoveCommand(title: String(localized: "Open"), symbol: "cursorarrow.click") {
+                self.hide()
+                contentSource.activate(.item(item))
+            }]
+        }
         let model = self.model
         var commands = [
             MoveCommand(title: String(localized: "Open"), symbol: "cursorarrow.click") { [weak self] in
@@ -398,6 +417,7 @@ final class QuickOpenController: ObservableObject {
 
     private func reveal(_ item: MenuBarItem) {
         hide()
+        if let contentSource { contentSource.activate(.item(item)); return }
         if item.section != .visible || model.isZenActive {
             // Zen keeps every section folded.
             if model.isZenActive {
