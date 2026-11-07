@@ -67,6 +67,7 @@ final class QuickOpenController: ObservableObject {
     private var isPoppingUpActions = false
     private var isShowingActions: Bool { openMenus > 0 || isPoppingUpActions }
     private var hostingView: NSHostingView<QuickOpenView>?
+    private var layoutTask: Task<Void, Never>?
     private var subscriptions: Set<AnyCancellable> = []
     private lazy var keyMonitor = LocalEventMonitor(mask: [.keyDown]) { [weak self] event in
         self?.handleKey(event) ?? false
@@ -119,6 +120,8 @@ final class QuickOpenController: ObservableObject {
     }
 
     func hide() {
+        layoutTask?.cancel()
+        layoutTask = nil
         guard isVisible else { return }
         isVisible = false
         openMenus = 0
@@ -490,10 +493,16 @@ final class QuickOpenController: ObservableObject {
     /// Sizes the panel now and again once SwiftUI has applied pending
     /// changes, since `fittingSize` reflects the last rendered state.
     private func layoutSoon() {
+        layoutTask?.cancel()
+        layoutTask = nil
+        guard isVisible else { return }
         layout()
-        Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 30_000_000)
-            self?.layout()
+        layoutTask = Task { [weak self] in
+            do { try await Task.sleep(nanoseconds: 30_000_000) }
+            catch { return }
+            guard !Task.isCancelled, let self else { return }
+            self.layoutTask = nil
+            self.layout()
         }
     }
 

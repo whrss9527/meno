@@ -60,6 +60,8 @@ struct QuickOpenView: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
+                .help(Text("Clear Search"))
+                .accessibilityLabel(Text("Clear Search"))
             }
         }
         .padding(.horizontal, 20)
